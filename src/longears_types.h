@@ -7,4 +7,6 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
+class AmqpConnection;
+
 #endif // __LONGEARS_H__
