@@ -40,10 +40,16 @@ $ systemctl start rabbitmq-server
 $ rabbitmqctl status
 ```
 
+To connect to the server (with default settings):
+
+```{r basic-connect}
+conn <- amqp_connect()
+conn
+```
+
 To send messages to a queue:
 
 ```{r basic-publish}
-conn <- amqp_connect()
 amqp_declare_queue(conn, "my_queue")
 amqp_publish(conn, "my_queue", "message")
 amqp_publish(conn, "my_queue", "second message")
@@ -61,4 +67,17 @@ And to pull messages back into R:
 amqp_get(conn, "my_queue")
 amqp_get(conn, "my_queue")
 amqp_get(conn, "my_queue")
+```
+
+Afterwards you can disconnect from the server:
+
+```{r basic-disconnect}
+amqp_disconnect(conn)
+conn
+```
+
+And check that the connection is closed:
+
+```shell
+$ rabbitmqctl list_connections
 ```

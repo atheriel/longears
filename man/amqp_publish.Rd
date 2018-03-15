@@ -7,7 +7,7 @@
 amqp_publish(conn, queue, msg, content_type = "text/plain")
 }
 \arguments{
-\item{conn}{An external pointer to a connection.}
+\item{conn}{An object returned by \code{\link{amqp_connect}}.}
 
 \item{queue}{The name of a queue.}
 

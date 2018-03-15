@@ -13,7 +13,7 @@ amqp_connect(host = "localhost", port = 5672L, vhost = "/",
 \item{port}{The server port.}
 }
 \value{
-An external pointer to a connection.
+An \code{amqp_connection} object.
 }
 \description{
 Open a Connection to a RabbitMQ Server

@@ -7,7 +7,7 @@
 amqp_disconnect(conn)
 }
 \arguments{
-\item{conn}{An external pointer to a connection.}
+\item{conn}{An object returned by \code{\link{amqp_connect}}.}
 }
 \description{
 Close a Connection to a RabbitMQ Server

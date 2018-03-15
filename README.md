@@ -26,10 +26,20 @@ $ systemctl start rabbitmq-server
 $ rabbitmqctl status
 ```
 
-To send messages to a queue:
+To connect to the server (with default settings):
 
 ``` r
 conn <- amqp_connect()
+conn
+#> AMQP Connection:
+#>   status:  connected
+#>   address: localhost:5672
+#>   vhost:   '/'
+```
+
+To send messages to a queue:
+
+``` r
 amqp_declare_queue(conn, "my_queue")
 #> Queue messages: 0 consumers: 0
 amqp_publish(conn, "my_queue", "message")
@@ -51,4 +61,21 @@ amqp_get(conn, "my_queue")
 #> [1] "second message"
 amqp_get(conn, "my_queue")
 #> character(0)
+```
+
+Afterwards you can disconnect from the server:
+
+``` r
+amqp_disconnect(conn)
+conn
+#> AMQP Connection:
+#>   status:  disconnected
+#>   address: localhost:5672
+#>   vhost:   '/'
+```
+
+And check that the connection is closed:
+
+``` shell
+$ rabbitmqctl list_connections
 ```
