@@ -1,1 +1,10 @@
+# Compiler artifacts:
+*.o
+*.so
+*.dll
+# Autoconf artifacts:
+src/Makevars
+config.status
+config.log
+# R project artifacts:
 .Rproj.user
