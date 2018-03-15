@@ -2,6 +2,7 @@
 
 export(amqp_connect)
 export(amqp_declare_queue)
+export(amqp_disconnect)
 export(amqp_get)
 export(amqp_publish)
 importFrom(Rcpp,sourceCpp)

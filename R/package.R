@@ -10,8 +10,19 @@ NULL
 #' @return An external pointer to a connection.
 #'
 #' @export
-amqp_connect <- function(host = "localhost", port = 5672L) {
-  amqp_connect_(host, port)
+amqp_connect <- function(host = "localhost", port = 5672L, vhost = "/",
+                         username = "guest", password = "guest",
+                         timeout = 10L) {
+  amqp_connect_(host, port, vhost, username, password, timeout)
+}
+
+#' Close a Connection to a RabbitMQ Server
+#'
+#' @param conn An external pointer to a connection.
+#'
+#' @export
+amqp_disconnect <- function(conn) {
+  amqp_disconnect_(conn)
 }
 
 #' Declare a Queue

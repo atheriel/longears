@@ -4,7 +4,8 @@
 \alias{amqp_connect}
 \title{Open a Connection to a RabbitMQ Server}
 \usage{
-amqp_connect(host = "localhost", port = 5672L)
+amqp_connect(host = "localhost", port = 5672L, vhost = "/",
+  username = "guest", password = "guest", timeout = 10L)
 }
 \arguments{
 \item{host}{The server host.}

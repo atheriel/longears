@@ -7,15 +7,29 @@
 using namespace Rcpp;
 
 // amqp_connect_
-Rcpp::XPtr<AmqpConnection> amqp_connect_(std::string host, int port);
-RcppExport SEXP _longears_amqp_connect_(SEXP hostSEXP, SEXP portSEXP) {
+Rcpp::XPtr<AmqpConnection> amqp_connect_(std::string host, int port, std::string vhost, std::string username, std::string password, long timeout);
+RcppExport SEXP _longears_amqp_connect_(SEXP hostSEXP, SEXP portSEXP, SEXP vhostSEXP, SEXP usernameSEXP, SEXP passwordSEXP, SEXP timeoutSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< std::string >::type host(hostSEXP);
     Rcpp::traits::input_parameter< int >::type port(portSEXP);
-    rcpp_result_gen = Rcpp::wrap(amqp_connect_(host, port));
+    Rcpp::traits::input_parameter< std::string >::type vhost(vhostSEXP);
+    Rcpp::traits::input_parameter< std::string >::type username(usernameSEXP);
+    Rcpp::traits::input_parameter< std::string >::type password(passwordSEXP);
+    Rcpp::traits::input_parameter< long >::type timeout(timeoutSEXP);
+    rcpp_result_gen = Rcpp::wrap(amqp_connect_(host, port, vhost, username, password, timeout));
     return rcpp_result_gen;
+END_RCPP
+}
+// amqp_disconnect_
+void amqp_disconnect_(Rcpp::XPtr<AmqpConnection> conn);
+RcppExport SEXP _longears_amqp_disconnect_(SEXP connSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::XPtr<AmqpConnection> >::type conn(connSEXP);
+    amqp_disconnect_(conn);
+    return R_NilValue;
 END_RCPP
 }
 // amqp_declare_queue_
@@ -57,7 +71,8 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_longears_amqp_connect_", (DL_FUNC) &_longears_amqp_connect_, 2},
+    {"_longears_amqp_connect_", (DL_FUNC) &_longears_amqp_connect_, 6},
+    {"_longears_amqp_disconnect_", (DL_FUNC) &_longears_amqp_disconnect_, 1},
     {"_longears_amqp_declare_queue_", (DL_FUNC) &_longears_amqp_declare_queue_, 3},
     {"_longears_amqp_publish_", (DL_FUNC) &_longears_amqp_publish_, 4},
     {"_longears_amqp_get_", (DL_FUNC) &_longears_amqp_get_, 2},

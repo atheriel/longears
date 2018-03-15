@@ -11,7 +11,8 @@ private:
 
 public:
 
-  void connect(std::string host = "localhost", int port = 5672) {
+  void connect(std::string host = "localhost", int port = 5672, std::string vhost = "/",
+               std::string username = "guest", std::string password = "guest", long timeout = 10) {
     conn = amqp_new_connection();
 
     if (!conn) {
@@ -25,8 +26,11 @@ public:
       Rcpp::stop("Failed create an amqp socket. Error: %d", socket);
     }
 
-    // TODO: Should we use amqp_default_connection_info instead?
-    int sockfd = amqp_socket_open(socket, host.c_str(), port);
+    // TODO: It should be possible to set an infinite timeout.
+    timeval *tv = new timeval;
+    tv->tv_sec = timeout;
+    tv->tv_usec = 0;
+    int sockfd = amqp_socket_open_noblock(socket, host.c_str(), port, tv);
     if (sockfd < 0) {
       amqp_connection_close(conn, AMQP_REPLY_SUCCESS);
       amqp_destroy_connection(conn);
@@ -35,10 +39,8 @@ public:
 
     /* Log in. */
 
-    // TODO: Should we use amqp_default_connection_info instead?
-    amqp_rpc_reply_t login_reply = amqp_login(conn, "/", 0, AMQP_DEFAULT_FRAME_SIZE, 0,
-                                              AMQP_SASL_METHOD_PLAIN, "guest",
-                                              "guest");
+    amqp_rpc_reply_t login_reply = amqp_login(conn, vhost.c_str(), AMQP_DEFAULT_MAX_CHANNELS, AMQP_DEFAULT_FRAME_SIZE,
+                                              0, AMQP_SASL_METHOD_PLAIN, username.c_str(), password.c_str());
 
     if (login_reply.reply_type != AMQP_RESPONSE_NORMAL) {
       amqp_connection_close(conn, AMQP_REPLY_SUCCESS);
@@ -55,6 +57,15 @@ public:
       amqp_destroy_connection(conn);
       stop_on_rpc_error("Failed to open channel.", open_reply);
     }
+  }
+
+  void disconnect() {
+    if (!conn) {
+      Rcpp::stop("The amqp connection no longer exists.");
+    }
+    stop_on_rpc_error("Failed to disconnect.", amqp_connection_close(conn, AMQP_REPLY_SUCCESS));
+    amqp_destroy_connection(conn);
+    conn = NULL;
   }
 
   void declare_queue(std::string queue, bool quietly = false) {
@@ -150,8 +161,9 @@ public:
     return out;
   }
 
-  AmqpConnection(std::string host = "localhost", int port = 5672) {
-    connect(host, port);
+  AmqpConnection(std::string host = "localhost", int port = 5672, std::string vhost = "/",
+                 std::string username = "guest", std::string password = "guest", long timeout = 10) {
+    connect(host, port, vhost, username, password, timeout);
   }
 
   ~AmqpConnection() {
@@ -163,9 +175,16 @@ public:
 };
 
 // [[Rcpp::export]]
-Rcpp::XPtr<AmqpConnection> amqp_connect_(std::string host = "localhost", int port = 5672) {
-  AmqpConnection *conn = new AmqpConnection(host, port);
+Rcpp::XPtr<AmqpConnection> amqp_connect_(std::string host = "localhost", int port = 5672, std::string vhost = "/",
+                                         std::string username = "guest", std::string password = "guest",
+                                         long timeout = 10) {
+  AmqpConnection *conn = new AmqpConnection(host, port, vhost, username, password, timeout);
   return Rcpp::XPtr<AmqpConnection>(conn, true);
+}
+
+// [[Rcpp::export]]
+void amqp_disconnect_(Rcpp::XPtr<AmqpConnection> conn) {
+  conn->disconnect();
 }
 
 // [[Rcpp::export]]
