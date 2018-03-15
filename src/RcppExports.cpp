@@ -32,6 +32,17 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// is_connected
+bool is_connected(Rcpp::XPtr<AmqpConnection> conn);
+RcppExport SEXP _longears_is_connected(SEXP connSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::XPtr<AmqpConnection> >::type conn(connSEXP);
+    rcpp_result_gen = Rcpp::wrap(is_connected(conn));
+    return rcpp_result_gen;
+END_RCPP
+}
 // amqp_declare_queue_
 void amqp_declare_queue_(Rcpp::XPtr<AmqpConnection> conn, std::string queue, bool quietly);
 RcppExport SEXP _longears_amqp_declare_queue_(SEXP connSEXP, SEXP queueSEXP, SEXP quietlySEXP) {
@@ -73,6 +84,7 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_longears_amqp_connect_", (DL_FUNC) &_longears_amqp_connect_, 6},
     {"_longears_amqp_disconnect_", (DL_FUNC) &_longears_amqp_disconnect_, 1},
+    {"_longears_is_connected", (DL_FUNC) &_longears_is_connected, 1},
     {"_longears_amqp_declare_queue_", (DL_FUNC) &_longears_amqp_declare_queue_, 3},
     {"_longears_amqp_publish_", (DL_FUNC) &_longears_amqp_publish_, 4},
     {"_longears_amqp_get_", (DL_FUNC) &_longears_amqp_get_, 2},

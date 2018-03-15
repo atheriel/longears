@@ -68,6 +68,10 @@ public:
     conn = NULL;
   }
 
+  bool is_connected() {
+    return (conn != NULL);
+  }
+
   void declare_queue(std::string queue, bool quietly = false) {
     if (!conn) {
       Rcpp::stop("The amqp connection no longer exists.");
@@ -185,6 +189,11 @@ Rcpp::XPtr<AmqpConnection> amqp_connect_(std::string host = "localhost", int por
 // [[Rcpp::export]]
 void amqp_disconnect_(Rcpp::XPtr<AmqpConnection> conn) {
   conn->disconnect();
+}
+
+// [[Rcpp::export]]
+bool is_connected(Rcpp::XPtr<AmqpConnection> conn) {
+  return conn->is_connected();
 }
 
 // [[Rcpp::export]]

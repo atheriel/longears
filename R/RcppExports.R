@@ -9,6 +9,10 @@ amqp_disconnect_ <- function(conn) {
     invisible(.Call(`_longears_amqp_disconnect_`, conn))
 }
 
+is_connected <- function(conn) {
+    .Call(`_longears_is_connected`, conn)
+}
+
 amqp_declare_queue_ <- function(conn, queue, quietly = FALSE) {
     invisible(.Call(`_longears_amqp_declare_queue_`, conn, queue, quietly))
 }
