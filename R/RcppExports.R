@@ -13,3 +13,7 @@ amqp_send_message_ <- function(conn, queue, msg, content_type = "text/plain") {
     invisible(.Call(`_longears_amqp_send_message_`, conn, queue, msg, content_type))
 }
 
+amqp_get_ <- function(conn, queue) {
+    .Call(`_longears_amqp_get_`, conn, queue)
+}
+

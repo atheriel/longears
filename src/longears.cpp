@@ -110,6 +110,46 @@ public:
     stop_on_rpc_error("Failed to publish message.", amqp_get_rpc_reply(conn));
   }
 
+  Rcpp::StringVector get(std::string queue) {
+    if (!conn) {
+      Rcpp::stop("The amqp connection no longer exists.");
+    }
+
+    /* Get message. */
+
+    // TODO: Add the ability to acknowledge the message.
+    amqp_rpc_reply_t reply = amqp_basic_get(conn, 1, amqp_cstring_bytes(queue.c_str()), 1);
+    stop_on_rpc_error("Failed to get message.", reply);
+
+    if (reply.reply.id == AMQP_BASIC_GET_EMPTY_METHOD) {
+      // Rcpp::Rcout << "No messages to get." << std::endl;
+      return Rcpp::StringVector(0);
+    }
+
+    amqp_frame_t frame;
+    int result = amqp_simple_wait_frame(conn, &frame);
+    if (result != AMQP_STATUS_OK) {
+      Rcpp::stop("Failed to read frame. Error: %d.", result);
+    }
+    if (frame.frame_type != AMQP_FRAME_HEADER) {
+      Rcpp::stop("Failed to read frame. Unexpected header type: %d.", frame.frame_type);
+    }
+
+    size_t body_remaining = frame.payload.properties.body_size;
+    std::string body; // = std::string();
+    while (body_remaining) {
+      result = amqp_simple_wait_frame(conn, &frame);
+      if (result != AMQP_STATUS_OK) {
+        Rcpp::stop("Failed to wait for frame. Error: %d.", result);
+      }
+      body.append((char *) frame.payload.body_fragment.bytes, frame.payload.body_fragment.len);
+      body_remaining -= frame.payload.body_fragment.len;
+    }
+    Rcpp::StringVector out(1);
+    out[0] = body;
+    return out;
+  }
+
   AmqpConnection(std::string host = "localhost", int port = 5672) {
     connect(host, port);
   }
@@ -137,6 +177,11 @@ void amqp_declare_queue_(Rcpp::XPtr<AmqpConnection> conn, std::string queue, boo
 void amqp_send_message_(Rcpp::XPtr<AmqpConnection> conn, std::string queue, std::string msg,
                         std::string content_type = "text/plain") {
   conn->send_message(queue, msg, content_type);
+}
+
+// [[Rcpp::export]]
+Rcpp::StringVector amqp_get_(Rcpp::XPtr<AmqpConnection> conn, std::string queue) {
+  return conn->get(queue);
 }
 
 void stop_on_rpc_error(const char *context, amqp_rpc_reply_t reply) {
