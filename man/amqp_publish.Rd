@@ -4,16 +4,26 @@
 \alias{amqp_publish}
 \title{Publish a Message to a Queue}
 \usage{
-amqp_publish(conn, queue, msg, content_type = "text/plain")
+amqp_publish(conn, routing_key, body, exchange = "",
+  content_type = "text/plain", mandatory = FALSE, immediate = FALSE)
 }
 \arguments{
 \item{conn}{An object returned by \code{\link{amqp_connect}}.}
 
-\item{queue}{The name of a queue.}
+\item{routing_key}{The routing key for the message. For the default
+exchange, this is the name of a queue.}
 
-\item{msg}{The message to send.}
+\item{body}{The message to send.}
+
+\item{exchange}{The exchange to route the message through.}
 
 \item{content_type}{The message content type.}
+
+\item{mandatory}{When \code{TRUE}, demand that the message is placed in a
+queue.}
+
+\item{immediate}{When \code{TRUE}, demand that the message is delivered
+immediately.}
 }
 \description{
 Publish a Message to a Queue

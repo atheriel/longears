@@ -17,8 +17,8 @@ amqp_declare_queue_ <- function(conn, queue, quietly = FALSE) {
     invisible(.Call(`_longears_amqp_declare_queue_`, conn, queue, quietly))
 }
 
-amqp_publish_ <- function(conn, queue, msg, content_type = "text/plain") {
-    invisible(.Call(`_longears_amqp_publish_`, conn, queue, msg, content_type))
+amqp_publish_ <- function(conn, routing_key, body, exchange = "", content_type = "text/plain", mandatory = FALSE, immediate = FALSE) {
+    invisible(.Call(`_longears_amqp_publish_`, conn, routing_key, body, exchange, content_type, mandatory, immediate))
 }
 
 amqp_get_ <- function(conn, queue) {

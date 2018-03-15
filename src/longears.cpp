@@ -99,7 +99,8 @@ public:
     }
   }
 
-  void publish(std::string queue, std::string msg, std::string content_type = "text/plain") {
+  void publish(std::string routing_key, std::string body, std::string exchange = "",
+               std::string content_type = "text/plain", bool mandatory = false, bool immediate = false) {
     if (!conn) {
       Rcpp::stop("The amqp connection no longer exists.");
     }
@@ -111,14 +112,16 @@ public:
       AMQP_BASIC_DELIVERY_MODE_FLAG;
     props.content_type = amqp_cstring_bytes(content_type.c_str());
     props.delivery_mode = 1;
+    amqp_bytes_t exch = amqp_empty_bytes;
+    if (!exchange.empty()) {
+      exch = amqp_cstring_bytes(exchange.c_str());
+    }
 
-    int result = amqp_basic_publish(
-      conn, 1, amqp_empty_bytes, amqp_cstring_bytes(queue.c_str()),
-      0, 0, &props, amqp_cstring_bytes(msg.c_str())
-    );
+    int result = amqp_basic_publish(conn, 1, exch, amqp_cstring_bytes(routing_key.c_str()), mandatory, immediate,
+                                    &props, amqp_cstring_bytes(body.c_str()));
 
     if (result != AMQP_STATUS_OK) {
-      Rcpp::stop("Failed to publish message. Error: %d.", result);
+      Rcpp::stop("Failed to publish message. Error: %s.", amqp_error_string2(result));
     }
 
     // TODO: This is not enough to ensure that we have sent the message.
@@ -202,9 +205,10 @@ void amqp_declare_queue_(Rcpp::XPtr<AmqpConnection> conn, std::string queue, boo
 }
 
 // [[Rcpp::export]]
-void amqp_publish_(Rcpp::XPtr<AmqpConnection> conn, std::string queue, std::string msg,
-                        std::string content_type = "text/plain") {
-  conn->publish(queue, msg, content_type);
+void amqp_publish_(Rcpp::XPtr<AmqpConnection> conn, std::string routing_key, std::string body,
+                   std::string exchange = "", std::string content_type = "text/plain", bool mandatory = false,
+                   bool immediate = false) {
+  conn->publish(routing_key, body, exchange, content_type, mandatory, immediate);
 }
 
 // [[Rcpp::export]]

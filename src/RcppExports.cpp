@@ -56,15 +56,18 @@ BEGIN_RCPP
 END_RCPP
 }
 // amqp_publish_
-void amqp_publish_(Rcpp::XPtr<AmqpConnection> conn, std::string queue, std::string msg, std::string content_type);
-RcppExport SEXP _longears_amqp_publish_(SEXP connSEXP, SEXP queueSEXP, SEXP msgSEXP, SEXP content_typeSEXP) {
+void amqp_publish_(Rcpp::XPtr<AmqpConnection> conn, std::string routing_key, std::string body, std::string exchange, std::string content_type, bool mandatory, bool immediate);
+RcppExport SEXP _longears_amqp_publish_(SEXP connSEXP, SEXP routing_keySEXP, SEXP bodySEXP, SEXP exchangeSEXP, SEXP content_typeSEXP, SEXP mandatorySEXP, SEXP immediateSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Rcpp::XPtr<AmqpConnection> >::type conn(connSEXP);
-    Rcpp::traits::input_parameter< std::string >::type queue(queueSEXP);
-    Rcpp::traits::input_parameter< std::string >::type msg(msgSEXP);
+    Rcpp::traits::input_parameter< std::string >::type routing_key(routing_keySEXP);
+    Rcpp::traits::input_parameter< std::string >::type body(bodySEXP);
+    Rcpp::traits::input_parameter< std::string >::type exchange(exchangeSEXP);
     Rcpp::traits::input_parameter< std::string >::type content_type(content_typeSEXP);
-    amqp_publish_(conn, queue, msg, content_type);
+    Rcpp::traits::input_parameter< bool >::type mandatory(mandatorySEXP);
+    Rcpp::traits::input_parameter< bool >::type immediate(immediateSEXP);
+    amqp_publish_(conn, routing_key, body, exchange, content_type, mandatory, immediate);
     return R_NilValue;
 END_RCPP
 }
@@ -86,7 +89,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_longears_amqp_disconnect_", (DL_FUNC) &_longears_amqp_disconnect_, 1},
     {"_longears_is_connected", (DL_FUNC) &_longears_is_connected, 1},
     {"_longears_amqp_declare_queue_", (DL_FUNC) &_longears_amqp_declare_queue_, 3},
-    {"_longears_amqp_publish_", (DL_FUNC) &_longears_amqp_publish_, 4},
+    {"_longears_amqp_publish_", (DL_FUNC) &_longears_amqp_publish_, 7},
     {"_longears_amqp_get_", (DL_FUNC) &_longears_amqp_get_, 2},
     {NULL, NULL, 0}
 };
