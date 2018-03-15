@@ -84,7 +84,7 @@ public:
     }
   }
 
-  void send_message(std::string queue, std::string msg, std::string content_type = "text/plain") {
+  void publish(std::string queue, std::string msg, std::string content_type = "text/plain") {
     if (!conn) {
       Rcpp::stop("The amqp connection no longer exists.");
     }
@@ -174,9 +174,9 @@ void amqp_declare_queue_(Rcpp::XPtr<AmqpConnection> conn, std::string queue, boo
 }
 
 // [[Rcpp::export]]
-void amqp_send_message_(Rcpp::XPtr<AmqpConnection> conn, std::string queue, std::string msg,
+void amqp_publish_(Rcpp::XPtr<AmqpConnection> conn, std::string queue, std::string msg,
                         std::string content_type = "text/plain") {
-  conn->send_message(queue, msg, content_type);
+  conn->publish(queue, msg, content_type);
 }
 
 // [[Rcpp::export]]
