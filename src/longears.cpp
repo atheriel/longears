@@ -115,6 +115,30 @@ public:
     return rval;
   }
 
+  int delete_queue(std::string queue, bool if_unused = false, bool if_empty = false) {
+    if (!conn) {
+      Rcpp::stop("The amqp connection no longer exists.");
+    }
+
+    /* Delete queue. */
+
+    amqp_bytes_t qname = amqp_cstring_bytes(queue.c_str());
+    amqp_queue_delete_ok_t *delete_ok = amqp_queue_delete(conn, 1, qname, if_unused, if_empty);
+
+    if (delete_ok == NULL) {
+      amqp_rpc_reply_t reply = amqp_get_rpc_reply(conn);
+      if (reply.reply_type == AMQP_RESPONSE_NORMAL) {
+        // This should never happen.
+        Rcpp::stop("Unexpected error: queue delete response is NULL with a normal reply.");
+      } else {
+        stop_on_rpc_error("Failed to delete queue.", reply);
+      }
+    }
+
+    int message_count = delete_ok->message_count;
+    return message_count;
+  }
+
   void publish(std::string routing_key, std::string body, std::string exchange = "",
                std::string content_type = "text/plain", bool mandatory = false, bool immediate = false) {
     if (!conn) {
@@ -219,6 +243,12 @@ bool is_connected(Rcpp::XPtr<AmqpConnection> conn) {
 Rcpp::List amqp_declare_queue_(Rcpp::XPtr<AmqpConnection> conn, std::string queue, bool passive = false,
                          bool durable = false, bool exclusive = false, bool auto_delete = false) {
   return conn->declare_queue(queue, passive, durable, exclusive, auto_delete);
+}
+
+// [[Rcpp::export]]
+int amqp_delete_queue_(Rcpp::XPtr<AmqpConnection> conn, std::string queue, bool if_unused = false,
+                       bool if_empty = false) {
+  return conn->delete_queue(queue, if_unused, if_empty);
 }
 
 // [[Rcpp::export]]

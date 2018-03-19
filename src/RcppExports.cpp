@@ -59,6 +59,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// amqp_delete_queue_
+int amqp_delete_queue_(Rcpp::XPtr<AmqpConnection> conn, std::string queue, bool if_unused, bool if_empty);
+RcppExport SEXP _longears_amqp_delete_queue_(SEXP connSEXP, SEXP queueSEXP, SEXP if_unusedSEXP, SEXP if_emptySEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::XPtr<AmqpConnection> >::type conn(connSEXP);
+    Rcpp::traits::input_parameter< std::string >::type queue(queueSEXP);
+    Rcpp::traits::input_parameter< bool >::type if_unused(if_unusedSEXP);
+    Rcpp::traits::input_parameter< bool >::type if_empty(if_emptySEXP);
+    rcpp_result_gen = Rcpp::wrap(amqp_delete_queue_(conn, queue, if_unused, if_empty));
+    return rcpp_result_gen;
+END_RCPP
+}
 // amqp_publish_
 void amqp_publish_(Rcpp::XPtr<AmqpConnection> conn, std::string routing_key, std::string body, std::string exchange, std::string content_type, bool mandatory, bool immediate);
 RcppExport SEXP _longears_amqp_publish_(SEXP connSEXP, SEXP routing_keySEXP, SEXP bodySEXP, SEXP exchangeSEXP, SEXP content_typeSEXP, SEXP mandatorySEXP, SEXP immediateSEXP) {
@@ -93,6 +107,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_longears_amqp_disconnect_", (DL_FUNC) &_longears_amqp_disconnect_, 1},
     {"_longears_is_connected", (DL_FUNC) &_longears_is_connected, 1},
     {"_longears_amqp_declare_queue_", (DL_FUNC) &_longears_amqp_declare_queue_, 6},
+    {"_longears_amqp_delete_queue_", (DL_FUNC) &_longears_amqp_delete_queue_, 4},
     {"_longears_amqp_publish_", (DL_FUNC) &_longears_amqp_publish_, 7},
     {"_longears_amqp_get_", (DL_FUNC) &_longears_amqp_get_, 2},
     {NULL, NULL, 0}

@@ -81,6 +81,23 @@ amqp_declare_tmp_queue <- function(conn, passive = FALSE, exclusive = TRUE) {
   queue$queue
 }
 
+#' Delete a Queue
+#'
+#' @param conn An object returned by \code{\link{amqp_connect}}.
+#' @param queue The name of a queue.
+#' @param if_unused Delete the queue only if it is unused.
+#' @param if_empty Delete the queue only if it is empty.
+#'
+#' @return The number of messages in the queue when it was deleted, invisibly.
+#'
+#' @export
+amqp_delete_queue <- function(conn, queue, if_unused = FALSE, if_empty = FALSE) {
+  if (!inherits(conn, "amqp_connection")) {
+    stop("`conn` is not an amqp_connection object")
+  }
+  invisible(amqp_delete_queue_(conn$ptr, queue, if_unused, if_empty))
+}
+
 #' @export
 print.amqp_queue <- function(x, ...) {
   cat(sep = "", "AMQP queue '", x$queue, "'\n",
