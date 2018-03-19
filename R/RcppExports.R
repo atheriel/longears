@@ -13,6 +13,14 @@ is_connected <- function(conn) {
     .Call(`_longears_is_connected`, conn)
 }
 
+amqp_declare_exchange_ <- function(conn, exchange, type, passive = FALSE, durable = FALSE, auto_delete = FALSE, internal = FALSE) {
+    invisible(.Call(`_longears_amqp_declare_exchange_`, conn, exchange, type, passive, durable, auto_delete, internal))
+}
+
+amqp_delete_exchange_ <- function(conn, exchange, if_unused = FALSE) {
+    invisible(.Call(`_longears_amqp_delete_exchange_`, conn, exchange, if_unused))
+}
+
 amqp_declare_queue_ <- function(conn, queue, passive = FALSE, durable = FALSE, exclusive = FALSE, auto_delete = FALSE) {
     .Call(`_longears_amqp_declare_queue_`, conn, queue, passive, durable, exclusive, auto_delete)
 }

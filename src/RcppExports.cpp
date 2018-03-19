@@ -43,6 +43,34 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// amqp_declare_exchange_
+void amqp_declare_exchange_(Rcpp::XPtr<AmqpConnection> conn, std::string exchange, std::string type, bool passive, bool durable, bool auto_delete, bool internal);
+RcppExport SEXP _longears_amqp_declare_exchange_(SEXP connSEXP, SEXP exchangeSEXP, SEXP typeSEXP, SEXP passiveSEXP, SEXP durableSEXP, SEXP auto_deleteSEXP, SEXP internalSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::XPtr<AmqpConnection> >::type conn(connSEXP);
+    Rcpp::traits::input_parameter< std::string >::type exchange(exchangeSEXP);
+    Rcpp::traits::input_parameter< std::string >::type type(typeSEXP);
+    Rcpp::traits::input_parameter< bool >::type passive(passiveSEXP);
+    Rcpp::traits::input_parameter< bool >::type durable(durableSEXP);
+    Rcpp::traits::input_parameter< bool >::type auto_delete(auto_deleteSEXP);
+    Rcpp::traits::input_parameter< bool >::type internal(internalSEXP);
+    amqp_declare_exchange_(conn, exchange, type, passive, durable, auto_delete, internal);
+    return R_NilValue;
+END_RCPP
+}
+// amqp_delete_exchange_
+void amqp_delete_exchange_(Rcpp::XPtr<AmqpConnection> conn, std::string exchange, bool if_unused);
+RcppExport SEXP _longears_amqp_delete_exchange_(SEXP connSEXP, SEXP exchangeSEXP, SEXP if_unusedSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::XPtr<AmqpConnection> >::type conn(connSEXP);
+    Rcpp::traits::input_parameter< std::string >::type exchange(exchangeSEXP);
+    Rcpp::traits::input_parameter< bool >::type if_unused(if_unusedSEXP);
+    amqp_delete_exchange_(conn, exchange, if_unused);
+    return R_NilValue;
+END_RCPP
+}
 // amqp_declare_queue_
 Rcpp::List amqp_declare_queue_(Rcpp::XPtr<AmqpConnection> conn, std::string queue, bool passive, bool durable, bool exclusive, bool auto_delete);
 RcppExport SEXP _longears_amqp_declare_queue_(SEXP connSEXP, SEXP queueSEXP, SEXP passiveSEXP, SEXP durableSEXP, SEXP exclusiveSEXP, SEXP auto_deleteSEXP) {
@@ -106,6 +134,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_longears_amqp_connect_", (DL_FUNC) &_longears_amqp_connect_, 6},
     {"_longears_amqp_disconnect_", (DL_FUNC) &_longears_amqp_disconnect_, 1},
     {"_longears_is_connected", (DL_FUNC) &_longears_is_connected, 1},
+    {"_longears_amqp_declare_exchange_", (DL_FUNC) &_longears_amqp_declare_exchange_, 7},
+    {"_longears_amqp_delete_exchange_", (DL_FUNC) &_longears_amqp_delete_exchange_, 3},
     {"_longears_amqp_declare_queue_", (DL_FUNC) &_longears_amqp_declare_queue_, 6},
     {"_longears_amqp_delete_queue_", (DL_FUNC) &_longears_amqp_delete_queue_, 4},
     {"_longears_amqp_publish_", (DL_FUNC) &_longears_amqp_publish_, 7},

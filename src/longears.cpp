@@ -72,6 +72,50 @@ public:
     return (conn != NULL);
   }
 
+  void declare_exchange(std::string exchange, std::string type, bool passive = false, bool durable = false,
+                        bool auto_delete = false, bool internal = false) {
+    if (!conn) {
+      Rcpp::stop("The amqp connection no longer exists.");
+    }
+
+    /* Declare exchange. */
+
+    amqp_exchange_declare_ok_t *exch_ok = amqp_exchange_declare(conn, 1, amqp_cstring_bytes(exchange.c_str()),
+                                                                amqp_cstring_bytes(type.c_str()), passive, durable,
+                                                                auto_delete, internal, amqp_empty_table);
+
+    if (exch_ok == NULL) {
+      amqp_rpc_reply_t reply = amqp_get_rpc_reply(conn);
+      if (reply.reply_type == AMQP_RESPONSE_NORMAL) {
+        // This should never happen.
+        Rcpp::stop("Unexpected error: exchange declare response is NULL with a normal reply.");
+      } else {
+        stop_on_rpc_error("Failed to declare exchange.", reply);
+      }
+    }
+  }
+
+  void delete_exchange(std::string exchange, bool if_unused = false) {
+    if (!conn) {
+      Rcpp::stop("The amqp connection no longer exists.");
+    }
+
+    /* Delete exchange. */
+
+    amqp_exchange_delete_ok_t *delete_ok = amqp_exchange_delete(conn, 1, amqp_cstring_bytes(exchange.c_str()),
+                                                                if_unused);
+
+    if (delete_ok == NULL) {
+      amqp_rpc_reply_t reply = amqp_get_rpc_reply(conn);
+      if (reply.reply_type == AMQP_RESPONSE_NORMAL) {
+        // This should never happen.
+        Rcpp::stop("Unexpected error: exchange delete response is NULL with a normal reply.");
+      } else {
+        stop_on_rpc_error("Failed to delete exchange.", reply);
+      }
+    }
+  }
+
   Rcpp::List declare_queue(std::string queue, bool passive = false, bool durable = false, bool exclusive = false,
                            bool auto_delete = false) {
     if (!conn) {
@@ -237,6 +281,18 @@ void amqp_disconnect_(Rcpp::XPtr<AmqpConnection> conn) {
 // [[Rcpp::export]]
 bool is_connected(Rcpp::XPtr<AmqpConnection> conn) {
   return conn->is_connected();
+}
+
+// [[Rcpp::export]]
+void amqp_declare_exchange_(Rcpp::XPtr<AmqpConnection> conn, std::string exchange, std::string type,
+                            bool passive = false, bool durable = false, bool auto_delete = false,
+                            bool internal = false) {
+  return conn->declare_exchange(exchange, type, passive, durable, auto_delete, internal);
+}
+
+// [[Rcpp::export]]
+void amqp_delete_exchange_(Rcpp::XPtr<AmqpConnection> conn, std::string exchange, bool if_unused = false) {
+  return conn->delete_exchange(exchange, if_unused);
 }
 
 // [[Rcpp::export]]
