@@ -43,15 +43,49 @@ amqp_disconnect <- function(conn) {
 #' Declare a Queue
 #'
 #' @param conn An object returned by \code{\link{amqp_connect}}.
-#' @param queue The name of a queue.
-#' @param quietly Suppress queue information echo.
+#' @param queue The name of a queue. If this is empty (the default), the server
+#'   will generate a random name for the queue itself.
+#' @param passive
+#' @param durable
+#' @param exclusive
+#' @param auto_delete
+#'
+#' @return An object of class \code{amqp_queue}.
 #'
 #' @export
-amqp_declare_queue <- function(conn, queue, quietly = FALSE) {
+amqp_declare_queue <- function(conn, queue = "", passive = FALSE,
+                               durable = FALSE, exclusive = FALSE,
+                               auto_delete = FALSE) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
-  amqp_declare_queue_(conn$ptr, queue, quietly)
+  amqp_declare_queue_(conn$ptr, queue, passive, durable, exclusive, auto_delete)
+}
+
+#' Declare a Temporary Queue
+#'
+#' @param conn An object returned by \code{\link{amqp_connect}}.
+#' @param passive
+#' @param exclusive
+#'
+#' @return The name of the temporary queue.
+#'
+#' @export
+amqp_declare_tmp_queue <- function(conn, passive = FALSE, exclusive = TRUE) {
+  if (!inherits(conn, "amqp_connection")) {
+    stop("`conn` is not an amqp_connection object")
+  }
+  queue <- amqp_declare_queue_(conn$ptr, queue = "", passive = passive,
+                               durable = FALSE, exclusive = exclusive,
+                               auto_delete = TRUE)
+  queue$queue
+}
+
+#' @export
+print.amqp_queue <- function(x, ...) {
+  cat(sep = "", "AMQP queue '", x$queue, "'\n",
+      "  messages:  ", x$message_count, "\n",
+      "  consumers: ", x$consumer_count, "\n")
 }
 
 #' Publish a Message to a Queue

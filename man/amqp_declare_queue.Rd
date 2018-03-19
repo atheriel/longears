@@ -4,14 +4,19 @@
 \alias{amqp_declare_queue}
 \title{Declare a Queue}
 \usage{
-amqp_declare_queue(conn, queue, quietly = FALSE)
+amqp_declare_queue(conn, queue = "", passive = FALSE, durable = FALSE,
+  exclusive = FALSE, auto_delete = FALSE)
 }
 \arguments{
 \item{conn}{An object returned by \code{\link{amqp_connect}}.}
 
-\item{queue}{The name of a queue.}
+\item{queue}{The name of a queue. If this is empty (the default), the server
+will generate a random name for the queue itself.}
 
-\item{quietly}{Suppress queue information echo.}
+\item{auto_delete}{}
+}
+\value{
+An object of class \code{amqp_queue}.
 }
 \description{
 Declare a Queue

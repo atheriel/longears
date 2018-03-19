@@ -72,16 +72,21 @@ public:
     return (conn != NULL);
   }
 
-  void declare_queue(std::string queue, bool quietly = false) {
+  Rcpp::List declare_queue(std::string queue, bool passive = false, bool durable = false, bool exclusive = false,
+                           bool auto_delete = false) {
     if (!conn) {
       Rcpp::stop("The amqp connection no longer exists.");
     }
 
     /* Declare queue. */
 
-    amqp_queue_declare_ok_t *queue_ok = amqp_queue_declare(
-      conn, 1, amqp_cstring_bytes(queue.c_str()), 0, 0, 0, 0, amqp_empty_table
-    );
+    amqp_bytes_t qname = amqp_empty_bytes;
+    if (!queue.empty()) {
+      qname = amqp_cstring_bytes(queue.c_str());
+    }
+
+    amqp_queue_declare_ok_t *queue_ok = amqp_queue_declare(conn, 1, qname, passive, durable, exclusive, auto_delete,
+                                                           amqp_empty_table);
 
     if (queue_ok == NULL) {
       amqp_rpc_reply_t reply = amqp_get_rpc_reply(conn);
@@ -93,10 +98,21 @@ public:
       }
     }
 
-    if (!quietly) {
-      Rcpp::Rcout << "Queue messages: " << (uint32_t) queue_ok->message_count <<
-        " consumers: " << (uint32_t) queue_ok->consumer_count << std::endl;
+    // TODO: Is this copy costly? Can it be avoided?
+    std::string name;
+    if (!queue.empty()) {
+      name = queue;
+    } else {
+      name = std::string((char *) queue_ok->queue.bytes, queue_ok->queue.len);
     }
+
+    int message_count = queue_ok->message_count;
+    int consumer_count = queue_ok->consumer_count;
+
+    Rcpp::List rval = Rcpp::List::create(Rcpp::Named("queue") = name, Rcpp::Named("message_count") = message_count,
+                                         Rcpp::Named("consumer_count") = consumer_count);
+    rval.attr("class") = "amqp_queue";
+    return rval;
   }
 
   void publish(std::string routing_key, std::string body, std::string exchange = "",
@@ -200,8 +216,9 @@ bool is_connected(Rcpp::XPtr<AmqpConnection> conn) {
 }
 
 // [[Rcpp::export]]
-void amqp_declare_queue_(Rcpp::XPtr<AmqpConnection> conn, std::string queue, bool quietly = false) {
-  conn->declare_queue(queue, quietly);
+Rcpp::List amqp_declare_queue_(Rcpp::XPtr<AmqpConnection> conn, std::string queue, bool passive = false,
+                         bool durable = false, bool exclusive = false, bool auto_delete = false) {
+  return conn->declare_queue(queue, passive, durable, exclusive, auto_delete);
 }
 
 // [[Rcpp::export]]

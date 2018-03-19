@@ -13,8 +13,8 @@ is_connected <- function(conn) {
     .Call(`_longears_is_connected`, conn)
 }
 
-amqp_declare_queue_ <- function(conn, queue, quietly = FALSE) {
-    invisible(.Call(`_longears_amqp_declare_queue_`, conn, queue, quietly))
+amqp_declare_queue_ <- function(conn, queue, passive = FALSE, durable = FALSE, exclusive = FALSE, auto_delete = FALSE) {
+    .Call(`_longears_amqp_declare_queue_`, conn, queue, passive, durable, exclusive, auto_delete)
 }
 
 amqp_publish_ <- function(conn, routing_key, body, exchange = "", content_type = "text/plain", mandatory = FALSE, immediate = FALSE) {
