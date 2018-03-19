@@ -29,6 +29,14 @@ amqp_delete_queue_ <- function(conn, queue, if_unused = FALSE, if_empty = FALSE)
     .Call(`_longears_amqp_delete_queue_`, conn, queue, if_unused, if_empty)
 }
 
+amqp_bind_queue_ <- function(conn, queue, exchange, routing_key = "") {
+    invisible(.Call(`_longears_amqp_bind_queue_`, conn, queue, exchange, routing_key))
+}
+
+amqp_unbind_queue_ <- function(conn, queue, exchange, routing_key = "") {
+    invisible(.Call(`_longears_amqp_unbind_queue_`, conn, queue, exchange, routing_key))
+}
+
 amqp_publish_ <- function(conn, routing_key, body, exchange = "", content_type = "text/plain", mandatory = FALSE, immediate = FALSE) {
     invisible(.Call(`_longears_amqp_publish_`, conn, routing_key, body, exchange, content_type, mandatory, immediate))
 }

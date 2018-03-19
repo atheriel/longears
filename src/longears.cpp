@@ -183,6 +183,52 @@ public:
     return message_count;
   }
 
+  void bind_queue(std::string queue, std::string exchange, std::string routing_key = "") {
+    if (!conn) {
+      Rcpp::stop("The amqp connection no longer exists.");
+    }
+
+    /* Bind queue to exchange. */
+
+    amqp_queue_bind_ok_t *bind_ok = amqp_queue_bind(conn, 1, amqp_cstring_bytes(queue.c_str()),
+                                                    amqp_cstring_bytes(exchange.c_str()),
+                                                    amqp_cstring_bytes(routing_key.c_str()),
+                                                    amqp_empty_table);
+
+    if (bind_ok == NULL) {
+      amqp_rpc_reply_t reply = amqp_get_rpc_reply(conn);
+      if (reply.reply_type == AMQP_RESPONSE_NORMAL) {
+        // This should never happen.
+        Rcpp::stop("Unexpected error: queue bind response is NULL with a normal reply.");
+      } else {
+        stop_on_rpc_error("Failed to bind queue.", reply);
+      }
+    }
+  }
+
+  void unbind_queue(std::string queue, std::string exchange, std::string routing_key = "") {
+    if (!conn) {
+      Rcpp::stop("The amqp connection no longer exists.");
+    }
+
+    /* Unbind queue from exchange. */
+
+    amqp_queue_unbind_ok_t *unbind_ok = amqp_queue_unbind(conn, 1, amqp_cstring_bytes(queue.c_str()),
+                                                          amqp_cstring_bytes(exchange.c_str()),
+                                                          amqp_cstring_bytes(routing_key.c_str()),
+                                                          amqp_empty_table);
+
+    if (unbind_ok == NULL) {
+      amqp_rpc_reply_t reply = amqp_get_rpc_reply(conn);
+      if (reply.reply_type == AMQP_RESPONSE_NORMAL) {
+        // This should never happen.
+        Rcpp::stop("Unexpected error: queue unbind response is NULL with a normal reply.");
+      } else {
+        stop_on_rpc_error("Failed to unbind queue.", reply);
+      }
+    }
+  }
+
   void publish(std::string routing_key, std::string body, std::string exchange = "",
                std::string content_type = "text/plain", bool mandatory = false, bool immediate = false) {
     if (!conn) {
@@ -305,6 +351,18 @@ Rcpp::List amqp_declare_queue_(Rcpp::XPtr<AmqpConnection> conn, std::string queu
 int amqp_delete_queue_(Rcpp::XPtr<AmqpConnection> conn, std::string queue, bool if_unused = false,
                        bool if_empty = false) {
   return conn->delete_queue(queue, if_unused, if_empty);
+}
+
+// [[Rcpp::export]]
+void amqp_bind_queue_(Rcpp::XPtr<AmqpConnection> conn, std::string queue, std::string exchange,
+                      std::string routing_key = "") {
+  return conn->bind_queue(queue, exchange, routing_key);
+}
+
+// [[Rcpp::export]]
+void amqp_unbind_queue_(Rcpp::XPtr<AmqpConnection> conn, std::string queue, std::string exchange,
+                        std::string routing_key = "") {
+  return conn->unbind_queue(queue, exchange, routing_key);
 }
 
 // [[Rcpp::export]]

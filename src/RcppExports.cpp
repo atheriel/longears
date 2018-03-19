@@ -101,6 +101,32 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// amqp_bind_queue_
+void amqp_bind_queue_(Rcpp::XPtr<AmqpConnection> conn, std::string queue, std::string exchange, std::string routing_key);
+RcppExport SEXP _longears_amqp_bind_queue_(SEXP connSEXP, SEXP queueSEXP, SEXP exchangeSEXP, SEXP routing_keySEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::XPtr<AmqpConnection> >::type conn(connSEXP);
+    Rcpp::traits::input_parameter< std::string >::type queue(queueSEXP);
+    Rcpp::traits::input_parameter< std::string >::type exchange(exchangeSEXP);
+    Rcpp::traits::input_parameter< std::string >::type routing_key(routing_keySEXP);
+    amqp_bind_queue_(conn, queue, exchange, routing_key);
+    return R_NilValue;
+END_RCPP
+}
+// amqp_unbind_queue_
+void amqp_unbind_queue_(Rcpp::XPtr<AmqpConnection> conn, std::string queue, std::string exchange, std::string routing_key);
+RcppExport SEXP _longears_amqp_unbind_queue_(SEXP connSEXP, SEXP queueSEXP, SEXP exchangeSEXP, SEXP routing_keySEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::XPtr<AmqpConnection> >::type conn(connSEXP);
+    Rcpp::traits::input_parameter< std::string >::type queue(queueSEXP);
+    Rcpp::traits::input_parameter< std::string >::type exchange(exchangeSEXP);
+    Rcpp::traits::input_parameter< std::string >::type routing_key(routing_keySEXP);
+    amqp_unbind_queue_(conn, queue, exchange, routing_key);
+    return R_NilValue;
+END_RCPP
+}
 // amqp_publish_
 void amqp_publish_(Rcpp::XPtr<AmqpConnection> conn, std::string routing_key, std::string body, std::string exchange, std::string content_type, bool mandatory, bool immediate);
 RcppExport SEXP _longears_amqp_publish_(SEXP connSEXP, SEXP routing_keySEXP, SEXP bodySEXP, SEXP exchangeSEXP, SEXP content_typeSEXP, SEXP mandatorySEXP, SEXP immediateSEXP) {
@@ -138,6 +164,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_longears_amqp_delete_exchange_", (DL_FUNC) &_longears_amqp_delete_exchange_, 3},
     {"_longears_amqp_declare_queue_", (DL_FUNC) &_longears_amqp_declare_queue_, 6},
     {"_longears_amqp_delete_queue_", (DL_FUNC) &_longears_amqp_delete_queue_, 4},
+    {"_longears_amqp_bind_queue_", (DL_FUNC) &_longears_amqp_bind_queue_, 4},
+    {"_longears_amqp_unbind_queue_", (DL_FUNC) &_longears_amqp_unbind_queue_, 4},
     {"_longears_amqp_publish_", (DL_FUNC) &_longears_amqp_publish_, 7},
     {"_longears_amqp_get_", (DL_FUNC) &_longears_amqp_get_, 2},
     {NULL, NULL, 0}
