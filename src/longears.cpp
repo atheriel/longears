@@ -16,14 +16,14 @@ public:
     conn = amqp_new_connection();
 
     if (!conn) {
-      Rcpp::stop("Failed create an amqp connection.");
+      Rcpp::stop("Failed to create an amqp connection.");
     }
 
     amqp_socket_t *socket = amqp_tcp_socket_new(conn);
 
     if (!socket) {
       amqp_destroy_connection(conn);
-      Rcpp::stop("Failed create an amqp socket. Error: %d", socket);
+      Rcpp::stop("Failed to create an amqp socket.");
     }
 
     // TODO: It should be possible to set an infinite timeout.
@@ -34,7 +34,11 @@ public:
     if (sockfd < 0) {
       amqp_connection_close(conn, AMQP_REPLY_SUCCESS);
       amqp_destroy_connection(conn);
-      Rcpp::stop("Failed open amqp socket. Error: %d", sockfd);
+      if (sockfd == AMQP_STATUS_SOCKET_ERROR) { // This has an unhelpful error message in this case.
+        Rcpp::stop("Failed to open amqp socket. Is the server running?");
+      } else {
+        Rcpp::stop("Failed to open amqp socket. Error: %d.", amqp_error_string2(sockfd));
+      }
     }
 
     /* Log in. */
