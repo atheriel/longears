@@ -3,25 +3,31 @@
 longears
 ========
 
-This repository contains an **extremely** early stage proof-of-concept RabbitMQ library for R. It wraps the reference C library (`rabbitmq-c`) instead taking the rJava approach of the only other [existing (but abandoned) package](https://r-forge.r-project.org/projects/r-message-queue/).
+This repository contains an early stage proof-of-concept RabbitMQ client for R. It wraps the [reference C library](https://github.com/alanxz/rabbitmq-c) instead of taking the rJava approach of the only other [existing (but abandoned)](https://r-forge.r-project.org/projects/r-message-queue/) package.
 
 Installation
 ------------
 
-You will need the `rabbitmq-c` library, otherwise the installation will fail. On Ubuntu, run
+You will need `librabbitmq`, otherwise the installation will fail. On Ubuntu, run
 
 ``` shell
 $ apt install librabbitmq-dev
 ```
 
-And then build and install this package from source.
+The package is only available from GitHub for now, so you can install it with
 
-Example
--------
+``` r
+# install.packages("devtools")
+devtools::install_github("atheriel/longears")
+```
+
+Usage
+-----
 
 You will need to have a local RabbitMQ server running with the default settings to test this.
 
 ``` shell
+$ # apt install rabbitmq-server
 $ systemctl start rabbitmq-server
 $ rabbitmqctl status
 ```
@@ -63,9 +69,10 @@ amqp_get(conn, "my_queue")
 #> character(0)
 ```
 
-Afterwards you can disconnect from the server:
+Afterwards you can delete the queue and disconnect from the server:
 
 ``` r
+amqp_delete_queue(conn, "my_queue")
 amqp_disconnect(conn)
 conn
 #> AMQP Connection:
@@ -79,3 +86,8 @@ And check that the connection is closed:
 ``` shell
 $ rabbitmqctl list_connections
 ```
+
+License
+-------
+
+The package is licensed under the GPL, version 2 or later.
