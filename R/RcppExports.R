@@ -41,7 +41,7 @@ amqp_publish_ <- function(conn, routing_key, body, exchange = "", content_type =
     invisible(.Call(`_longears_amqp_publish_`, conn, routing_key, body, exchange, content_type, mandatory, immediate))
 }
 
-amqp_get_ <- function(conn, queue) {
-    .Call(`_longears_amqp_get_`, conn, queue)
+amqp_get_ <- function(conn, queue, no_ack = FALSE) {
+    .Call(`_longears_amqp_get_`, conn, queue, no_ack)
 }
 

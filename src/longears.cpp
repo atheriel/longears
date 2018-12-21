@@ -262,7 +262,7 @@ public:
     stop_on_rpc_error("Failed to publish message.", amqp_get_rpc_reply(conn));
   }
 
-  Rcpp::StringVector get(std::string queue) {
+  SEXP get(std::string queue, bool no_ack = false) {
     if (!conn) {
       Rcpp::stop("The amqp connection no longer exists.");
     }
@@ -270,7 +270,7 @@ public:
     /* Get message. */
 
     // TODO: Add the ability to acknowledge the message.
-    amqp_rpc_reply_t reply = amqp_basic_get(conn, 1, amqp_cstring_bytes(queue.c_str()), 1);
+    amqp_rpc_reply_t reply = amqp_basic_get(conn, 1, amqp_cstring_bytes(queue.c_str()), no_ack);
     stop_on_rpc_error("Failed to get message.", reply);
 
     if (reply.reply.id == AMQP_BASIC_GET_EMPTY_METHOD) {
@@ -377,8 +377,8 @@ void amqp_publish_(Rcpp::XPtr<AmqpConnection> conn, std::string routing_key, std
 }
 
 // [[Rcpp::export]]
-Rcpp::StringVector amqp_get_(Rcpp::XPtr<AmqpConnection> conn, std::string queue) {
-  return conn->get(queue);
+SEXP amqp_get_(Rcpp::XPtr<AmqpConnection> conn, std::string queue, bool no_ack = false) {
+  return conn->get(queue, no_ack);
 }
 
 void stop_on_rpc_error(const char *context, amqp_rpc_reply_t reply) {

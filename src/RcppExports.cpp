@@ -144,14 +144,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // amqp_get_
-Rcpp::StringVector amqp_get_(Rcpp::XPtr<AmqpConnection> conn, std::string queue);
-RcppExport SEXP _longears_amqp_get_(SEXP connSEXP, SEXP queueSEXP) {
+SEXP amqp_get_(Rcpp::XPtr<AmqpConnection> conn, std::string queue, bool no_ack);
+RcppExport SEXP _longears_amqp_get_(SEXP connSEXP, SEXP queueSEXP, SEXP no_ackSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Rcpp::XPtr<AmqpConnection> >::type conn(connSEXP);
     Rcpp::traits::input_parameter< std::string >::type queue(queueSEXP);
-    rcpp_result_gen = Rcpp::wrap(amqp_get_(conn, queue));
+    Rcpp::traits::input_parameter< bool >::type no_ack(no_ackSEXP);
+    rcpp_result_gen = Rcpp::wrap(amqp_get_(conn, queue, no_ack));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -167,7 +168,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_longears_amqp_bind_queue_", (DL_FUNC) &_longears_amqp_bind_queue_, 4},
     {"_longears_amqp_unbind_queue_", (DL_FUNC) &_longears_amqp_unbind_queue_, 4},
     {"_longears_amqp_publish_", (DL_FUNC) &_longears_amqp_publish_, 7},
-    {"_longears_amqp_get_", (DL_FUNC) &_longears_amqp_get_, 2},
+    {"_longears_amqp_get_", (DL_FUNC) &_longears_amqp_get_, 3},
     {NULL, NULL, 0}
 };
 

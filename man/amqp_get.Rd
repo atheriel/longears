@@ -4,7 +4,7 @@
 \alias{amqp_get}
 \title{Get a Message from a Queue}
 \usage{
-amqp_get(conn, queue)
+amqp_get(conn, queue, no_ack = FALSE)
 }
 \arguments{
 \item{conn}{An object returned by \code{\link{amqp_connect}}.}

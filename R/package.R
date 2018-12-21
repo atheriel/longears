@@ -138,9 +138,9 @@ amqp_publish <- function(conn, routing_key, body, exchange = "",
 #'   if there is no message in the queue.
 #'
 #' @export
-amqp_get <- function(conn, queue) {
+amqp_get <- function(conn, queue, no_ack = FALSE) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
-  amqp_get_(conn$ptr, queue)
+  amqp_get_(conn$ptr, queue, no_ack)
 }
