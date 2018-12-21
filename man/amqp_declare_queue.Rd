@@ -4,8 +4,8 @@
 \alias{amqp_declare_queue}
 \title{Declare a Queue}
 \usage{
-amqp_declare_queue(conn, queue = "", passive = FALSE, durable = FALSE,
-  exclusive = FALSE, auto_delete = FALSE)
+amqp_declare_queue(conn, queue = "", passive = FALSE,
+  durable = FALSE, exclusive = FALSE, auto_delete = FALSE)
 }
 \arguments{
 \item{conn}{An object returned by \code{\link{amqp_connect}}.}
