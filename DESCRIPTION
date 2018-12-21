@@ -8,7 +8,7 @@ Authors@R: c(
   )
 Description: This package provides a way to send and consume the 'AMQP'
   messages used by RabbitMQ servers.
-License: file LICENSE
+License: GPL (>= 2)
 Imports:
   Rcpp
 LinkingTo:
