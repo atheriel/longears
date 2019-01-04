@@ -13,16 +13,19 @@ NULL
 amqp_connect <- function(host = "localhost", port = 5672L, vhost = "/",
                          username = "guest", password = "guest",
                          timeout = 10L) {
-  conn <- amqp_connect_(host, port, vhost, username, password, timeout)
+  conn <- .Call(R_amqp_connect, host, port, vhost, username, password, timeout)
   structure(list(ptr = conn, host = host, port = port, vhost = vhost),
             class = "amqp_connection")
+}
+
+is_connected <- function(conn) {
+  .Call(R_amqp_is_connected, conn$ptr)
 }
 
 #' @export
 print.amqp_connection <- function(x, ...) {
   cat(sep = "", "AMQP Connection:\n",
-      "  status:  ", ifelse(is_connected(x$ptr), "connected\n",
-                           "disconnected\n"),
+      "  status:  ", ifelse(is_connected(x), "connected\n", "disconnected\n"),
       "  address: ", x$host, ":", x$port, "\n",
       "  vhost:   '", x$vhost, "'\n")
 }
@@ -36,7 +39,7 @@ amqp_disconnect <- function(conn) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
-  amqp_disconnect_(conn$ptr)
+  .Call(R_amqp_disconnect, conn$ptr)
   invisible(conn)
 }
 
