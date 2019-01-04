@@ -4,6 +4,8 @@ static const R_CallMethodDef longears_entries[] = {
   {"R_amqp_connect", (DL_FUNC) &R_amqp_connect, 6},
   {"R_amqp_is_connected", (DL_FUNC) &R_amqp_is_connected, 1},
   {"R_amqp_disconnect", (DL_FUNC) &R_amqp_disconnect, 1},
+  {"R_amqp_declare_exchange", (DL_FUNC) &R_amqp_declare_exchange, 7},
+  {"R_amqp_delete_exchange", (DL_FUNC) &R_amqp_delete_exchange, 3},
   {NULL, NULL, 0}
 };
 

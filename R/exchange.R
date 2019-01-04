@@ -33,8 +33,10 @@ amqp_declare_exchange <- function(conn, exchange, type = "direct",
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
-  amqp_declare_exchange_(conn$ptr, exchange, type, passive, durable,
-                         auto_delete, internal)
+  invisible(.Call(
+    R_amqp_declare_exchange, conn$ptr, exchange, type, passive, durable,
+    auto_delete, internal
+  ))
 }
 
 #' @param if_unused Delete the exchange only if it is unused.
@@ -45,5 +47,5 @@ amqp_delete_exchange <- function(conn, exchange, if_unused = FALSE) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
-  amqp_delete_exchange_(conn$ptr, exchange, if_unused)
+  invisible(.Call(R_amqp_delete_exchange, conn$ptr, exchange, if_unused))
 }
