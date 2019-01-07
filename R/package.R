@@ -62,7 +62,10 @@ amqp_declare_queue <- function(conn, queue = "", passive = FALSE,
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
-  amqp_declare_queue_(conn$ptr, queue, passive, durable, exclusive, auto_delete)
+  .Call(
+    R_amqp_declare_queue, conn$ptr, queue, passive, durable, exclusive,
+    auto_delete
+  )
 }
 
 #' Declare a Temporary Queue
@@ -78,9 +81,9 @@ amqp_declare_tmp_queue <- function(conn, passive = FALSE, exclusive = TRUE) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
-  queue <- amqp_declare_queue_(conn$ptr, queue = "", passive = passive,
-                               durable = FALSE, exclusive = exclusive,
-                               auto_delete = TRUE)
+  queue <- amqp_declare_queue(conn, queue = "", passive = passive,
+                              durable = FALSE, exclusive = exclusive,
+                              auto_delete = TRUE)
   queue$queue
 }
 
@@ -98,7 +101,7 @@ amqp_delete_queue <- function(conn, queue, if_unused = FALSE, if_empty = FALSE) 
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
-  invisible(amqp_delete_queue_(conn$ptr, queue, if_unused, if_empty))
+  invisible(.Call(R_amqp_delete_queue, conn$ptr, queue, if_unused, if_empty))
 }
 
 #' @export
