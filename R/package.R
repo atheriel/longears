@@ -131,8 +131,10 @@ amqp_publish <- function(conn, routing_key, body, exchange = "",
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
-  amqp_publish_(conn$ptr, routing_key, body, exchange, content_type, mandatory,
-                immediate)
+  invisible(.Call(
+    R_amqp_publish, conn$ptr, routing_key, body, exchange, content_type,
+    mandatory, immediate
+  ))
 }
 
 #' Get a Message from a Queue
