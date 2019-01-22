@@ -1,5 +1,4 @@
 #' @useDynLib longears, .registration = TRUE
-#' @importFrom Rcpp sourceCpp
 NULL
 
 #' Open a Connection to a RabbitMQ Server
