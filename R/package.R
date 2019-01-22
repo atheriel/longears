@@ -150,5 +150,5 @@ amqp_get <- function(conn, queue, no_ack = FALSE) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
-  amqp_get_(conn$ptr, queue, no_ack)
+  .Call(R_amqp_get, conn$ptr, queue, no_ack)
 }
