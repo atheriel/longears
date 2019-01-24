@@ -3,6 +3,7 @@
 #include <amqp_framing.h>
 
 #include "longears.h"
+#include "utils.h"
 
 SEXP R_amqp_bind_queue(SEXP ptr, SEXP queue, SEXP exchange, SEXP routing_key)
 {
@@ -27,8 +28,7 @@ SEXP R_amqp_bind_queue(SEXP ptr, SEXP queue, SEXP exchange, SEXP routing_key)
       // This should never happen.
       Rf_error("Unexpected error: queue bind response is NULL with a normal reply.");
     } else {
-      // FIXME: Report better errors for failures.
-      Rf_error("Failed to bind queue.");
+      handle_amqp_error("Failed to bind queue.", reply);
     }
   }
 
@@ -58,8 +58,7 @@ SEXP R_amqp_unbind_queue(SEXP ptr, SEXP queue, SEXP exchange, SEXP routing_key)
       // This should never happen.
       Rf_error("Unexpected error: queue unbind response is NULL with a normal reply.");
     } else {
-      // FIXME: Report better errors for failures.
-      Rf_error("Failed to unbind queue.");
+      handle_amqp_error("Failed to unbind queue.", reply);
     }
   }
 

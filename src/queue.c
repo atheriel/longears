@@ -3,6 +3,7 @@
 #include <amqp_framing.h>
 
 #include "longears.h"
+#include "utils.h"
 
 SEXP R_amqp_declare_queue(SEXP ptr, SEXP queue, SEXP passive, SEXP durable,
                           SEXP exclusive, SEXP auto_delete)
@@ -30,8 +31,7 @@ SEXP R_amqp_declare_queue(SEXP ptr, SEXP queue, SEXP passive, SEXP durable,
       Rf_error("Unexpected error: queue declare response is NULL with a normal reply.");
       return R_NilValue;
     } else {
-      // FIXME: Report better errors for failures.
-      Rf_error("Failed to declare queue.");
+      handle_amqp_error("Failed to declare queue.", reply);
       return R_NilValue;
     }
   }
@@ -76,8 +76,7 @@ SEXP R_amqp_delete_queue(SEXP ptr, SEXP queue, SEXP if_unused, SEXP if_empty)
       Rf_error("Unexpected error: queue delete response is NULL with a normal reply.");
       return R_NilValue;
     } else {
-      // FIXME: Report better errors for failures.
-      Rf_error("Failed to delete queue.");
+      handle_amqp_error("Failed to delete queue.", reply);
       return R_NilValue;
     }
   }

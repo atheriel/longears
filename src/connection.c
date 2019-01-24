@@ -6,6 +6,7 @@
 #include <amqp_framing.h>
 
 #include "longears.h"
+#include "utils.h"
 
 static void R_finalize_amqp_connection(SEXP ptr)
 {
@@ -71,8 +72,7 @@ SEXP R_amqp_connect(SEXP host, SEXP port, SEXP vhost, SEXP username,
   if (login_reply.reply_type != AMQP_RESPONSE_NORMAL) {
     amqp_connection_close(conn, AMQP_REPLY_SUCCESS);
     amqp_destroy_connection(conn);
-    // FIXME: Report better errors for login failures.
-    Rf_error("Failed to log in.");
+    handle_amqp_error("Failed to log in.", login_reply);
     return R_NilValue;
   }
 
@@ -106,8 +106,7 @@ SEXP R_amqp_disconnect(SEXP ptr)
   }
   amqp_rpc_reply_t reply = amqp_connection_close(conn, AMQP_REPLY_SUCCESS);
   if (reply.reply_type != AMQP_RESPONSE_NORMAL) {
-    // FIXME: Report better errors for failures.
-    Rf_error("Failed to disconnect.");
+    handle_amqp_error("Failed to disconnect.", reply);
     return R_NilValue;
   }
   amqp_destroy_connection(conn);

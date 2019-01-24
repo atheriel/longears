@@ -3,6 +3,7 @@
 #include <amqp_framing.h>
 
 #include "longears.h"
+#include "utils.h"
 
 SEXP R_amqp_declare_exchange(SEXP ptr, SEXP exchange, SEXP type, SEXP passive,
                              SEXP durable, SEXP auto_delete, SEXP internal)
@@ -31,8 +32,7 @@ SEXP R_amqp_declare_exchange(SEXP ptr, SEXP exchange, SEXP type, SEXP passive,
       // This should never happen.
       Rf_error("Unexpected error: exchange declare response is NULL with a normal reply.");
     } else {
-      // FIXME: Report better errors for failures.
-      Rf_error("Failed to declare exchange.");
+      handle_amqp_error("Failed to declare exchange.", reply);
     }
   }
 
@@ -59,8 +59,7 @@ SEXP R_amqp_delete_exchange(SEXP ptr, SEXP exchange, SEXP if_unused)
       // This should never happen.
       Rf_error("Unexpected error: exchange delete response is NULL with a normal reply.");
     } else {
-      // FIXME: Report better errors for failures.
-      Rf_error("Failed to delete exchange.");
+      handle_amqp_error("Failed to delete exchange.", reply);
     }
   }
 

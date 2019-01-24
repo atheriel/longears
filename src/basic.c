@@ -6,6 +6,7 @@
 #include <amqp_framing.h>
 
 #include "longears.h"
+#include "utils.h"
 
 SEXP R_amqp_publish(SEXP ptr, SEXP routing_key, SEXP body, SEXP exchange,
                     SEXP content_type, SEXP mandatory, SEXP immediate)
@@ -43,8 +44,7 @@ SEXP R_amqp_publish(SEXP ptr, SEXP routing_key, SEXP body, SEXP exchange,
 
   amqp_rpc_reply_t reply = amqp_get_rpc_reply(conn);
   if (reply.reply_type != AMQP_RESPONSE_NORMAL) {
-    // FIXME: Report better errors for failures.
-    Rf_error("Failed to publish message.");
+    handle_amqp_error("Failed to publish message.", reply);
   }
 
   return R_NilValue;
@@ -66,8 +66,7 @@ SEXP R_amqp_get(SEXP ptr, SEXP queue, SEXP no_ack)
   amqp_rpc_reply_t reply = amqp_basic_get(conn, 1, amqp_cstring_bytes(queue_str),
                                           has_no_ack);
   if (reply.reply_type != AMQP_RESPONSE_NORMAL) {
-    // FIXME: Report better errors for failures.
-    Rf_error("Failed to get message.");
+    handle_amqp_error("Failed to get message.", reply);
     return R_NilValue;
   } else if (reply.reply.id == AMQP_BASIC_GET_EMPTY_METHOD) {
     return allocVector(STRSXP, 0); // Equivalent to character(0).
