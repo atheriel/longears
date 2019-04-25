@@ -55,7 +55,7 @@ SEXP R_amqp_connect(SEXP host, SEXP port, SEXP vhost, SEXP username,
     if (sockfd == AMQP_STATUS_SOCKET_ERROR) {
       Rf_error("Failed to open amqp socket. Is the server running?");
     } else {
-      Rf_error("Failed to open amqp socket. Error: %d.",
+      Rf_error("Failed to open amqp socket. Error: %s.",
                amqp_error_string2(sockfd));
     }
     return R_NilValue;
