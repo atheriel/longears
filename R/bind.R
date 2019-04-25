@@ -16,7 +16,7 @@ amqp_bind_queue <- function(conn, queue, exchange, routing_key = "") {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
-  .Call(R_amqp_bind_queue, conn$ptr, queue, exchange, routing_key)
+  invisible(.Call(R_amqp_bind_queue, conn$ptr, queue, exchange, routing_key))
 }
 
 #' @rdname amqp_bindings
@@ -25,5 +25,5 @@ amqp_unbind_queue <- function(conn, queue, exchange, routing_key = "") {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
-  .Call(R_amqp_unbind_queue, conn$ptr, queue, exchange, routing_key)
+  invisible(.Call(R_amqp_unbind_queue, conn$ptr, queue, exchange, routing_key))
 }
