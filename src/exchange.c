@@ -18,7 +18,7 @@ SEXP R_amqp_declare_exchange(SEXP ptr, SEXP exchange, SEXP type, SEXP passive,
   int is_passive = asLogical(passive);
   int is_durable = asLogical(durable);
   int is_auto_delete = asLogical(auto_delete);
-  int is_internal = asLogical(durable);
+  int is_internal = asLogical(internal);
 
   amqp_exchange_declare_ok_t *exch_ok;
   exch_ok = amqp_exchange_declare(conn, 1, amqp_cstring_bytes(exchange_str),
