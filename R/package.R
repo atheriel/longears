@@ -141,8 +141,9 @@ amqp_publish <- function(conn, routing_key, body, exchange = "",
 #' @param conn An object returned by \code{\link{amqp_connect}}.
 #' @param queue The name of a queue.
 #'
-#' @return A string containing the message, or a zero-length character vector
-#'   if there is no message in the queue.
+#' @return A string containing the message, or a zero-length character vector if
+#'   there is no message in the queue. Messages may have additional properties
+#'   (such as the content type) attached to them as attributes.
 #'
 #' @export
 amqp_get <- function(conn, queue, no_ack = FALSE) {

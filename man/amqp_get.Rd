@@ -12,8 +12,9 @@ amqp_get(conn, queue, no_ack = FALSE)
 \item{queue}{The name of a queue.}
 }
 \value{
-A string containing the message, or a zero-length character vector
-  if there is no message in the queue.
+A string containing the message, or a zero-length character vector if
+  there is no message in the queue. Messages may have additional properties
+  (such as the content type) attached to them as attributes.
 }
 \description{
 Get a Message from a Queue

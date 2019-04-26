@@ -84,7 +84,8 @@ SEXP R_amqp_get(SEXP ptr, SEXP queue, SEXP no_ack)
     return R_NilValue;
   }
 
-  size_t body_remaining = frame.payload.properties.body_size;
+  size_t body_len, body_remaining;
+  body_len = body_remaining = frame.payload.properties.body_size;
   char *body = calloc(1, body_remaining); // NOTE: Assuming this works here.
   while (body_remaining) {
     result = amqp_simple_wait_frame(conn, &frame);
@@ -97,5 +98,35 @@ SEXP R_amqp_get(SEXP ptr, SEXP queue, SEXP no_ack)
             frame.payload.body_fragment.len);
     body_remaining -= frame.payload.body_fragment.len;
   }
-  return ScalarString(mkChar(body));
+
+  // TODO: It's possible the message body is not a valid string -- e.g. it's
+  // gzipped or base64 encoded. We could return a raw vector instead, and then
+  // perhaps use the content-type to guess whether to convert it at the R level.
+
+  SEXP out = PROTECT(ScalarString(mkCharLen(body, body_len)));
+  free(body);
+
+  // TODO: Decide if it makes more sense to return a list instead of using
+  // attributes for properties.
+
+  amqp_basic_properties_t *props =
+    (amqp_basic_properties_t *) frame.payload.properties.decoded;
+
+  if (!props) {
+    Rf_warning("Message properties cannot be recovered.\n");
+    UNPROTECT(1);
+    return out;
+  }
+
+  // TODO: Decode other relevant properties.
+
+  if (props->_flags & AMQP_BASIC_CONTENT_TYPE_FLAG) {
+    SEXP content_type = PROTECT(mkCharLen(props->content_type.bytes,
+                                          props->content_type.len));
+    setAttrib(out, install("content_type"), ScalarString(content_type));
+    UNPROTECT(1);
+  }
+
+  UNPROTECT(1);
+  return out;
 }
