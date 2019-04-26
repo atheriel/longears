@@ -6,15 +6,20 @@
 #include <amqp_framing.h>
 
 #include "longears.h"
+#include "connection.h"
 #include "utils.h"
+
+int connect(connection *conn, char *buffer, size_t len);
 
 static void R_finalize_amqp_connection(SEXP ptr)
 {
-  amqp_connection_state_t conn = (amqp_connection_state_t) R_ExternalPtrAddr(ptr);
+  connection *conn = (connection *) R_ExternalPtrAddr(ptr);
   if (conn) {
     // Attempt to close the connection.
-    amqp_connection_close(conn, AMQP_REPLY_SUCCESS);
-    amqp_destroy_connection(conn);
+    amqp_connection_close(conn->conn, AMQP_REPLY_SUCCESS);
+    amqp_destroy_connection(conn->conn);
+    free(conn);
+    conn = NULL;
   }
   R_ClearExternalPtr(ptr);
 }
@@ -29,59 +34,29 @@ SEXP R_amqp_connect(SEXP host, SEXP port, SEXP vhost, SEXP username,
   const char *password_str = CHAR(asChar(password));
   int seconds = asInteger(timeout);
 
-  amqp_connection_state_t conn = amqp_new_connection();
+  connection *conn = malloc(sizeof(connection)); // NOTE: Assuming this works.
+  conn->host = host_str;
+  conn->port = port_num;
+  conn->vhost = vhost_str;
+  conn->username = username_str;
+  conn->password = password_str;
+  conn->timeout = seconds;
+  conn->chan.chan = 0;
+  conn->chan.is_open = 0;
+  conn->is_connected = 0;
+  conn->conn = amqp_new_connection();
 
-  if (!conn) {
+  if (!conn->conn) {
+    free(conn);
     Rf_error("Failed to create an amqp connection.");
     return R_NilValue;
   }
 
-  amqp_socket_t *socket = amqp_tcp_socket_new(conn);
-
-  if (!socket) {
-    amqp_destroy_connection(conn);
-    Rf_error("Failed to create an amqp socket.");
-    return R_NilValue;
-  }
-
-  struct timeval tv;
-  tv.tv_sec = seconds;
-  tv.tv_usec = 0;
-  int sockfd = amqp_socket_open_noblock(socket, host_str, port_num, &tv);
-  if (sockfd < 0) {
-    amqp_connection_close(conn, AMQP_REPLY_SUCCESS);
-    amqp_destroy_connection(conn);
-    // This has an unhelpful error message in this case.
-    if (sockfd == AMQP_STATUS_SOCKET_ERROR) {
-      Rf_error("Failed to open amqp socket. Is the server running?");
-    } else {
-      Rf_error("Failed to open amqp socket. Error: %s.",
-               amqp_error_string2(sockfd));
-    }
-    return R_NilValue;
-  }
-
-  /* Log in. */
-
-  amqp_rpc_reply_t login_reply = amqp_login(conn, vhost_str,
-                                            AMQP_DEFAULT_MAX_CHANNELS,
-                                            AMQP_DEFAULT_FRAME_SIZE, 0,
-                                            AMQP_SASL_METHOD_PLAIN,
-                                            username_str, password_str);
-
-  if (login_reply.reply_type != AMQP_RESPONSE_NORMAL) {
-    amqp_connection_close(conn, AMQP_REPLY_SUCCESS);
-    amqp_destroy_connection(conn);
-    handle_amqp_error("Failed to log in.", login_reply);
-    return R_NilValue;
-  }
-
-  amqp_channel_open(conn, 1);
-  amqp_rpc_reply_t open_reply = amqp_get_rpc_reply(conn);
-  if (open_reply.reply_type != AMQP_RESPONSE_NORMAL) {
-    amqp_connection_close(conn, AMQP_REPLY_SUCCESS);
-    amqp_destroy_connection(conn);
-    Rf_error("Failed to open channel.");
+  char msg[120];
+  if (connect(conn, msg, 120) < 0) {
+    amqp_destroy_connection(conn->conn);
+    free(conn);
+    Rf_error("Failed to connect to server. %s", msg);
     return R_NilValue;
   }
 
@@ -93,23 +68,149 @@ SEXP R_amqp_connect(SEXP host, SEXP port, SEXP vhost, SEXP username,
 
 SEXP R_amqp_is_connected(SEXP ptr)
 {
-  amqp_connection_state_t conn = (amqp_connection_state_t) R_ExternalPtrAddr(ptr);
-  return (conn) ? ScalarLogical(1) : ScalarLogical(0);
-}
-
-SEXP R_amqp_disconnect(SEXP ptr)
-{
-  amqp_connection_state_t conn = (amqp_connection_state_t) R_ExternalPtrAddr(ptr);
+  connection *conn = (connection *) R_ExternalPtrAddr(ptr);
   if (!conn) {
     Rf_error("The amqp connection no longer exists.");
     return R_NilValue;
   }
-  amqp_rpc_reply_t reply = amqp_connection_close(conn, AMQP_REPLY_SUCCESS);
-  if (reply.reply_type != AMQP_RESPONSE_NORMAL) {
-    handle_amqp_error("Failed to disconnect.", reply);
+  return ScalarLogical(conn->is_connected);
+}
+
+SEXP R_amqp_reconnect(SEXP ptr)
+{
+  connection *conn = (connection *) R_ExternalPtrAddr(ptr);
+  if (!conn) {
+    Rf_error("The amqp connection no longer exists.");
     return R_NilValue;
   }
-  amqp_destroy_connection(conn);
-  R_ClearExternalPtr(ptr);
+
+  if (conn->is_connected) {
+    Rprintf("Connection is already open.\n");
+  } else {
+    char msg[120];
+    if (connect(conn, msg, 120) < 0) {
+      Rf_error("Failed to reconnect to server. %s", msg);
+      return R_NilValue;
+    }
+  }
+
   return R_NilValue;
+}
+
+SEXP R_amqp_disconnect(SEXP ptr)
+{
+  connection *conn = (connection *) R_ExternalPtrAddr(ptr);
+  if (!conn) {
+    Rf_error("The amqp connection no longer exists.");
+    return R_NilValue;
+  }
+  if (!conn->is_connected) {
+    Rprintf("Connection is already closed.\n");
+    return R_NilValue;
+  }
+
+  amqp_rpc_reply_t reply = amqp_connection_close(conn->conn, AMQP_REPLY_SUCCESS);
+  if (reply.reply_type != AMQP_RESPONSE_NORMAL) {
+    char msg[120];
+    render_amqp_error(reply, conn, msg, 120);
+    Rf_error("Failed to disconnect. %s", msg);
+    return R_NilValue;
+  }
+  // Depending on the nature of the possible error above, the connection might
+  // be closed without this value having been set.
+  conn->is_connected = 0;
+
+  // NOTE: amqp_connection_close() does not seem to close the actual file
+  // descriptor of the socket, and we do not seem to be able to re-use them for
+  // e.g. reconnection, unfortunately.
+  return R_NilValue;
+}
+
+int connect(connection *conn, char *buffer, size_t len)
+{
+  // Assume conn->conn is valid.
+  if (conn->is_connected) return 0;
+
+  // If a connection is closed, clearly the channel(s) are as well.
+  conn->chan.is_open = 0;
+
+  amqp_rpc_reply_t reply;
+  amqp_socket_t *socket = amqp_tcp_socket_new(conn->conn);
+
+  if (!socket) {
+    snprintf(buffer, len, "Failed to create an amqp socket.");
+    return -1;
+  }
+
+  struct timeval tv;
+  tv.tv_sec = conn->timeout;
+  tv.tv_usec = 0;
+  int sockfd = amqp_socket_open_noblock(socket, conn->host, conn->port, &tv);
+
+  if (sockfd < 0) {
+    // This has an unhelpful error message in this case.
+    if (sockfd == AMQP_STATUS_SOCKET_ERROR) {
+      snprintf(buffer, len, "Is the server running?");
+    } else {
+      snprintf(buffer, len, "%s", amqp_error_string2(sockfd));
+    }
+    return -1;
+  }
+
+  reply = amqp_login(conn->conn, conn->vhost, AMQP_DEFAULT_MAX_CHANNELS,
+                     AMQP_DEFAULT_FRAME_SIZE, 0, AMQP_SASL_METHOD_PLAIN,
+                     conn->username, conn->password);
+
+  if (reply.reply_type != AMQP_RESPONSE_NORMAL) {
+    render_amqp_error(reply, conn, buffer, len);
+    // The connection is likely closed already, but try anyway.
+    amqp_connection_close(conn->conn, AMQP_REPLY_SUCCESS);
+    return -1;
+  }
+
+  conn->is_connected = 1;
+
+  // TODO: Maybe we shouldn't fail here.
+  char chan_buff[100];
+  if (ensure_valid_channel(conn, chan_buff, 100) < 0) {
+    snprintf(buffer, len, "Failed to open channel. %s", chan_buff);
+    amqp_connection_close(conn->conn, AMQP_REPLY_SUCCESS);
+    return -1;
+  }
+
+  return 0;
+}
+
+int ensure_valid_channel(connection *conn, char *buffer, size_t len)
+{
+  if (!conn) {
+    snprintf(buffer, len, "Invalid connection object.");
+    return -1;
+  }
+
+  // Automatically reconnect.
+  if (!conn->is_connected) {
+    char msg[120];
+    int ret = connect(conn, msg, 120);
+    if (ret < 0) {
+      snprintf(buffer, len, "Failed to reconnect to server. %s", msg);
+    }
+    return ret;
+  }
+  if (conn->chan.is_open) return 0;
+
+  // The connection seems to hang indefinitely if we reuse channel IDs, so make
+  // sure to get a new one. If we ever have channel multiplexing, incrementing
+  // this will become more tricky.
+  conn->chan.chan += 1;
+
+  amqp_channel_open(conn->conn, conn->chan.chan);
+  amqp_rpc_reply_t reply = amqp_get_rpc_reply(conn->conn);
+  if (reply.reply_type != AMQP_RESPONSE_NORMAL) {
+    render_amqp_error(reply, conn, buffer, len);
+    return -1;
+  }
+
+  conn->chan.is_open = 1;
+  return 0;
 }

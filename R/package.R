@@ -29,6 +29,19 @@ print.amqp_connection <- function(x, ...) {
       "  vhost:   '", x$vhost, "'\n")
 }
 
+#' Restablish a Connection to a RabbitMQ Server
+#'
+#' @param conn An object returned by \code{\link{amqp_connect}}.
+#'
+#' @export
+amqp_reconnect <- function(conn) {
+  if (!inherits(conn, "amqp_connection")) {
+    stop("`conn` is not an amqp_connection object")
+  }
+  .Call(R_amqp_reconnect, conn$ptr)
+  invisible(conn)
+}
+
 #' Close a Connection to a RabbitMQ Server
 #'
 #' @param conn An object returned by \code{\link{amqp_connect}}.
