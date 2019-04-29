@@ -3,14 +3,16 @@
 #include <amqp_framing.h>
 
 #include "longears.h"
+#include "connection.h"
 #include "utils.h"
 
 SEXP R_amqp_declare_queue(SEXP ptr, SEXP queue, SEXP passive, SEXP durable,
                           SEXP exclusive, SEXP auto_delete)
 {
-  amqp_connection_state_t conn = (amqp_connection_state_t) R_ExternalPtrAddr(ptr);
-  if (!conn) {
-    Rf_error("The amqp connection no longer exists.");
+  connection *conn = (connection *) R_ExternalPtrAddr(ptr);
+  char errbuff[200];
+  if (ensure_valid_channel(conn, errbuff, 200) < 0) {
+    Rf_error("Failed to find an open channel. %s", errbuff);
     return R_NilValue;
   }
   const char *queue_str = CHAR(asChar(queue));
@@ -20,18 +22,20 @@ SEXP R_amqp_declare_queue(SEXP ptr, SEXP queue, SEXP passive, SEXP durable,
   int is_auto_delete = asLogical(auto_delete);
 
   amqp_queue_declare_ok_t *queue_ok;
-  queue_ok = amqp_queue_declare(conn, 1, amqp_cstring_bytes(queue_str),
-                                is_passive, is_exclusive, is_durable,
-                                is_auto_delete, amqp_empty_table);
+  queue_ok = amqp_queue_declare(conn->conn, conn->chan.chan,
+                                amqp_cstring_bytes(queue_str), is_passive,
+                                is_exclusive, is_durable, is_auto_delete,
+                                amqp_empty_table);
 
   if (queue_ok == NULL) {
-    amqp_rpc_reply_t reply = amqp_get_rpc_reply(conn);
+    amqp_rpc_reply_t reply = amqp_get_rpc_reply(conn->conn);
     if (reply.reply_type == AMQP_RESPONSE_NORMAL) {
       // This should never happen.
       Rf_error("Unexpected error: queue declare response is NULL with a normal reply.");
       return R_NilValue;
     } else {
-      handle_amqp_error("Failed to declare queue.", reply);
+      render_amqp_error(reply, conn, errbuff, 200);
+      Rf_error("Failed to declare queue. %s", errbuff);
       return R_NilValue;
     }
   }
@@ -56,9 +60,10 @@ SEXP R_amqp_declare_queue(SEXP ptr, SEXP queue, SEXP passive, SEXP durable,
 
 SEXP R_amqp_delete_queue(SEXP ptr, SEXP queue, SEXP if_unused, SEXP if_empty)
 {
-  amqp_connection_state_t conn = (amqp_connection_state_t) R_ExternalPtrAddr(ptr);
-  if (!conn) {
-    Rf_error("The amqp connection no longer exists.");
+  connection *conn = (connection *) R_ExternalPtrAddr(ptr);
+  char errbuff[200];
+  if (ensure_valid_channel(conn, errbuff, 200) < 0) {
+    Rf_error("Failed to find an open channel. %s", errbuff);
     return R_NilValue;
   }
   const char *queue_str = CHAR(asChar(queue));
@@ -66,17 +71,18 @@ SEXP R_amqp_delete_queue(SEXP ptr, SEXP queue, SEXP if_unused, SEXP if_empty)
   int empty = asLogical(if_empty);
 
   amqp_queue_delete_ok_t *delete_ok;
-  delete_ok = amqp_queue_delete(conn, 1, amqp_cstring_bytes(queue_str), unused,
-                                empty);
+  delete_ok = amqp_queue_delete(conn->conn, conn->chan.chan,
+                                amqp_cstring_bytes(queue_str), unused, empty);
 
   if (delete_ok == NULL) {
-    amqp_rpc_reply_t reply = amqp_get_rpc_reply(conn);
+    amqp_rpc_reply_t reply = amqp_get_rpc_reply(conn->conn);
     if (reply.reply_type == AMQP_RESPONSE_NORMAL) {
       // This should never happen.
       Rf_error("Unexpected error: queue delete response is NULL with a normal reply.");
       return R_NilValue;
     } else {
-      handle_amqp_error("Failed to delete queue.", reply);
+      render_amqp_error(reply, conn, errbuff, 200);
+      Rf_error("Failed to delete queue. %s", errbuff);
       return R_NilValue;
     }
   }
