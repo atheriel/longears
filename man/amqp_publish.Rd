@@ -2,7 +2,7 @@
 % Please edit documentation in R/basic.R
 \name{amqp_publish}
 \alias{amqp_publish}
-\title{Publish a Message to a Queue}
+\title{Publish a Message to an Exchange}
 \usage{
 amqp_publish(conn, routing_key, body, exchange = "",
   content_type = "text/plain", mandatory = FALSE, immediate = FALSE)
@@ -26,5 +26,5 @@ queue.}
 immediately.}
 }
 \description{
-Publish a Message to a Queue
+Publishes a message to an exchange with a given routing key.
 }

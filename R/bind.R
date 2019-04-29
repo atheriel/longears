@@ -10,7 +10,7 @@
 #' @param routing_key The routing key to use (if applicable).
 #'
 #' @aliases amqp_bindings
-#' @rdname amqp_bindings
+#' @name amqp_bindings
 #' @export
 amqp_bind_queue <- function(conn, queue, exchange, routing_key = "") {
   if (!inherits(conn, "amqp_connection")) {

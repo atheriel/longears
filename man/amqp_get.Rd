@@ -10,6 +10,8 @@ amqp_get(conn, queue, no_ack = FALSE)
 \item{conn}{An object returned by \code{\link{amqp_connect}}.}
 
 \item{queue}{The name of a queue.}
+
+\item{no_ack}{When \code{TRUE}, do not acknowldge receipt of the message.}
 }
 \value{
 A string containing the message, or a zero-length character vector if
@@ -17,5 +19,5 @@ A string containing the message, or a zero-length character vector if
   (such as the content type) attached to them as attributes.
 }
 \description{
-Get a Message from a Queue
+Get a message from a given queue.
 }

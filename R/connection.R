@@ -1,10 +1,31 @@
-#' Open a Connection to a RabbitMQ Server
+#' Connections to a RabbitMQ Server
+#'
+#' @description
+#'
+#' Connect, disconnect, and reconnect to RabbitMQ servers. When possible, we
+#' automatically recover from connection errors, so manual reconnection is not
+#' usually necessary.
+#'
+#' For those familiar with the AMQP protocol: we manage channels internally, and
+#' automatically recover from channel-level errors.
 #'
 #' @param host The server host.
 #' @param port The server port.
+#' @param vhost The desired virtual host.
+#' @param username User credentials.
+#' @param password User credentials.
+#' @param timeout A timeout, in seconds, for operations that support it.
 #'
 #' @return An \code{amqp_connection} object.
 #'
+#' @examples
+#' \dontrun{
+#' conn <- amqp_connect(password = "wrong")
+#' conn <- amqp_connect()
+#' amqp_disconnect(conn)
+#' }
+#'
+#' @name amqp_connections
 #' @export
 amqp_connect <- function(host = "localhost", port = 5672L, vhost = "/",
                          username = "guest", password = "guest",
@@ -26,10 +47,9 @@ print.amqp_connection <- function(x, ...) {
       "  vhost:   '", x$vhost, "'\n")
 }
 
-#' Restablish a Connection to a RabbitMQ Server
-#'
 #' @param conn An object returned by \code{\link{amqp_connect}}.
 #'
+#' @rdname amqp_connections
 #' @export
 amqp_reconnect <- function(conn) {
   if (!inherits(conn, "amqp_connection")) {
@@ -39,10 +59,7 @@ amqp_reconnect <- function(conn) {
   invisible(conn)
 }
 
-#' Close a Connection to a RabbitMQ Server
-#'
-#' @param conn An object returned by \code{\link{amqp_connect}}.
-#'
+#' @rdname amqp_connections
 #' @export
 amqp_disconnect <- function(conn) {
   if (!inherits(conn, "amqp_connection")) {

@@ -1,4 +1,6 @@
-#' Publish a Message to a Queue
+#' Publish a Message to an Exchange
+#'
+#' Publishes a message to an exchange with a given routing key.
 #'
 #' @param conn An object returned by \code{\link{amqp_connect}}.
 #' @param routing_key The routing key for the message. For the default
@@ -26,8 +28,11 @@ amqp_publish <- function(conn, routing_key, body, exchange = "",
 
 #' Get a Message from a Queue
 #'
+#' Get a message from a given queue.
+#'
 #' @param conn An object returned by \code{\link{amqp_connect}}.
 #' @param queue The name of a queue.
+#' @param no_ack When \code{TRUE}, do not acknowldge receipt of the message.
 #'
 #' @return A string containing the message, or a zero-length character vector if
 #'   there is no message in the queue. Messages may have additional properties

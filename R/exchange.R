@@ -1,20 +1,28 @@
 #' Declare or Delete Exchanges
 #'
-#' AMQP exchanges route messages to queues. By default the server will have a
-#' few exchanges defined (including the default exchange \code{""}), but
-#' additional exchanges can be defined and subsequently deleted by clients.
+#' @description
 #'
-#' Both \code{amqp_declare_exchange} and \code{amqp_delete_exchange} will
+#' AMQP exchanges route messages to queues. By default the server will have a
+#' few exchanges declared (including the default exchange \code{""}), but
+#' additional exchanges can be declared and subsequently deleted by clients.
+#'
+#' Both \code{amqp_declare_exchange()} and \code{amqp_delete_exchange()} will
 #' raise errors if there is a problem declaring/deleting the exchange.
 #'
 #' @param conn An object returned by \code{\link{amqp_connect}}.
 #' @param exchange The name of an exchange.
 #' @param type The type of exchange. Usually one of \code{"direct"},
 #'   \code{"fanout"}, or \code{"topic"}.
-#' @param passive
-#' @param durable
-#' @param auto_delete
-#' @param internal
+#' @param passive When \code{TRUE}, raise an error if the exchange does not
+#'   already exist.
+#' @param durable When \code{TRUE}, the exchange will persist between server
+#'   restarts.
+#' @param auto_delete When \code{TRUE}, the exchange is automatically deleted
+#'   when all queues have finished using it.
+#' @param internal When \code{TRUE}, the exchange cannot be used for publishing
+#'   messages; it can only be \link[=amqp_bindings]{bound} to other exchanges.
+#'   This is for creating complex routing topologies that are not visible to
+#'   consumers.
 #'
 #' @examples
 #' \dontrun{
@@ -24,8 +32,7 @@
 #' amqp_disconnect(conn)
 #' }
 #'
-#' @aliases amqp_exchanges
-#' @rdname amqp_exchanges
+#' @name amqp_exchanges
 #' @export
 amqp_declare_exchange <- function(conn, exchange, type = "direct",
                                   passive = FALSE, durable = FALSE,
@@ -39,7 +46,8 @@ amqp_declare_exchange <- function(conn, exchange, type = "direct",
   ))
 }
 
-#' @param if_unused Delete the exchange only if it is unused.
+#' @param if_unused Delete the exchange only if it is unused (i.e. no queues are
+#'   \link[=amqp_bindings]{bound} to it).
 #'
 #' @rdname amqp_exchanges
 #' @export
