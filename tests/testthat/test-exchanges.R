@@ -4,6 +4,12 @@ testthat::test_that("Exchanges can be created and deleted", {
   conn <- amqp_connect()
 
   testthat::expect_silent(amqp_delete_exchange(conn, "test.exchange"))
+
+  testthat::expect_error(
+    amqp_declare_exchange(conn, "test.exchange", type = "fanout", passive = TRUE),
+    regexp = "NOT_FOUND"
+  )
+
   testthat::expect_silent(amqp_declare_exchange(conn, "test.exchange"))
 
   # Attempt to declare an exchange with an inconsistent type.

@@ -9,6 +9,11 @@ testthat::test_that("Queues can be created, deleted, and receive messages", {
     regexp = "ACCESS_REFUSED"
   )
 
+  testthat::expect_error(
+    amqp_declare_queue(conn, "test.queue", passive = TRUE),
+    regexp = "NOT_FOUND"
+  )
+
   testthat::expect_silent(
     amqp_declare_queue(conn, "test.queue", durable = FALSE, auto_delete = TRUE)
   )
