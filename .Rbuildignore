@@ -1,3 +1,4 @@
 ^longears\.Rproj$
 ^\.Rproj\.user$
 ^README\.Rmd$
+^\.dir-locals.el$
