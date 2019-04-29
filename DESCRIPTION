@@ -3,15 +3,17 @@ Title: Interface to 'RabbitMQ' and the Advanced Message Queuing Protocol
 Version: 0.0.0.9000
 Authors@R: c(
   person("Aaron", "Jacobs", role = c("aut", "cre"),
-         email = "aaron.jacobs@crescendotechnology.com"),
+         email = "atheriel@gmail.com"),
   person("Crescendo Technology Ltd.", role = "cph")
   )
+Maintainer: Aaron Jacobs <atheriel@gmail.com>
 Description: This package provides a way to send and consume the 'AMQP'
-  messages used by RabbitMQ servers.
+  messages used by 'RabbitMQ' servers.
 License: GPL (>= 2)
+Suggests:
+  testthat
 ByteCompile: true
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 6.1.0
-Suggests:
-  testthat
+RoxygenNote: 6.1.1
+SystemRequirements: librabbitmq
