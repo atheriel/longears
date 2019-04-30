@@ -140,3 +140,44 @@ SEXP R_amqp_get(SEXP ptr, SEXP queue, SEXP no_ack)
   UNPROTECT(1);
   return out;
 }
+
+SEXP R_amqp_ack(SEXP ptr, SEXP delivery_tag, SEXP multiple)
+{
+  connection *conn = (connection *) R_ExternalPtrAddr(ptr);
+  char errbuff[200];
+  if (ensure_valid_channel(conn, errbuff, 200) < 0) {
+    Rf_error("Failed to find an open channel. %s", errbuff);
+    return R_NilValue;
+  }
+  int delivery_tag_ = asInteger(delivery_tag);
+  int multiple_ = asLogical(multiple);
+
+  int result = amqp_basic_ack(conn->conn, conn->chan.chan, delivery_tag_,
+                              multiple_);
+  if (result != AMQP_STATUS_OK) {
+    Rf_error("Failed to acknowledge message(s). %s", amqp_error_string2(result));
+  }
+
+  return R_NilValue;
+}
+
+SEXP R_amqp_nack(SEXP ptr, SEXP delivery_tag, SEXP multiple, SEXP requeue)
+{
+  connection *conn = (connection *) R_ExternalPtrAddr(ptr);
+  char errbuff[200];
+  if (ensure_valid_channel(conn, errbuff, 200) < 0) {
+    Rf_error("Failed to find an open channel. %s", errbuff);
+    return R_NilValue;
+  }
+  int delivery_tag_ = asInteger(delivery_tag);
+  int multiple_ = asLogical(multiple);
+  int requeue_ = asLogical(requeue);
+
+  int result = amqp_basic_nack(conn->conn, conn->chan.chan, delivery_tag_,
+                               multiple_, requeue_);
+  if (result != AMQP_STATUS_OK) {
+    Rf_error("Failed to nack message(s). %s", amqp_error_string2(result));
+  }
+
+  return R_NilValue;
+}

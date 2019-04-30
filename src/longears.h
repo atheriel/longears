@@ -23,6 +23,8 @@ SEXP R_amqp_unbind_queue(SEXP ptr, SEXP queue, SEXP exchange, SEXP routing_key);
 
 SEXP R_amqp_publish(SEXP ptr, SEXP routing_key, SEXP body, SEXP exchange, SEXP context_type, SEXP mandatory, SEXP immediate);
 SEXP R_amqp_get(SEXP ptr, SEXP queue, SEXP no_ack);
+SEXP R_amqp_ack(SEXP ptr, SEXP delivery_tag, SEXP multiple);
+SEXP R_amqp_nack(SEXP ptr, SEXP delivery_tag, SEXP multiple, SEXP requeue);
 
 #ifdef __cplusplus
 }

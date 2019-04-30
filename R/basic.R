@@ -46,3 +46,35 @@ amqp_get <- function(conn, queue, no_ack = FALSE) {
   }
   .Call(R_amqp_get, conn$ptr, queue, no_ack)
 }
+
+#' Acknowledge or Reject Incoming Messages
+#'
+#' Notify the server that a message (or a series of messages) have been received
+#' by acknowledging (ack-ing) them. Or, reject incoming messages that you cannot
+#' handle correctly by "nack"-ing them.
+#'
+#' @param conn An object returned by \code{\link{amqp_connect}}.
+#' @param delivery_tag The message's numeric identifier.
+#' @param multiple When \code{TRUE}, (n)ack messages up-to-and-including this
+#'   \code{delivery_tag}. By default, we only (n)ack a single message.
+#'
+#' @name amqp_acks
+#' @export
+amqp_ack <- function(conn, delivery_tag, multiple = FALSE) {
+  if (!inherits(conn, "amqp_connection")) {
+    stop("`conn` is not an amqp_connection object")
+  }
+  invisible(.Call(R_amqp_ack, conn$ptr, delivery_tag, multiple))
+}
+
+#' @param requeue When \code{TRUE}, ask the server to requeue the message.
+#'   Otherwise, messages are discarded or dead-lettered.
+#'
+#' @name amqp_acks
+#' @export
+amqp_nack <- function(conn, delivery_tag, multiple = FALSE, requeue = FALSE) {
+  if (!inherits(conn, "amqp_connection")) {
+    stop("`conn` is not an amqp_connection object")
+  }
+  invisible(.Call(R_amqp_ack, conn$ptr, delivery_tag, multiple))
+}
