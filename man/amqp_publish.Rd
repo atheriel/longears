@@ -4,8 +4,8 @@
 \alias{amqp_publish}
 \title{Publish a Message to an Exchange}
 \usage{
-amqp_publish(conn, routing_key, body, exchange = "",
-  content_type = "text/plain", mandatory = FALSE, immediate = FALSE)
+amqp_publish(conn, routing_key, body, exchange = "", content_type = NA,
+  mandatory = FALSE, immediate = FALSE)
 }
 \arguments{
 \item{conn}{An object returned by \code{\link{amqp_connect}}.}

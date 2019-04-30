@@ -15,7 +15,7 @@
 #'
 #' @export
 amqp_publish <- function(conn, routing_key, body, exchange = "",
-                         content_type = "text/plain", mandatory = FALSE,
+                         content_type = NA, mandatory = FALSE,
                          immediate = FALSE) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
