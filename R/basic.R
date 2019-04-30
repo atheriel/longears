@@ -3,20 +3,21 @@
 #' Publishes a message to an exchange with a given routing key.
 #'
 #' @param conn An object returned by \code{\link{amqp_connect}}.
-#' @param routing_key The routing key for the message. For the default
-#'   exchange, this is the name of a queue.
 #' @param body The message to send.
 #' @param exchange The exchange to route the message through.
-#' @param content_type The message content type.
+#' @param routing_key The routing key for the message. For the default exchange,
+#'   this is the name of a queue.
 #' @param mandatory When \code{TRUE}, demand that the message is placed in a
 #'   queue.
 #' @param immediate When \code{TRUE}, demand that the message is delivered
 #'   immediately.
+#' @param content_type The message MIME content type. When \code{NA}, send no
+#'   content type information.
 #'
 #' @export
-amqp_publish <- function(conn, routing_key, body, exchange = "",
-                         content_type = NA, mandatory = FALSE,
-                         immediate = FALSE) {
+amqp_publish <- function(conn, body, exchange = "", routing_key = "",
+                         mandatory = FALSE, immediate = FALSE,
+                         content_type = NA) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
