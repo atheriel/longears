@@ -24,7 +24,7 @@ SEXP R_amqp_declare_queue(SEXP ptr, SEXP queue, SEXP passive, SEXP durable,
   amqp_queue_declare_ok_t *queue_ok;
   queue_ok = amqp_queue_declare(conn->conn, conn->chan.chan,
                                 amqp_cstring_bytes(queue_str), is_passive,
-                                is_exclusive, is_durable, is_auto_delete,
+                                is_durable, is_exclusive, is_auto_delete,
                                 amqp_empty_table);
 
   if (queue_ok == NULL) {
