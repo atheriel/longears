@@ -9,8 +9,8 @@
 #include "connection.h"
 #include "utils.h"
 
-SEXP R_amqp_publish(SEXP ptr, SEXP routing_key, SEXP body, SEXP exchange,
-                    SEXP content_type, SEXP mandatory, SEXP immediate)
+SEXP R_amqp_publish(SEXP ptr, SEXP body, SEXP exchange, SEXP routing_key,
+                    SEXP mandatory, SEXP immediate, SEXP props)
 {
   connection *conn = (connection *) R_ExternalPtrAddr(ptr);
   char errbuff[200];
@@ -18,28 +18,22 @@ SEXP R_amqp_publish(SEXP ptr, SEXP routing_key, SEXP body, SEXP exchange,
     Rf_error("Failed to find an open channel. %s", errbuff);
     return R_NilValue;
   }
-  const char *routing_key_str = CHAR(asChar(routing_key));
   const char *body_str = CHAR(asChar(body));
   const char *exchange_str = CHAR(asChar(exchange));
-  SEXP content_type_str = asChar(content_type);
+  const char *routing_key_str = CHAR(asChar(routing_key));
   int is_mandatory = asLogical(mandatory);
   int is_immediate = asLogical(immediate);
+  amqp_basic_properties_t *props_ = NULL;
+  if (TYPEOF(props) != 0) {
+    props_ = R_ExternalPtrAddr(props);
+  }
 
   /* Send message. */
-
-  amqp_basic_properties_t props;
-  props._flags = AMQP_BASIC_DELIVERY_MODE_FLAG;
-  props.delivery_mode = 1;
-
-  if (content_type_str != NA_STRING) {
-    props._flags |= AMQP_BASIC_CONTENT_TYPE_FLAG;
-    props.content_type = amqp_cstring_bytes(CHAR(content_type_str));
-  }
 
   int result = amqp_basic_publish(conn->conn, conn->chan.chan,
                                   amqp_cstring_bytes(exchange_str),
                                   amqp_cstring_bytes(routing_key_str),
-                                  is_mandatory, is_immediate, &props,
+                                  is_mandatory, is_immediate, props_,
                                   amqp_cstring_bytes(body_str));
 
   if (result != AMQP_STATUS_OK) {

@@ -11,19 +11,25 @@
 #'   queue.
 #' @param immediate When \code{TRUE}, demand that the message is delivered
 #'   immediately.
-#' @param content_type The message MIME content type. When \code{NA}, send no
-#'   content type information.
+#' @param properties Message properties created with
+#'   \code{\link{amqp_properties}}, or \code{NULL} to attach no properties to
+#'   the message.
 #'
 #' @export
 amqp_publish <- function(conn, body, exchange = "", routing_key = "",
                          mandatory = FALSE, immediate = FALSE,
-                         content_type = NA) {
+                         properties = NULL) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
+  props <- if (inherits(properties, "amqp_properties")) {
+    properties$ptr
+  } else {
+    NULL
+  }
   invisible(.Call(
-    R_amqp_publish, conn$ptr, routing_key, body, exchange, content_type,
-    mandatory, immediate
+    R_amqp_publish, conn$ptr, body, exchange, routing_key, mandatory,
+    immediate, props
   ))
 }
 
