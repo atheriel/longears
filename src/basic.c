@@ -119,25 +119,30 @@ SEXP R_amqp_get(SEXP ptr, SEXP queue, SEXP no_ack)
   // TODO: Decide if it makes more sense to return a list instead of using
   // attributes for properties.
 
+  /* Add basic_get fields. */
+
+  SEXP exchange, routing_key;
+  amqp_basic_get_ok_t *ok = (amqp_basic_get_ok_t *) reply.reply.decoded;
+  exchange = PROTECT(mkCharLen(ok->exchange.bytes, ok->exchange.len));
+  routing_key = PROTECT(mkCharLen(ok->routing_key.bytes, ok->routing_key.len));
+  setAttrib(out, install("delivery_tag"), ScalarInteger(ok->delivery_tag));
+  setAttrib(out, install("redelivered"), ScalarLogical(ok->redelivered));
+  setAttrib(out, install("exchange"), ScalarString(exchange));
+  setAttrib(out, install("routing_key"), ScalarString(routing_key));
+  setAttrib(out, install("message_count"), ScalarInteger(ok->message_count));
+
+  /* Add properties. */
+
   amqp_basic_properties_t *props =
     (amqp_basic_properties_t *) frame.payload.properties.decoded;
 
   if (!props) {
     Rf_warning("Message properties cannot be recovered.\n");
-    UNPROTECT(1);
-    return out;
+  } else {
+    setAttrib(out, install("properties"), decode_properties(props));
   }
 
-  // TODO: Decode other relevant properties.
-
-  if (props->_flags & AMQP_BASIC_CONTENT_TYPE_FLAG) {
-    SEXP content_type = PROTECT(mkCharLen(props->content_type.bytes,
-                                          props->content_type.len));
-    setAttrib(out, install("content_type"), ScalarString(content_type));
-    UNPROTECT(1);
-  }
-
-  UNPROTECT(1);
+  UNPROTECT(3);
   return out;
 }
 
