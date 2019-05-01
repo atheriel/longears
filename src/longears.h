@@ -26,6 +26,9 @@ SEXP R_amqp_get(SEXP ptr, SEXP queue, SEXP no_ack);
 SEXP R_amqp_ack(SEXP ptr, SEXP delivery_tag, SEXP multiple);
 SEXP R_amqp_nack(SEXP ptr, SEXP delivery_tag, SEXP multiple, SEXP requeue);
 
+SEXP R_amqp_encode_properties(SEXP list);
+SEXP R_amqp_decode_properties(SEXP ptr);
+
 #ifdef __cplusplus
 }
 #endif

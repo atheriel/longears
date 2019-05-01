@@ -15,6 +15,8 @@ static const R_CallMethodDef longears_entries[] = {
   {"R_amqp_get", (DL_FUNC) &R_amqp_get, 3},
   {"R_amqp_ack", (DL_FUNC) &R_amqp_ack, 3},
   {"R_amqp_nack", (DL_FUNC) &R_amqp_nack, 4},
+  {"R_amqp_encode_properties", (DL_FUNC) &R_amqp_encode_properties, 1},
+  {"R_amqp_decode_properties", (DL_FUNC) &R_amqp_decode_properties, 1},
   {NULL, NULL, 0}
 };
 
