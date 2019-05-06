@@ -11,6 +11,5 @@ amqp_properties <- function(props, ...) {
   if (!all(vapply(args, nchar, integer(1)) > 0)) {
     stop("All properties must be named.")
   }
-  props <- .Call(R_amqp_encode_properties, args)
-  structure(list(ptr = props), class = "amqp_properties")
+  .Call(R_amqp_encode_properties, args)
 }

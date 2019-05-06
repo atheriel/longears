@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 void render_amqp_error(const amqp_rpc_reply_t, connection *, char *, size_t);
-SEXP decode_properties(amqp_basic_properties_t *props);
+SEXP R_properties_object(amqp_basic_properties_t *props);
 
 #ifdef __cplusplus
 }

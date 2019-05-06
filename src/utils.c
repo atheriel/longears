@@ -253,13 +253,29 @@ static void R_finalize_amqp_properties(SEXP ptr)
   R_ClearExternalPtr(ptr);
 }
 
+SEXP R_properties_object(amqp_basic_properties_t *props)
+{
+  SEXP ptr = PROTECT(R_MakeExternalPtr(props, R_NilValue, R_NilValue));
+  R_RegisterCFinalizerEx(ptr, R_finalize_amqp_properties, 1);
+
+  /* Create the "amqp_properties" object. */
+  SEXP out = PROTECT(Rf_allocVector(VECSXP, 1));
+  SEXP names = PROTECT(Rf_allocVector(STRSXP, 1));
+  SEXP class = PROTECT(Rf_allocVector(STRSXP, 1));
+  SET_VECTOR_ELT(out, 0, ptr);
+  SET_STRING_ELT(names, 0, mkCharLen("ptr", 3));
+  SET_STRING_ELT(class, 0, mkCharLen("amqp_properties", 15));
+  Rf_setAttrib(out, R_NamesSymbol, names);
+  Rf_setAttrib(out, R_ClassSymbol, class);
+
+  UNPROTECT(4);
+  return out;
+}
+
 SEXP R_amqp_encode_properties(SEXP list)
 {
   amqp_basic_properties_t *props = encode_properties(list);
-  SEXP ptr = PROTECT(R_MakeExternalPtr(props, R_NilValue, R_NilValue));
-  R_RegisterCFinalizerEx(ptr, R_finalize_amqp_properties, 1);
-  UNPROTECT(1);
-  return ptr;
+  return R_properties_object(props);
 }
 
 SEXP R_amqp_decode_properties(SEXP ptr)

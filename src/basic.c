@@ -125,15 +125,17 @@ SEXP R_amqp_get(SEXP ptr, SEXP queue, SEXP no_ack)
   setAttrib(out, install("routing_key"), ScalarString(routing_key));
   setAttrib(out, install("message_count"), ScalarInteger(ok->message_count));
 
-  /* Add properties. */
+  /* Copy properties. */
 
-  amqp_basic_properties_t *props =
-    (amqp_basic_properties_t *) frame.payload.properties.decoded;
+  amqp_basic_properties_t *props = malloc(sizeof(amqp_basic_properties_t));
+  memcpy(props, (amqp_basic_properties_t *) frame.payload.properties.decoded,
+         sizeof(amqp_basic_properties_t));
 
   if (!props) {
     Rf_warning("Message properties cannot be recovered.\n");
+    setAttrib(out, install("properties"), R_NilValue);
   } else {
-    setAttrib(out, install("properties"), decode_properties(props));
+    setAttrib(out, install("properties"), R_properties_object(props));
   }
 
   UNPROTECT(3);
