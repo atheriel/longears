@@ -5,7 +5,7 @@
 \title{Publish a Message to an Exchange}
 \usage{
 amqp_publish(conn, body, exchange = "", routing_key = "",
-  mandatory = FALSE, immediate = FALSE, content_type = NA)
+  mandatory = FALSE, immediate = FALSE, properties = NULL)
 }
 \arguments{
 \item{conn}{An object returned by \code{\link{amqp_connect}}.}
@@ -23,8 +23,9 @@ queue.}
 \item{immediate}{When \code{TRUE}, demand that the message is delivered
 immediately.}
 
-\item{content_type}{The message MIME content type. When \code{NA}, send no
-content type information.}
+\item{properties}{Message properties created with
+\code{\link{amqp_properties}}, or \code{NULL} to attach no properties to
+the message.}
 }
 \description{
 Publishes a message to an exchange with a given routing key.

@@ -9,8 +9,8 @@
 #include "connection.h"
 #include "utils.h"
 
-SEXP R_amqp_publish(SEXP ptr, SEXP routing_key, SEXP body, SEXP exchange,
-                    SEXP content_type, SEXP mandatory, SEXP immediate)
+SEXP R_amqp_publish(SEXP ptr, SEXP body, SEXP exchange, SEXP routing_key,
+                    SEXP mandatory, SEXP immediate, SEXP props)
 {
   connection *conn = (connection *) R_ExternalPtrAddr(ptr);
   char errbuff[200];
@@ -18,28 +18,22 @@ SEXP R_amqp_publish(SEXP ptr, SEXP routing_key, SEXP body, SEXP exchange,
     Rf_error("Failed to find an open channel. %s", errbuff);
     return R_NilValue;
   }
-  const char *routing_key_str = CHAR(asChar(routing_key));
   const char *body_str = CHAR(asChar(body));
   const char *exchange_str = CHAR(asChar(exchange));
-  SEXP content_type_str = asChar(content_type);
+  const char *routing_key_str = CHAR(asChar(routing_key));
   int is_mandatory = asLogical(mandatory);
   int is_immediate = asLogical(immediate);
+  amqp_basic_properties_t *props_ = NULL;
+  if (TYPEOF(props) != 0) {
+    props_ = R_ExternalPtrAddr(props);
+  }
 
   /* Send message. */
-
-  amqp_basic_properties_t props;
-  props._flags = AMQP_BASIC_DELIVERY_MODE_FLAG;
-  props.delivery_mode = 1;
-
-  if (content_type_str != NA_STRING) {
-    props._flags |= AMQP_BASIC_CONTENT_TYPE_FLAG;
-    props.content_type = amqp_cstring_bytes(CHAR(content_type_str));
-  }
 
   int result = amqp_basic_publish(conn->conn, conn->chan.chan,
                                   amqp_cstring_bytes(exchange_str),
                                   amqp_cstring_bytes(routing_key_str),
-                                  is_mandatory, is_immediate, &props,
+                                  is_mandatory, is_immediate, props_,
                                   amqp_cstring_bytes(body_str));
 
   if (result != AMQP_STATUS_OK) {
@@ -119,25 +113,32 @@ SEXP R_amqp_get(SEXP ptr, SEXP queue, SEXP no_ack)
   // TODO: Decide if it makes more sense to return a list instead of using
   // attributes for properties.
 
-  amqp_basic_properties_t *props =
-    (amqp_basic_properties_t *) frame.payload.properties.decoded;
+  /* Add basic_get fields. */
+
+  SEXP exchange, routing_key;
+  amqp_basic_get_ok_t *ok = (amqp_basic_get_ok_t *) reply.reply.decoded;
+  exchange = PROTECT(mkCharLen(ok->exchange.bytes, ok->exchange.len));
+  routing_key = PROTECT(mkCharLen(ok->routing_key.bytes, ok->routing_key.len));
+  setAttrib(out, install("delivery_tag"), ScalarInteger(ok->delivery_tag));
+  setAttrib(out, install("redelivered"), ScalarLogical(ok->redelivered));
+  setAttrib(out, install("exchange"), ScalarString(exchange));
+  setAttrib(out, install("routing_key"), ScalarString(routing_key));
+  setAttrib(out, install("message_count"), ScalarInteger(ok->message_count));
+
+  /* Copy properties. */
+
+  amqp_basic_properties_t *props = malloc(sizeof(amqp_basic_properties_t));
+  memcpy(props, (amqp_basic_properties_t *) frame.payload.properties.decoded,
+         sizeof(amqp_basic_properties_t));
 
   if (!props) {
     Rf_warning("Message properties cannot be recovered.\n");
-    UNPROTECT(1);
-    return out;
+    setAttrib(out, install("properties"), R_NilValue);
+  } else {
+    setAttrib(out, install("properties"), R_properties_object(props));
   }
 
-  // TODO: Decode other relevant properties.
-
-  if (props->_flags & AMQP_BASIC_CONTENT_TYPE_FLAG) {
-    SEXP content_type = PROTECT(mkCharLen(props->content_type.bytes,
-                                          props->content_type.len));
-    setAttrib(out, install("content_type"), ScalarString(content_type));
-    UNPROTECT(1);
-  }
-
-  UNPROTECT(1);
+  UNPROTECT(3);
   return out;
 }
 
