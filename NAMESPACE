@@ -2,6 +2,7 @@
 
 S3method(as.list,amqp_properties)
 S3method(print,amqp_connection)
+S3method(print,amqp_message)
 S3method(print,amqp_properties)
 S3method(print,amqp_queue)
 export(amqp_ack)

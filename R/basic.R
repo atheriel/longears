@@ -50,7 +50,32 @@ amqp_get <- function(conn, queue, no_ack = FALSE) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
-  .Call(R_amqp_get, conn$ptr, queue, no_ack)
+  out <- .Call(R_amqp_get, conn$ptr, queue, no_ack)
+  class(out) <- "amqp_message"
+  out
+}
+
+#' @export
+print.amqp_message <- function(x, ...) {
+  # Turn all properties into HTTP-style "headers".
+  headers <- attributes(x)
+  headers <- headers[setdiff(names(headers), c("properties", "class"))]
+  props <- attr(x, "properties")
+  if (!is.null(props)) {
+    headers <- c(headers, as.list(props))
+  }
+  names(headers) <- gsub("_", " ", names(headers), fixed = TRUE)
+
+  # Determine \t spacing.
+  len <- (nchar(names(headers)) + 1) %/% 8
+  len <- (max(len) - len) + 1
+  buffer <- strrep("\t", times = len)
+
+  header <- paste(
+    tools::toTitleCase(names(headers)), ":", buffer, headers,
+    sep = "", collapse = "\n"
+  )
+  cat(header, x, sep = "\n")
 }
 
 #' Acknowledge or Reject Incoming Messages
