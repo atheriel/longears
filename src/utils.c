@@ -61,7 +61,6 @@ amqp_basic_properties_t * encode_properties(SEXP list)
     elt = VECTOR_ELT(list, i);
     name = STRING_ELT(names, i);
 
-    /* TODO: Support the timestamp. */
     if (strcmp(CHAR(name), "content_type") == 0) {
       if (!isString(elt)) Rf_error("'content_type' must be a string.");
       props->_flags |= AMQP_BASIC_CONTENT_TYPE_FLAG;
@@ -94,6 +93,9 @@ amqp_basic_properties_t * encode_properties(SEXP list)
       if (!isString(elt)) Rf_error("'message_id' must be a string.");
       props->_flags |= AMQP_BASIC_MESSAGE_ID_FLAG;
       props->message_id = amqp_cstring_bytes(CHAR(STRING_ELT(elt, 0)));
+    } else if (strcmp(CHAR(name), "timestamp") == 0) {
+      /* TODO: Support the timestamp. */
+      Rf_warning("The timestamp property is not yet supported, and will be ignored.");
     } else if (strcmp(CHAR(name), "type") == 0) {
       if (!isString(elt)) Rf_error("'type' must be a string.");
       props->_flags |= AMQP_BASIC_TYPE_FLAG;
@@ -112,7 +114,7 @@ amqp_basic_properties_t * encode_properties(SEXP list)
       props->cluster_id = amqp_cstring_bytes(CHAR(STRING_ELT(elt, 0)));
     } else {
       /* TODO: Turn the remaining elements into headers. */
-      Rprintf("Typeof: %s Name: %s\n", type2str(TYPEOF(elt)), CHAR(name));
+      Rf_warning("Additional property arguments are not yet supported, and will be ignored.");
     }
   }
 
