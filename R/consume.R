@@ -11,11 +11,11 @@ amqp_create_consumer <- function(conn, queue, consumer = "", no_local = FALSE,
 }
 
 #' @export
-amqp_destroy_consumer <- function(conn, consumer) {
-  if (!inherits(conn, "amqp_connection")) {
-    stop("`conn` is not an amqp_connection object")
+amqp_destroy_consumer <- function(consumer) {
+  if (!inherits(consumer, "amqp_consumer")) {
+    stop("`consumer` is not an amqp_consumer object")
   }
-  invisible(.Call(R_amqp_destroy_consumer, conn$ptr, consumer))
+  invisible(.Call(R_amqp_destroy_consumer, consumer))
 }
 
 #' @export

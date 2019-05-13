@@ -17,7 +17,7 @@ static const R_CallMethodDef longears_entries[] = {
   {"R_amqp_nack", (DL_FUNC) &R_amqp_nack, 4},
   {"R_amqp_create_consumer", (DL_FUNC) &R_amqp_create_consumer, 6},
   {"R_amqp_listen", (DL_FUNC) &R_amqp_listen, 4},
-  {"R_amqp_destroy_consumer", (DL_FUNC) &R_amqp_destroy_consumer, 2},
+  {"R_amqp_destroy_consumer", (DL_FUNC) &R_amqp_destroy_consumer, 1},
   {"R_amqp_encode_properties", (DL_FUNC) &R_amqp_encode_properties, 1},
   {"R_amqp_decode_properties", (DL_FUNC) &R_amqp_decode_properties, 1},
   {NULL, NULL, 0}

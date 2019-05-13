@@ -28,7 +28,7 @@ SEXP R_amqp_nack(SEXP ptr, SEXP delivery_tag, SEXP multiple, SEXP requeue);
 
 SEXP R_amqp_create_consumer(SEXP ptr, SEXP queue, SEXP tag, SEXP no_local, SEXP no_ack, SEXP exclusive);
 SEXP R_amqp_listen(SEXP ptr, SEXP fun, SEXP rho, SEXP timeout);
-SEXP R_amqp_destroy_consumer(SEXP ptr, SEXP tag);
+SEXP R_amqp_destroy_consumer(SEXP ptr);
 
 SEXP R_amqp_encode_properties(SEXP list);
 SEXP R_amqp_decode_properties(SEXP ptr);
