@@ -22,9 +22,10 @@ typedef struct connection {
   const char *password;
   int timeout;
   channel chan;
+  int next_chan;
 } connection;
 
-int ensure_valid_channel(connection *, char *, size_t);
+int ensure_valid_channel(connection *, channel *, char *, size_t);
 
 #ifdef __cplusplus
 }

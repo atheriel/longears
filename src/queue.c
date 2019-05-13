@@ -11,7 +11,7 @@ SEXP R_amqp_declare_queue(SEXP ptr, SEXP queue, SEXP passive, SEXP durable,
 {
   connection *conn = (connection *) R_ExternalPtrAddr(ptr);
   char errbuff[200];
-  if (ensure_valid_channel(conn, errbuff, 200) < 0) {
+  if (ensure_valid_channel(conn, &conn->chan, errbuff, 200) < 0) {
     Rf_error("Failed to find an open channel. %s", errbuff);
     return R_NilValue;
   }
@@ -62,7 +62,7 @@ SEXP R_amqp_delete_queue(SEXP ptr, SEXP queue, SEXP if_unused, SEXP if_empty)
 {
   connection *conn = (connection *) R_ExternalPtrAddr(ptr);
   char errbuff[200];
-  if (ensure_valid_channel(conn, errbuff, 200) < 0) {
+  if (ensure_valid_channel(conn, &conn->chan, errbuff, 200) < 0) {
     Rf_error("Failed to find an open channel. %s", errbuff);
     return R_NilValue;
   }

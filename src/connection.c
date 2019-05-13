@@ -43,6 +43,7 @@ SEXP R_amqp_connect(SEXP host, SEXP port, SEXP vhost, SEXP username,
   conn->timeout = seconds;
   conn->chan.chan = 0;
   conn->chan.is_open = 0;
+  conn->next_chan = 1;
   conn->is_connected = 0;
   conn->conn = amqp_new_connection();
 
@@ -172,7 +173,7 @@ int connect(connection *conn, char *buffer, size_t len)
 
   // TODO: Maybe we shouldn't fail here.
   char chan_buff[100];
-  if (ensure_valid_channel(conn, chan_buff, 100) < 0) {
+  if (ensure_valid_channel(conn, &conn->chan, chan_buff, 100) < 0) {
     snprintf(buffer, len, "Failed to open channel. %s", chan_buff);
     amqp_connection_close(conn->conn, AMQP_REPLY_SUCCESS);
     return -1;
@@ -181,7 +182,7 @@ int connect(connection *conn, char *buffer, size_t len)
   return 0;
 }
 
-int ensure_valid_channel(connection *conn, char *buffer, size_t len)
+int ensure_valid_channel(connection *conn, channel *chan, char *buffer, size_t len)
 {
   if (!conn) {
     snprintf(buffer, len, "Invalid connection object.");
@@ -191,26 +192,27 @@ int ensure_valid_channel(connection *conn, char *buffer, size_t len)
   // Automatically reconnect.
   if (!conn->is_connected) {
     char msg[120];
+    chan->is_open = 0;
     int ret = connect(conn, msg, 120);
     if (ret < 0) {
       snprintf(buffer, len, "Failed to reconnect to server. %s", msg);
     }
     return ret;
   }
-  if (conn->chan.is_open) return 0;
+  if (chan->is_open) return 0;
 
   // The connection seems to hang indefinitely if we reuse channel IDs, so make
-  // sure to get a new one. If we ever have channel multiplexing, incrementing
-  // this will become more tricky.
-  conn->chan.chan += 1;
+  // sure to get a new one.
+  chan->chan = conn->next_chan;
+  conn->next_chan += 1;
 
-  amqp_channel_open(conn->conn, conn->chan.chan);
+  amqp_channel_open(conn->conn, chan->chan);
   amqp_rpc_reply_t reply = amqp_get_rpc_reply(conn->conn);
   if (reply.reply_type != AMQP_RESPONSE_NORMAL) {
     render_amqp_error(reply, conn, buffer, len);
     return -1;
   }
 
-  conn->chan.is_open = 1;
+  chan->is_open = 1;
   return 0;
 }
