@@ -52,7 +52,7 @@ void render_amqp_error(const amqp_rpc_reply_t reply, connection *conn,
 
 amqp_basic_properties_t * encode_properties(SEXP list)
 {
-  SEXP names = Rf_getAttrib(list, R_NamesSymbol);
+  SEXP names = PROTECT(Rf_getAttrib(list, R_NamesSymbol));
   amqp_basic_properties_t *props = malloc(sizeof(amqp_basic_properties_t));
   props->_flags = 0;
 
@@ -118,6 +118,7 @@ amqp_basic_properties_t * encode_properties(SEXP list)
     }
   }
 
+  UNPROTECT(1);
   return props;
 }
 

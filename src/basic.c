@@ -119,11 +119,11 @@ SEXP R_amqp_get(SEXP ptr, SEXP queue, SEXP no_ack)
   amqp_basic_get_ok_t *ok = (amqp_basic_get_ok_t *) reply.reply.decoded;
   exchange = PROTECT(mkCharLen(ok->exchange.bytes, ok->exchange.len));
   routing_key = PROTECT(mkCharLen(ok->routing_key.bytes, ok->routing_key.len));
-  setAttrib(out, install("delivery_tag"), ScalarInteger(ok->delivery_tag));
-  setAttrib(out, install("redelivered"), ScalarLogical(ok->redelivered));
-  setAttrib(out, install("exchange"), ScalarString(exchange));
-  setAttrib(out, install("routing_key"), ScalarString(routing_key));
-  setAttrib(out, install("message_count"), ScalarInteger(ok->message_count));
+  setAttrib(out, install("delivery_tag"), PROTECT(ScalarInteger(ok->delivery_tag)));
+  setAttrib(out, install("redelivered"), PROTECT(ScalarLogical(ok->redelivered)));
+  setAttrib(out, install("exchange"), PROTECT(ScalarString(exchange)));
+  setAttrib(out, install("routing_key"), PROTECT(ScalarString(routing_key)));
+  setAttrib(out, install("message_count"), PROTECT(ScalarInteger(ok->message_count)));
 
   /* Copy properties. */
 
@@ -135,10 +135,11 @@ SEXP R_amqp_get(SEXP ptr, SEXP queue, SEXP no_ack)
     Rf_warning("Message properties cannot be recovered.\n");
     setAttrib(out, install("properties"), R_NilValue);
   } else {
-    setAttrib(out, install("properties"), R_properties_object(props));
+    setAttrib(out, install("properties"), PROTECT(R_properties_object(props)));
+    UNPROTECT(1);
   }
 
-  UNPROTECT(3);
+  UNPROTECT(8);
   return out;
 }
 
