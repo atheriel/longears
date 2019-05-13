@@ -50,19 +50,15 @@ amqp_get <- function(conn, queue, no_ack = FALSE) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
-  out <- .Call(R_amqp_get, conn$ptr, queue, no_ack)
-  class(out) <- "amqp_message"
-  out
+  .Call(R_amqp_get, conn$ptr, queue, no_ack)
 }
 
 #' @export
 print.amqp_message <- function(x, ...) {
   # Turn all properties into HTTP-style "headers".
-  headers <- attributes(x)
-  headers <- headers[setdiff(names(headers), c("properties", "class"))]
-  props <- attr(x, "properties")
-  if (!is.null(props)) {
-    headers <- c(headers, as.list(props))
+  headers <- x[setdiff(names(x), c("body", "properties", "class"))]
+  if (!is.null(x$properties)) {
+    headers <- c(headers, as.list(x$properties))
   }
   names(headers) <- gsub("_", " ", names(headers), fixed = TRUE)
 
@@ -75,7 +71,7 @@ print.amqp_message <- function(x, ...) {
     tools::toTitleCase(names(headers)), ":", buffer, headers,
     sep = "", collapse = "\n"
   )
-  cat(header, paste0(x, collapse = " "), sep = "\n")
+  cat(header, paste0(x$body, collapse = " "), sep = "\n")
 }
 
 #' Acknowledge or Reject Incoming Messages

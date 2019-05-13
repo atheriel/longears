@@ -288,3 +288,51 @@ SEXP R_amqp_decode_properties(SEXP ptr)
     Rf_error("Properties object is no longer valid.");
   return decode_properties(props);
 }
+
+SEXP R_message_object(SEXP body, int delivery_tag, int redelivered,
+                      amqp_bytes_t exchange, amqp_bytes_t routing_key,
+                      int message_count, amqp_bytes_t consumer_tag,
+                      amqp_basic_properties_t *props)
+{
+  SEXP out = PROTECT(Rf_allocVector(VECSXP, 7));
+  SEXP names = PROTECT(Rf_allocVector(STRSXP, 7));
+  SET_STRING_ELT(names, 0, mkCharLen("body", 4));
+  SET_STRING_ELT(names, 1, mkCharLen("delivery_tag", 12));
+  SET_STRING_ELT(names, 2, mkCharLen("redelivered", 11));
+  SET_STRING_ELT(names, 3, mkCharLen("exchange", 8));
+  SET_STRING_ELT(names, 4, mkCharLen("routing_key", 11));
+  SET_STRING_ELT(names, 6, mkCharLen("properties", 10));
+
+  SET_VECTOR_ELT(out, 0, body);
+  SET_VECTOR_ELT(out, 1, ScalarInteger(delivery_tag));
+  SET_VECTOR_ELT(out, 2, ScalarLogical(redelivered));
+  SET_VECTOR_ELT(out, 3, amqp_bytes_to_string(&exchange));
+  SET_VECTOR_ELT(out, 4, amqp_bytes_to_string(&routing_key));
+
+  /* amqp_get and amqp_consume will have different entries. */
+  if (message_count < 0) {
+    SET_STRING_ELT(names, 5, mkCharLen("consumer_tag", 12));
+    SET_VECTOR_ELT(out, 5, amqp_bytes_to_string(&consumer_tag));
+  } else {
+    SET_STRING_ELT(names, 5, mkCharLen("message_count", 13));
+    SET_VECTOR_ELT(out, 5, ScalarInteger(message_count));
+  }
+
+  if (!props) {
+    Rf_warning("Out properties cannot be recovered.\n");
+    SET_VECTOR_ELT(out, 6, R_NilValue);
+  } else {
+    SET_VECTOR_ELT(out, 6, R_properties_object(props));
+  }
+
+  Rf_setAttrib(out, R_NamesSymbol, names);
+  Rf_setAttrib(out, R_ClassSymbol, mkString("amqp_message"));
+
+  UNPROTECT(2);
+  return out;
+}
+
+SEXP amqp_bytes_to_string(const amqp_bytes_t *in)
+{
+  return ScalarString(mkCharLen(in->bytes, in->len));
+}

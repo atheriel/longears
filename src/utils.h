@@ -10,6 +10,11 @@ extern "C" {
 
 void render_amqp_error(const amqp_rpc_reply_t, connection *, char *, size_t);
 SEXP R_properties_object(amqp_basic_properties_t *props);
+SEXP R_message_object(SEXP body, int delivery_tag, int redelivered,
+                      amqp_bytes_t exchange, amqp_bytes_t routing_key,
+                      int message_count, amqp_bytes_t consumer_tag,
+                      amqp_basic_properties_t *props);
+SEXP amqp_bytes_to_string(const amqp_bytes_t *in);
 
 #ifdef __cplusplus
 }

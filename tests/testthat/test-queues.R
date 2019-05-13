@@ -39,10 +39,7 @@ testthat::test_that("Queues can be created, deleted, and receive messages", {
 
   # We should be able to get() messages from queues.
   out <- testthat::expect_silent(amqp_get(conn, tmp))
-  expected <- charToRaw("test_message")
-  # Drop attributes, for simplicity.
-  attributes(out) <- NULL
-  testthat::expect_equal(out, expected)
+  testthat::expect_equal(out$body, charToRaw("test_message"))
 
   # The existing message should prevent deletion.
   testthat::expect_error(
