@@ -98,18 +98,14 @@ SEXP R_amqp_get(SEXP ptr, SEXP queue, SEXP no_ack)
   SEXP body = PROTECT(Rf_allocVector(RAWSXP, message.body.len));
   memcpy((void *) RAW(body), message.body.bytes, message.body.len);
 
-  /* Copy properties. */
-  amqp_basic_properties_t *props = malloc(sizeof(amqp_basic_properties_t));
-  memcpy(props, (amqp_basic_properties_t *) &message.properties,
-         sizeof(amqp_basic_properties_t));
-
   SEXP out = R_message_object(body, delivery_tag, redelivered, exchange,
                               routing_key, message_count, amqp_empty_bytes,
-                              props);
+                              &message.properties);
 
   amqp_destroy_message(&message);
   amqp_bytes_free(exchange);
   amqp_bytes_free(routing_key);
+  amqp_maybe_release_buffers_on_channel(conn->conn, conn->chan.chan);
   UNPROTECT(1);
   return out;
 }

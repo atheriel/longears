@@ -322,7 +322,7 @@ SEXP R_message_object(SEXP body, int delivery_tag, int redelivered,
     Rf_warning("Out properties cannot be recovered.\n");
     SET_VECTOR_ELT(out, 6, R_NilValue);
   } else {
-    SET_VECTOR_ELT(out, 6, R_properties_object(props));
+    SET_VECTOR_ELT(out, 6, decode_properties(props));
   }
 
   Rf_setAttrib(out, R_NamesSymbol, names);
