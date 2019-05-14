@@ -2,13 +2,14 @@
 #define __LONGEARS_UTILS_H__
 
 #include <amqp.h>       /* for amqp_rpc_reply_t */
-#include "connection.h" /* for connection */
+#include "connection.h" /* for connection, channel */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void render_amqp_error(const amqp_rpc_reply_t, connection *, char *, size_t);
+void render_amqp_error(const amqp_rpc_reply_t reply, connection *conn,
+                       channel *chan, char *err_buffer, size_t buffer_len);
 SEXP R_properties_object(amqp_basic_properties_t *props);
 SEXP R_message_object(SEXP body, int delivery_tag, int redelivered,
                       amqp_bytes_t exchange, amqp_bytes_t routing_key,

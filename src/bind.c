@@ -31,7 +31,7 @@ SEXP R_amqp_bind_queue(SEXP ptr, SEXP queue, SEXP exchange, SEXP routing_key)
       // This should never happen.
       Rf_error("Unexpected error: queue bind response is NULL with a normal reply.");
     } else {
-      render_amqp_error(reply, conn, errbuff, 200);
+      render_amqp_error(reply, conn, &conn->chan, errbuff, 200);
       Rf_error("Failed to bind queue. %s", errbuff);
     }
   }
@@ -64,7 +64,7 @@ SEXP R_amqp_unbind_queue(SEXP ptr, SEXP queue, SEXP exchange, SEXP routing_key)
       // This should never happen.
       Rf_error("Unexpected error: queue unbind response is NULL with a normal reply.");
     } else {
-      render_amqp_error(reply, conn, errbuff, 200);
+      render_amqp_error(reply, conn, &conn->chan, errbuff, 200);
       Rf_error("Failed to unbind queue. %s", errbuff);
     }
   }

@@ -113,7 +113,7 @@ SEXP R_amqp_disconnect(SEXP ptr)
   amqp_rpc_reply_t reply = amqp_connection_close(conn->conn, AMQP_REPLY_SUCCESS);
   if (reply.reply_type != AMQP_RESPONSE_NORMAL) {
     char msg[120];
-    render_amqp_error(reply, conn, msg, 120);
+    render_amqp_error(reply, conn, &conn->chan, msg, 120);
     Rf_error("Failed to disconnect. %s", msg);
     return R_NilValue;
   }
@@ -163,7 +163,7 @@ int connect(connection *conn, char *buffer, size_t len)
                      conn->username, conn->password);
 
   if (reply.reply_type != AMQP_RESPONSE_NORMAL) {
-    render_amqp_error(reply, conn, buffer, len);
+    render_amqp_error(reply, conn, &conn->chan, buffer, len);
     // The connection is likely closed already, but try anyway.
     amqp_connection_close(conn->conn, AMQP_REPLY_SUCCESS);
     return -1;
@@ -209,7 +209,7 @@ int ensure_valid_channel(connection *conn, channel *chan, char *buffer, size_t l
   amqp_channel_open(conn->conn, chan->chan);
   amqp_rpc_reply_t reply = amqp_get_rpc_reply(conn->conn);
   if (reply.reply_type != AMQP_RESPONSE_NORMAL) {
-    render_amqp_error(reply, conn, buffer, len);
+    render_amqp_error(reply, conn, &conn->chan, buffer, len);
     return -1;
   }
 

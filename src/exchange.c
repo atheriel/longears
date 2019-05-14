@@ -35,7 +35,7 @@ SEXP R_amqp_declare_exchange(SEXP ptr, SEXP exchange, SEXP type, SEXP passive,
       // This should never happen.
       Rf_error("Unexpected error: exchange declare response is NULL with a normal reply.");
     } else {
-      render_amqp_error(reply, conn, errbuff, 200);
+      render_amqp_error(reply, conn, &conn->chan, errbuff, 200);
       Rf_error("Failed to declare exchange. %s", errbuff);
     }
   }
@@ -64,7 +64,7 @@ SEXP R_amqp_delete_exchange(SEXP ptr, SEXP exchange, SEXP if_unused)
       // This should never happen.
       Rf_error("Unexpected error: exchange delete response is NULL with a normal reply.");
     } else {
-      render_amqp_error(reply, conn, errbuff, 200);
+      render_amqp_error(reply, conn, &conn->chan, errbuff, 200);
       Rf_error("Failed to delete exchange. %s", errbuff);
     }
   }

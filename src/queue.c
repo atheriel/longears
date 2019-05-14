@@ -34,7 +34,7 @@ SEXP R_amqp_declare_queue(SEXP ptr, SEXP queue, SEXP passive, SEXP durable,
       Rf_error("Unexpected error: queue declare response is NULL with a normal reply.");
       return R_NilValue;
     } else {
-      render_amqp_error(reply, conn, errbuff, 200);
+      render_amqp_error(reply, conn, &conn->chan, errbuff, 200);
       Rf_error("Failed to declare queue. %s", errbuff);
       return R_NilValue;
     }
@@ -81,7 +81,7 @@ SEXP R_amqp_delete_queue(SEXP ptr, SEXP queue, SEXP if_unused, SEXP if_empty)
       Rf_error("Unexpected error: queue delete response is NULL with a normal reply.");
       return R_NilValue;
     } else {
-      render_amqp_error(reply, conn, errbuff, 200);
+      render_amqp_error(reply, conn, &conn->chan, errbuff, 200);
       Rf_error("Failed to delete queue. %s", errbuff);
       return R_NilValue;
     }

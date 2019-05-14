@@ -66,7 +66,7 @@ SEXP R_amqp_create_consumer(SEXP ptr, SEXP queue, SEXP tag, SEXP no_local,
       // This should never happen.
       Rf_error("Unexpected error: consume response is NULL with a normal reply.");
     } else {
-      render_amqp_error(reply, conn, errbuff, 200);
+      render_amqp_error(reply, con->conn, &con->chan, errbuff, 200);
       Rf_error("Failed to start a queue consumer. %s", errbuff);
     }
     return R_NilValue;
@@ -84,8 +84,10 @@ SEXP R_amqp_create_consumer(SEXP ptr, SEXP queue, SEXP tag, SEXP no_local,
 SEXP R_amqp_listen(SEXP ptr, SEXP fun, SEXP rho, SEXP timeout)
 {
   connection *conn = (connection *) R_ExternalPtrAddr(ptr);
-  if (!conn || !conn->is_connected) {
-    Rf_error("Connection is closed or invalid.");
+  char errbuff[200];
+  if (ensure_valid_channel(conn, &conn->chan, errbuff, 200) < 0) {
+    Rf_error("Failed to consume messages. %s", errbuff);
+    return R_NilValue;
   }
 
   struct timeval tv;
@@ -154,7 +156,7 @@ SEXP R_amqp_destroy_consumer(SEXP ptr)
       // This should never happen.
       Rf_error("Unexpected error: cancel response is NULL with a normal reply.");
     } else {
-      render_amqp_error(reply, con->conn, errbuff, 200);
+      render_amqp_error(reply, con->conn, &con->chan, errbuff, 200);
       Rf_error("Failed to cancel the consumer. %s", errbuff);
     }
     return R_NilValue;
@@ -164,7 +166,7 @@ SEXP R_amqp_destroy_consumer(SEXP ptr)
   reply = amqp_channel_close(con->conn->conn, con->chan.chan,
                              AMQP_REPLY_SUCCESS);
   if (reply.reply_type != AMQP_RESPONSE_NORMAL) {
-    render_amqp_error(reply, con->conn, errbuff, 200);
+    render_amqp_error(reply, con->conn, &con->chan, errbuff, 200);
     Rf_error("Failed to close the consumer's channel. %s", errbuff);
   }
 
