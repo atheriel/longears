@@ -76,51 +76,42 @@ SEXP R_amqp_get(SEXP ptr, SEXP queue, SEXP no_ack)
     return allocVector(STRSXP, 0); // Equivalent to character(0).
   }
 
-  amqp_frame_t frame;
-  int result = amqp_simple_wait_frame(conn->conn, &frame);
-  if (result != AMQP_STATUS_OK) {
-    Rf_error("Failed to read frame. Error: %d.", result);
-    return R_NilValue;
-  }
-  if (frame.frame_type != AMQP_FRAME_HEADER) {
-    Rf_error("Failed to read frame. Unexpected header type: %d.",
-             frame.frame_type);
-    return R_NilValue;
+  /* Read basic_get fields before they are reclaimed. */
+  amqp_basic_get_ok_t *ok = (amqp_basic_get_ok_t *) reply.reply.decoded;
+  int delivery_tag = ok->delivery_tag;
+  int redelivered = ok->redelivered;
+  amqp_bytes_t exchange = amqp_bytes_malloc_dup(ok->exchange);
+  amqp_bytes_t routing_key = amqp_bytes_malloc_dup(ok->routing_key);
+  int message_count = ok->message_count;
+
+  amqp_message_t message;
+  reply = amqp_read_message(conn->conn, conn->chan.chan, &message, 0);
+  if (reply.reply_type != AMQP_RESPONSE_NORMAL) {
+    render_amqp_error(reply, conn, errbuff, 200);
+    amqp_destroy_message(&message);
+    Rf_error("Failed to read message. %s", errbuff);
   }
 
   // It's possible the message body is not a valid string -- e.g. it's gzipped
   // or base64 encoded. So we return a raw vector.
 
-  size_t body_len, body_remaining;
-  body_len = body_remaining = frame.payload.properties.body_size;
-  SEXP out = PROTECT(Rf_allocVector(RAWSXP, body_len));
-  void *body = (void *) RAW(out); // These are raw bytes to R anyway.
-  while (body_remaining) {
-    result = amqp_simple_wait_frame(conn->conn, &frame);
-    if (result != AMQP_STATUS_OK) {
-      Rf_error("Failed to wait for frame. Error: %d.", result);
-      return R_NilValue;
-    }
-    memcpy(body, frame.payload.body_fragment.bytes,
-           frame.payload.body_fragment.len);
-    body = body + frame.payload.body_fragment.len;
-    body_remaining -= frame.payload.body_fragment.len;
-  }
-
-  /* Use basic_get fields. */
-  amqp_basic_get_ok_t *ok = (amqp_basic_get_ok_t *) reply.reply.decoded;
+  SEXP body = PROTECT(Rf_allocVector(RAWSXP, message.body.len));
+  memcpy((void *) RAW(body), message.body.bytes, message.body.len);
 
   /* Copy properties. */
   amqp_basic_properties_t *props = malloc(sizeof(amqp_basic_properties_t));
-  memcpy(props, (amqp_basic_properties_t *) frame.payload.properties.decoded,
+  memcpy(props, (amqp_basic_properties_t *) &message.properties,
          sizeof(amqp_basic_properties_t));
 
-  SEXP message = R_message_object(out, ok->delivery_tag, ok->redelivered,
-                                  ok->exchange, ok->routing_key,
-                                  ok->message_count, amqp_empty_bytes, props);
+  SEXP out = R_message_object(body, delivery_tag, redelivered, exchange,
+                              routing_key, message_count, amqp_empty_bytes,
+                              props);
 
+  amqp_destroy_message(&message);
+  amqp_bytes_free(exchange);
+  amqp_bytes_free(routing_key);
   UNPROTECT(1);
-  return message;
+  return out;
 }
 
 SEXP R_amqp_ack(SEXP ptr, SEXP delivery_tag, SEXP multiple)
