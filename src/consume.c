@@ -94,7 +94,8 @@ SEXP R_amqp_listen(SEXP ptr, SEXP fun, SEXP rho, SEXP timeout)
   tv.tv_sec = 1;
   tv.tv_usec = 0;
 
-  SEXP message, body;
+  SEXP message, body, res;
+  Rboolean finished = FALSE;
   SEXP R_fcall = PROTECT(allocList(2));
   SET_TYPEOF(R_fcall, LANGSXP);
   SETCAR(R_fcall, fun);
@@ -102,7 +103,7 @@ SEXP R_amqp_listen(SEXP ptr, SEXP fun, SEXP rho, SEXP timeout)
   amqp_rpc_reply_t reply;
   amqp_envelope_t env;
 
-  for (;;) {
+  while (!finished) {
 
     amqp_maybe_release_buffers(conn->conn);
     reply = amqp_consume_message(conn->conn, &env, &tv, 0);
@@ -122,14 +123,19 @@ SEXP R_amqp_listen(SEXP ptr, SEXP fun, SEXP rho, SEXP timeout)
       amqp_destroy_envelope(&env);
 
       SETCADR(R_fcall, message);
-      Rf_eval(R_fcall, rho);
+      res = PROTECT(Rf_eval(R_fcall, rho));
+      if (!isLogical(res)) {
+        Rf_error("'fun' must return TRUE or FALSE");
+      }
+      finished = asLogical(res);
 
-      UNPROTECT(2);
+      UNPROTECT(3);
     }
 
     R_CheckUserInterrupt(); // Escape hatch.
   }
 
+  UNPROTECT(1);
   return R_NilValue;
 }
 
