@@ -48,7 +48,7 @@ testthat::test_that("Queues can be created, deleted, and receive messages", {
   )
 
   # Unless use if_empty = FALSE (the default).
-  testthat::expect_equal(amqp_delete_queue(conn, tmp), 2)
+  testthat::expect_equal(amqp_delete_queue(conn, tmp), 1)
 
   amqp_disconnect(conn)
 })

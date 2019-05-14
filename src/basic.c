@@ -64,7 +64,6 @@ SEXP R_amqp_get(SEXP ptr, SEXP queue, SEXP no_ack)
 
   /* Get message. */
 
-  // TODO: Add the ability to acknowledge the message.
   amqp_rpc_reply_t reply = amqp_basic_get(conn->conn, conn->chan.chan,
                                           amqp_cstring_bytes(queue_str),
                                           has_no_ack);
@@ -98,15 +97,22 @@ SEXP R_amqp_get(SEXP ptr, SEXP queue, SEXP no_ack)
   SEXP body = PROTECT(Rf_allocVector(RAWSXP, message.body.len));
   memcpy((void *) RAW(body), message.body.bytes, message.body.len);
 
-  SEXP out = R_message_object(body, delivery_tag, redelivered, exchange,
-                              routing_key, message_count, amqp_empty_bytes,
-                              &message.properties);
+  SEXP out = PROTECT(R_message_object(body, delivery_tag, redelivered, exchange,
+                                      routing_key, message_count,
+                                      amqp_empty_bytes, &message.properties));
+
+  if (!has_no_ack) {
+    int ack = amqp_basic_ack(conn->conn, conn->chan.chan, delivery_tag, 0);
+    if (ack != AMQP_STATUS_OK) {
+      Rf_warning("Failed to acknowledge message. %s", amqp_error_string2(ack));
+    }
+  }
 
   amqp_destroy_message(&message);
   amqp_bytes_free(exchange);
   amqp_bytes_free(routing_key);
   amqp_maybe_release_buffers_on_channel(conn->conn, conn->chan.chan);
-  UNPROTECT(1);
+  UNPROTECT(2);
   return out;
 }
 
