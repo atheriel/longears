@@ -34,17 +34,21 @@ testthat::test_that("Exchanges can be created and deleted", {
 testthat::test_that("Queues can be bound to exchanges", {
   conn <- amqp_connect()
 
-  amqp_declare_exchange(conn, "test.exchange")
   tmp <- amqp_declare_tmp_queue(conn)
-
-  testthat::expect_silent(amqp_bind_queue(conn, tmp, "test.exchange"))
-  testthat::expect_silent(amqp_unbind_queue(conn, tmp, "test.exchange"))
 
   # Bind to a non-existant exchange.
   testthat::expect_error(amqp_bind_queue(conn, tmp, "doesnotexist"),
                          regexp = "NOT_FOUND")
 
-  amqp_delete_exchange(conn, "test.exchange")
+  amqp_declare_exchange(conn, "test.exchange", auto_delete = TRUE)
+
+  testthat::expect_silent(amqp_bind_queue(conn, tmp, "test.exchange"))
+
+  # The (auto_delete) exchange should be deleted when the queue is unbound.
+  testthat::expect_silent(amqp_unbind_queue(conn, tmp, "test.exchange"))
+  testthat::expect_error(amqp_bind_queue(conn, tmp, "test.exchange"),
+                         regexp = "NOT_FOUND")
+
   amqp_delete_queue(conn, tmp, if_empty = TRUE)
   amqp_disconnect(conn)
 })
