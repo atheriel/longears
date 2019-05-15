@@ -74,6 +74,16 @@ print.amqp_message <- function(x, ...) {
   cat(header, paste0(x$body, collapse = " "), sep = "\n")
 }
 
+#' @export
+as.data.frame.amqp_message <- function(x, row.names = NULL, optional = FALSE,
+                                       ...) {
+  out <- c(x[setdiff(names(x), c("body", "properties"))], as.list(x$properties))
+  # Put the raw body vector is in a list column.
+  out$body <- list(x$body)
+  # Note: We construct the object directly here for performance.
+  structure(out, class = c("tbl_df", "tbl", "data.frame"), row.names = 1L)
+}
+
 #' Acknowledge or Reject Incoming Messages
 #'
 #' Notify the server that a message (or a series of messages) have been received
