@@ -284,5 +284,7 @@ SEXP R_amqp_encode_properties(SEXP list)
 SEXP R_amqp_decode_properties(SEXP ptr)
 {
   amqp_basic_properties_t *props = (amqp_basic_properties_t *) R_ExternalPtrAddr(ptr);
+  if (!props)
+    Rf_error("Properties object is no longer valid.");
   return decode_properties(props);
 }
