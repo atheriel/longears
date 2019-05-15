@@ -85,8 +85,7 @@ print.amqp_message <- function(x, ...) {
 #' @param multiple When \code{TRUE}, (n)ack messages up-to-and-including this
 #'   \code{delivery_tag}. By default, we only (n)ack a single message.
 #'
-#' @name amqp_acks
-#' @export
+#' @noRd
 amqp_ack <- function(conn, delivery_tag, multiple = FALSE) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
@@ -97,8 +96,7 @@ amqp_ack <- function(conn, delivery_tag, multiple = FALSE) {
 #' @param requeue When \code{TRUE}, ask the server to requeue the message.
 #'   Otherwise, messages are discarded or dead-lettered.
 #'
-#' @name amqp_acks
-#' @export
+#' @noRd
 amqp_nack <- function(conn, delivery_tag, multiple = FALSE, requeue = FALSE) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
