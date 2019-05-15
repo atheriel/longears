@@ -88,27 +88,24 @@ SEXP R_amqp_get(SEXP ptr, SEXP queue, SEXP no_ack)
     return R_NilValue;
   }
 
+  // It's possible the message body is not a valid string -- e.g. it's gzipped
+  // or base64 encoded. So we return a raw vector.
+
   size_t body_len, body_remaining;
   body_len = body_remaining = frame.payload.properties.body_size;
-  char *body = calloc(1, body_remaining); // NOTE: Assuming this works here.
+  SEXP out = PROTECT(Rf_allocVector(RAWSXP, body_len));
+  void *body = (void *) RAW(out); // These are raw bytes to R anyway.
   while (body_remaining) {
     result = amqp_simple_wait_frame(conn->conn, &frame);
     if (result != AMQP_STATUS_OK) {
       Rf_error("Failed to wait for frame. Error: %d.", result);
-      free(body);
       return R_NilValue;
     }
-    strncpy(body, (const char *) frame.payload.body_fragment.bytes,
-            frame.payload.body_fragment.len);
+    memcpy(body, frame.payload.body_fragment.bytes,
+           frame.payload.body_fragment.len);
+    body = body + frame.payload.body_fragment.len;
     body_remaining -= frame.payload.body_fragment.len;
   }
-
-  // TODO: It's possible the message body is not a valid string -- e.g. it's
-  // gzipped or base64 encoded. We could return a raw vector instead, and then
-  // perhaps use the content-type to guess whether to convert it at the R level.
-
-  SEXP out = PROTECT(ScalarString(mkCharLen(body, body_len)));
-  free(body);
 
   // TODO: Decide if it makes more sense to return a list instead of using
   // attributes for properties.

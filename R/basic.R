@@ -75,7 +75,7 @@ print.amqp_message <- function(x, ...) {
     tools::toTitleCase(names(headers)), ":", buffer, headers,
     sep = "", collapse = "\n"
   )
-  cat(header, x, sep = "\n")
+  cat(header, paste0(x, collapse = " "), sep = "\n")
 }
 
 #' Acknowledge or Reject Incoming Messages
