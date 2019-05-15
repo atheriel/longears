@@ -50,19 +50,15 @@ amqp_get <- function(conn, queue, no_ack = FALSE) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
-  out <- .Call(R_amqp_get, conn$ptr, queue, no_ack)
-  class(out) <- "amqp_message"
-  out
+  .Call(R_amqp_get, conn$ptr, queue, no_ack)
 }
 
 #' @export
 print.amqp_message <- function(x, ...) {
   # Turn all properties into HTTP-style "headers".
-  headers <- attributes(x)
-  headers <- headers[setdiff(names(headers), c("properties", "class"))]
-  props <- attr(x, "properties")
-  if (!is.null(props)) {
-    headers <- c(headers, as.list(props))
+  headers <- x[setdiff(names(x), c("body", "properties", "class"))]
+  if (!is.null(x$properties)) {
+    headers <- c(headers, as.list(x$properties))
   }
   names(headers) <- gsub("_", " ", names(headers), fixed = TRUE)
 
@@ -75,7 +71,17 @@ print.amqp_message <- function(x, ...) {
     tools::toTitleCase(names(headers)), ":", buffer, headers,
     sep = "", collapse = "\n"
   )
-  cat(header, x, sep = "\n")
+  cat(header, paste0(x$body, collapse = " "), sep = "\n")
+}
+
+#' @export
+as.data.frame.amqp_message <- function(x, row.names = NULL, optional = FALSE,
+                                       ...) {
+  out <- c(x[setdiff(names(x), c("body", "properties"))], as.list(x$properties))
+  # Put the raw body vector is in a list column.
+  out$body <- list(x$body)
+  # Note: We construct the object directly here for performance.
+  structure(out, class = c("tbl_df", "tbl", "data.frame"), row.names = 1L)
 }
 
 #' Acknowledge or Reject Incoming Messages
@@ -89,8 +95,7 @@ print.amqp_message <- function(x, ...) {
 #' @param multiple When \code{TRUE}, (n)ack messages up-to-and-including this
 #'   \code{delivery_tag}. By default, we only (n)ack a single message.
 #'
-#' @name amqp_acks
-#' @export
+#' @noRd
 amqp_ack <- function(conn, delivery_tag, multiple = FALSE) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
@@ -101,8 +106,7 @@ amqp_ack <- function(conn, delivery_tag, multiple = FALSE) {
 #' @param requeue When \code{TRUE}, ask the server to requeue the message.
 #'   Otherwise, messages are discarded or dead-lettered.
 #'
-#' @name amqp_acks
-#' @export
+#' @noRd
 amqp_nack <- function(conn, delivery_tag, multiple = FALSE, requeue = FALSE) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")

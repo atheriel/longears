@@ -64,7 +64,6 @@ SEXP R_amqp_get(SEXP ptr, SEXP queue, SEXP no_ack)
 
   /* Get message. */
 
-  // TODO: Add the ability to acknowledge the message.
   amqp_rpc_reply_t reply = amqp_basic_get(conn->conn, conn->chan.chan,
                                           amqp_cstring_bytes(queue_str),
                                           has_no_ack);
@@ -76,70 +75,44 @@ SEXP R_amqp_get(SEXP ptr, SEXP queue, SEXP no_ack)
     return allocVector(STRSXP, 0); // Equivalent to character(0).
   }
 
-  amqp_frame_t frame;
-  int result = amqp_simple_wait_frame(conn->conn, &frame);
-  if (result != AMQP_STATUS_OK) {
-    Rf_error("Failed to read frame. Error: %d.", result);
-    return R_NilValue;
-  }
-  if (frame.frame_type != AMQP_FRAME_HEADER) {
-    Rf_error("Failed to read frame. Unexpected header type: %d.",
-             frame.frame_type);
-    return R_NilValue;
-  }
-
-  size_t body_len, body_remaining;
-  body_len = body_remaining = frame.payload.properties.body_size;
-  char *body = calloc(1, body_remaining); // NOTE: Assuming this works here.
-  while (body_remaining) {
-    result = amqp_simple_wait_frame(conn->conn, &frame);
-    if (result != AMQP_STATUS_OK) {
-      Rf_error("Failed to wait for frame. Error: %d.", result);
-      free(body);
-      return R_NilValue;
-    }
-    strncpy(body, (const char *) frame.payload.body_fragment.bytes,
-            frame.payload.body_fragment.len);
-    body_remaining -= frame.payload.body_fragment.len;
-  }
-
-  // TODO: It's possible the message body is not a valid string -- e.g. it's
-  // gzipped or base64 encoded. We could return a raw vector instead, and then
-  // perhaps use the content-type to guess whether to convert it at the R level.
-
-  SEXP out = PROTECT(ScalarString(mkCharLen(body, body_len)));
-  free(body);
-
-  // TODO: Decide if it makes more sense to return a list instead of using
-  // attributes for properties.
-
-  /* Add basic_get fields. */
-
-  SEXP exchange, routing_key;
+  /* Read basic_get fields before they are reclaimed. */
   amqp_basic_get_ok_t *ok = (amqp_basic_get_ok_t *) reply.reply.decoded;
-  exchange = PROTECT(mkCharLen(ok->exchange.bytes, ok->exchange.len));
-  routing_key = PROTECT(mkCharLen(ok->routing_key.bytes, ok->routing_key.len));
-  setAttrib(out, install("delivery_tag"), PROTECT(ScalarInteger(ok->delivery_tag)));
-  setAttrib(out, install("redelivered"), PROTECT(ScalarLogical(ok->redelivered)));
-  setAttrib(out, install("exchange"), PROTECT(ScalarString(exchange)));
-  setAttrib(out, install("routing_key"), PROTECT(ScalarString(routing_key)));
-  setAttrib(out, install("message_count"), PROTECT(ScalarInteger(ok->message_count)));
+  int delivery_tag = ok->delivery_tag;
+  int redelivered = ok->redelivered;
+  amqp_bytes_t exchange = amqp_bytes_malloc_dup(ok->exchange);
+  amqp_bytes_t routing_key = amqp_bytes_malloc_dup(ok->routing_key);
+  int message_count = ok->message_count;
 
-  /* Copy properties. */
-
-  amqp_basic_properties_t *props = malloc(sizeof(amqp_basic_properties_t));
-  memcpy(props, (amqp_basic_properties_t *) frame.payload.properties.decoded,
-         sizeof(amqp_basic_properties_t));
-
-  if (!props) {
-    Rf_warning("Message properties cannot be recovered.\n");
-    setAttrib(out, install("properties"), R_NilValue);
-  } else {
-    setAttrib(out, install("properties"), PROTECT(R_properties_object(props)));
-    UNPROTECT(1);
+  amqp_message_t message;
+  reply = amqp_read_message(conn->conn, conn->chan.chan, &message, 0);
+  if (reply.reply_type != AMQP_RESPONSE_NORMAL) {
+    render_amqp_error(reply, conn, errbuff, 200);
+    amqp_destroy_message(&message);
+    Rf_error("Failed to read message. %s", errbuff);
   }
 
-  UNPROTECT(8);
+  // It's possible the message body is not a valid string -- e.g. it's gzipped
+  // or base64 encoded. So we return a raw vector.
+
+  SEXP body = PROTECT(Rf_allocVector(RAWSXP, message.body.len));
+  memcpy((void *) RAW(body), message.body.bytes, message.body.len);
+
+  SEXP out = PROTECT(R_message_object(body, delivery_tag, redelivered, exchange,
+                                      routing_key, message_count,
+                                      amqp_empty_bytes, &message.properties));
+
+  if (!has_no_ack) {
+    int ack = amqp_basic_ack(conn->conn, conn->chan.chan, delivery_tag, 0);
+    if (ack != AMQP_STATUS_OK) {
+      Rf_warning("Failed to acknowledge message. %s", amqp_error_string2(ack));
+    }
+  }
+
+  amqp_destroy_message(&message);
+  amqp_bytes_free(exchange);
+  amqp_bytes_free(routing_key);
+  amqp_maybe_release_buffers_on_channel(conn->conn, conn->chan.chan);
+  UNPROTECT(2);
   return out;
 }
 
