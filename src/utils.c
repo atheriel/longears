@@ -15,6 +15,11 @@ void render_amqp_error(const amqp_rpc_reply_t reply, connection *conn,
     snprintf(buffer, len, "RPC reply is missing.");
     break;
 
+  case AMQP_RESPONSE_NORMAL:
+    // This should never happen.
+    snprintf(buffer, len, "Response is NULL with a normal reply.");
+    break;
+
   case AMQP_RESPONSE_LIBRARY_EXCEPTION:
     snprintf(buffer, len, "Library error: %s",
              amqp_error_string2(reply.library_error));

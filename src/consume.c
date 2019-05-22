@@ -62,14 +62,8 @@ SEXP R_amqp_create_consumer(SEXP ptr, SEXP queue, SEXP tag, SEXP no_local,
   if (consume_ok == NULL) {
     free(con);
     amqp_rpc_reply_t reply = amqp_get_rpc_reply(conn->conn);
-    if (reply.reply_type == AMQP_RESPONSE_NORMAL) {
-      // This should never happen.
-      Rf_error("Unexpected error: consume response is NULL with a normal reply.");
-    } else {
-      render_amqp_error(reply, con->conn, &con->chan, errbuff, 200);
-      Rf_error("Failed to start a queue consumer. %s", errbuff);
-    }
-    return R_NilValue;
+    render_amqp_error(reply, con->conn, &con->chan, errbuff, 200);
+    Rf_error("Failed to start a queue consumer. %s", errbuff);
   }
 
   con->tag = amqp_bytes_malloc_dup(consume_ok->consumer_tag);
@@ -158,14 +152,8 @@ SEXP R_amqp_destroy_consumer(SEXP ptr)
 
   if (cancel_ok == NULL) {
     reply = amqp_get_rpc_reply(con->conn->conn);
-    if (reply.reply_type == AMQP_RESPONSE_NORMAL) {
-      // This should never happen.
-      Rf_error("Unexpected error: cancel response is NULL with a normal reply.");
-    } else {
-      render_amqp_error(reply, con->conn, &con->chan, errbuff, 200);
-      Rf_error("Failed to cancel the consumer. %s", errbuff);
-    }
-    return R_NilValue;
+    render_amqp_error(reply, con->conn, &con->chan, errbuff, 200);
+    Rf_error("Failed to cancel the consumer. %s", errbuff);
   }
 
   con->chan.is_open = 0;
