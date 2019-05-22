@@ -86,3 +86,6 @@ amqp_listen <- function(conn, timeout = 10L) {
   }
   invisible(.Call(R_amqp_listen, conn$ptr, timeout))
 }
+
+#' @import later
+NULL
