@@ -14,6 +14,8 @@ typedef struct consumer_ {
   connection *conn;
   channel chan;
   amqp_bytes_t tag;
+  SEXP fun;
+  SEXP rho;
   struct consumer_ *prev;
   struct consumer_ *next;
 } consumer;
@@ -37,14 +39,16 @@ static void R_finalize_consumer(SEXP ptr)
       con->conn->consumers = con->next;
     }
     amqp_bytes_free(con->tag);
+    R_ReleaseObject(con->fun);
+    R_ReleaseObject(con->rho);
     free(con);
     con = NULL;
   }
   R_ClearExternalPtr(ptr);
 }
 
-SEXP R_amqp_create_consumer(SEXP ptr, SEXP queue, SEXP tag, SEXP no_ack,
-                            SEXP exclusive)
+SEXP R_amqp_create_consumer(SEXP ptr, SEXP queue, SEXP tag, SEXP fun, SEXP rho,
+                            SEXP no_ack, SEXP exclusive)
 {
   connection *conn = (connection *) R_ExternalPtrAddr(ptr);
   consumer *con = malloc(sizeof(consumer));
@@ -52,6 +56,8 @@ SEXP R_amqp_create_consumer(SEXP ptr, SEXP queue, SEXP tag, SEXP no_ack,
   con->chan.chan = 0;
   con->chan.is_open = 0;
   con->tag = amqp_empty_bytes;
+  con->fun = fun;
+  con->rho = rho;
   con->prev = NULL;
   con->next = NULL;
 
@@ -97,11 +103,14 @@ SEXP R_amqp_create_consumer(SEXP ptr, SEXP queue, SEXP tag, SEXP no_ack,
     con->prev = elt;
   }
 
+  R_PreserveObject(fun);
+  R_PreserveObject(rho);
+
   UNPROTECT(1);
   return out;
 }
 
-SEXP R_amqp_listen(SEXP ptr, SEXP fun, SEXP rho, SEXP timeout)
+SEXP R_amqp_listen(SEXP ptr, SEXP timeout)
 {
   connection *conn = (connection *) R_ExternalPtrAddr(ptr);
   char errbuff[200];
@@ -122,7 +131,6 @@ SEXP R_amqp_listen(SEXP ptr, SEXP fun, SEXP rho, SEXP timeout)
   Rboolean finished = FALSE;
   SEXP R_fcall = PROTECT(allocList(2));
   SET_TYPEOF(R_fcall, LANGSXP);
-  SETCAR(R_fcall, fun);
 
   amqp_rpc_reply_t reply;
   amqp_envelope_t env;
@@ -159,8 +167,9 @@ SEXP R_amqp_listen(SEXP ptr, SEXP fun, SEXP rho, SEXP timeout)
                                          &env.message.properties));
       amqp_destroy_envelope(&env);
 
+      SETCAR(R_fcall, elt->fun);
       SETCADR(R_fcall, message);
-      res = PROTECT(Rf_eval(R_fcall, rho));
+      res = PROTECT(Rf_eval(R_fcall, elt->rho));
       if (!isLogical(res)) {
         Rf_error("'fun' must return TRUE or FALSE");
       }
