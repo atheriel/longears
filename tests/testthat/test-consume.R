@@ -82,3 +82,53 @@ testthat::test_that("Consume works as expected", {
 
   amqp_disconnect(conn)
 })
+
+testthat::test_that("Consume later works as expected", {
+  conn <- amqp_connect()
+
+  amqp_declare_exchange(
+    conn, "test.exchange", type = "direct", auto_delete = TRUE
+  )
+  q1 <- amqp_declare_tmp_queue(conn, exclusive = FALSE)
+  amqp_bind_queue(conn, q1, "test.exchange", routing_key = "#")
+  q2 <- amqp_declare_tmp_queue(conn, exclusive = FALSE)
+  amqp_bind_queue(conn, q2, "test.exchange", routing_key = "#")
+
+  messages <- data.frame()
+  last_tag <- NA
+
+  # Create two consumers.
+
+  c1 <- testthat::expect_silent(
+    amqp_consume_later(conn, q1, function(msg) {
+      messages <<- rbind(messages, as.data.frame(msg))
+    })
+  )
+
+  c2 <- testthat::expect_silent(
+    amqp_consume_later(conn, q2, function(msg) {
+      last_tag <<- msg$delivery_tag
+    })
+  )
+
+  amqp_publish(
+    conn, body = "Hello, world", exchange = "test.exchange", routing_key = "#"
+  )
+  testthat::expect_true(later::run_now(0.5, FALSE))
+  testthat::expect_true(later::run_now(0.5, FALSE))
+  testthat::expect_true(later::loop_empty())
+  amqp_publish(
+    conn, body = "Hello, again", exchange = "test.exchange", routing_key = "#"
+  )
+  testthat::expect_true(later::run_now(0.5, FALSE))
+  testthat::expect_true(later::run_now(0.5, FALSE))
+  testthat::expect_true(later::loop_empty())
+
+  testthat::expect_equal(nrow(messages), 2)
+  testthat::expect_false(is.na(last_tag))
+
+  testthat::expect_silent(amqp_cancel_consumer(c1))
+  testthat::expect_error(amqp_cancel_consumer(c1), regexp = "destroyed")
+  testthat::expect_silent(amqp_cancel_consumer(c2))
+  amqp_disconnect(conn)
+})
