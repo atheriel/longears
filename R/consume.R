@@ -70,10 +70,13 @@ amqp_consume <- function(conn, queue, fun, tag = "", no_ack = FALSE,
 #' @rdname amqp_consume
 #' @export
 amqp_cancel_consumer <- function(consumer) {
-  if (!inherits(consumer, "amqp_consumer")) {
+  if (inherits(consumer, "amqp_consumer")) {
+    invisible(.Call(R_amqp_destroy_consumer, consumer))
+  } else if (inherits(consumer, "amqp_bg_consumer")) {
+    invisible(.Call(R_amqp_destroy_bg_consumer, consumer$ptr))
+  } else {
     stop("`consumer` is not an amqp_consumer object")
   }
-  invisible(.Call(R_amqp_destroy_consumer, consumer))
 }
 
 #' @param timeout Maximum number of seconds to wait for messages. Capped at 60.
@@ -87,5 +90,15 @@ amqp_listen <- function(conn, timeout = 10L) {
   invisible(.Call(R_amqp_listen, conn$ptr, timeout))
 }
 
+#' @export
 #' @import later
-NULL
+amqp_consume_later <- function(conn, queue, fun, consumer = "",
+                               no_ack = FALSE, exclusive = FALSE) {
+  if (!inherits(conn, "amqp_connection")) {
+    stop("`conn` is not an amqp_connection object")
+  }
+  .Call(
+    R_amqp_consume_later, conn$ptr, queue, fun, new.env(), consumer, no_ack,
+    exclusive
+  )
+}
