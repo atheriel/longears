@@ -50,7 +50,8 @@ callback function to the queue that is run once for each message received
 connection.
 
 Because R is single-threaded, you must call \code{amqp_listen()} to actually
-receive and process messages.
+receive and process messages. As an alternative, you can consume messages on
+a background thread by using \code{\link{amqp_consume_later}}.
 }
 \details{
 Unless \code{no_ack} is \code{TRUE}, messages are acknowledged automatically
@@ -76,5 +77,6 @@ amqp_disconnect(conn)
 
 }
 \seealso{
-\code{\link{amqp_get}} to get messages individually.
+\code{\link{amqp_get}} to get messages individually or
+\code{\link{amqp_consume_later}} to consume messages in a background thread.
 }

@@ -8,7 +8,8 @@
 #' connection.
 #'
 #' Because R is single-threaded, you must call \code{amqp_listen()} to actually
-#' receive and process messages.
+#' receive and process messages. As an alternative, you can consume messages on
+#' a background thread by using \code{\link{amqp_consume_later}}.
 #'
 #' @inheritParams amqp_get
 #' @param fun A function taking a single parameter, the message received. This
@@ -51,7 +52,11 @@
 #' amqp_disconnect(conn)
 #' }
 #'
-#' @seealso \code{\link{amqp_get}} to get messages individually.
+#' @seealso
+#'
+#' \code{\link{amqp_get}} to get messages individually or
+#' \code{\link{amqp_consume_later}} to consume messages in a background thread.
+#'
 #' @export
 amqp_consume <- function(conn, queue, fun, tag = "", no_ack = FALSE,
                          exclusive = FALSE) {
@@ -90,15 +95,41 @@ amqp_listen <- function(conn, timeout = 10L) {
   invisible(.Call(R_amqp_listen, conn$ptr, timeout))
 }
 
+#' Consume Messages from a Queue, Later
+#'
+#' @description
+#'
+#' Consume messages "asynchronously" by using the machinery of the
+#' \strong{\link[later]{later}} package. This function is primarily for use
+#' inside applications (particularly Shiny applications) that already make use
+#' of \strong{later} to manage events.
+#'
+#' @inheritParams amqp_consume
+#' @param conn An object returned by \code{\link{amqp_connect}}, but see
+#'   \strong{Details}.
+#' @param fun A function taking a single parameter, the message received. This
+#'   function is executed by \code{\link[later]{later}} whenever messages are
+#'   received on the queue.
+#'
+#' @details
+#'
+#' Because the \code{amqp_connection} object is not thread-safe, this
+#' function actually clones the connection properties and opens a new one for
+#' the consumer. This may lead to some surprising results, including the fact
+#' that consumers created with this interface will not stop running if the
+#' original connection is closed. Consumers can only be stopped by using
+#' \code{\link{amqp_cancel_consumer}}.
+#'
+#' @seealso \code{\link{amqp_consume}} to consume messages in the main thread.
 #' @export
 #' @import later
-amqp_consume_later <- function(conn, queue, fun, consumer = "",
-                               no_ack = FALSE, exclusive = FALSE) {
+amqp_consume_later <- function(conn, queue, fun, tag = "", no_ack = FALSE,
+                               exclusive = FALSE) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
   .Call(
-    R_amqp_consume_later, conn$ptr, queue, fun, new.env(), consumer, no_ack,
+    R_amqp_consume_later, conn$ptr, queue, fun, new.env(), tag, no_ack,
     exclusive
   )
 }
