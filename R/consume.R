@@ -1,13 +1,10 @@
 #' @export
-amqp_create_consumer <- function(conn, queue, consumer = "", no_local = FALSE,
-                                 no_ack = FALSE, exclusive = FALSE) {
+amqp_create_consumer <- function(conn, queue, consumer = "", no_ack = FALSE,
+                                 exclusive = FALSE) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
-  .Call(
-    R_amqp_create_consumer, conn$ptr, queue, consumer, no_local, no_ack,
-    exclusive
-  )
+  .Call(R_amqp_create_consumer, conn$ptr, queue, consumer, no_ack, exclusive)
 }
 
 #' @export

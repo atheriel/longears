@@ -31,8 +31,8 @@ static void R_finalize_consumer(SEXP ptr)
   R_ClearExternalPtr(ptr);
 }
 
-SEXP R_amqp_create_consumer(SEXP ptr, SEXP queue, SEXP tag, SEXP no_local,
-                            SEXP no_ack, SEXP exclusive)
+SEXP R_amqp_create_consumer(SEXP ptr, SEXP queue, SEXP tag, SEXP no_ack,
+                            SEXP exclusive)
 {
   connection *conn = (connection *) R_ExternalPtrAddr(ptr);
   consumer *con = malloc(sizeof(consumer));
@@ -48,7 +48,6 @@ SEXP R_amqp_create_consumer(SEXP ptr, SEXP queue, SEXP tag, SEXP no_local,
   }
   const char *queue_str = CHAR(asChar(queue));
   const char *tag_str = CHAR(asChar(tag));
-  int has_no_local = asLogical(no_local);
   int has_no_ack = asLogical(no_ack);
   int is_exclusive = asLogical(exclusive);
 
@@ -56,7 +55,7 @@ SEXP R_amqp_create_consumer(SEXP ptr, SEXP queue, SEXP tag, SEXP no_local,
   consume_ok = amqp_basic_consume(conn->conn, con->chan.chan,
                                   amqp_cstring_bytes(queue_str),
                                   amqp_cstring_bytes(tag_str),
-                                  has_no_local, has_no_ack, is_exclusive,
+                                  0, has_no_ack, is_exclusive,
                                   amqp_empty_table);
 
   if (consume_ok == NULL) {
