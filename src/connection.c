@@ -44,6 +44,7 @@ SEXP R_amqp_connect(SEXP host, SEXP port, SEXP vhost, SEXP username,
   conn->chan.chan = 0;
   conn->chan.is_open = 0;
   conn->next_chan = 1;
+  conn->consumers = NULL;
   conn->is_connected = 0;
   conn->conn = amqp_new_connection();
 

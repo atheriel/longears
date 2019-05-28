@@ -23,6 +23,7 @@ typedef struct connection {
   int timeout;
   channel chan;
   int next_chan;
+  void *consumers;
 } connection;
 
 int ensure_valid_channel(connection *, channel *, char *, size_t);

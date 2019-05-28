@@ -10,10 +10,12 @@
 #include "connection.h"
 #include "utils.h"
 
-typedef struct {
+typedef struct consumer_ {
   connection *conn;
   channel chan;
   amqp_bytes_t tag;
+  struct consumer_ *prev;
+  struct consumer_ *next;
 } consumer;
 
 static void R_finalize_consumer(SEXP ptr)
@@ -25,6 +27,16 @@ static void R_finalize_consumer(SEXP ptr)
       amqp_basic_cancel(con->conn->conn, con->chan.chan, con->tag);
       amqp_channel_close(con->conn->conn, con->chan.chan, AMQP_REPLY_SUCCESS);
     }
+    /* Remove it from the global list of consumers. */
+    if (con->next) {
+      con->next->prev = con->prev;
+    }
+    if (con->prev) {
+      con->prev->next = con->next;
+    } else if (con->conn->consumers == (void *) con) {
+      con->conn->consumers = con->next;
+    }
+    amqp_bytes_free(con->tag);
     free(con);
     con = NULL;
   }
@@ -40,6 +52,8 @@ SEXP R_amqp_create_consumer(SEXP ptr, SEXP queue, SEXP tag, SEXP no_ack,
   con->chan.chan = 0;
   con->chan.is_open = 0;
   con->tag = amqp_empty_bytes;
+  con->prev = NULL;
+  con->next = NULL;
 
   char errbuff[200];
   if (ensure_valid_channel(con->conn, &con->chan, errbuff, 200) < 0) {
@@ -70,6 +84,19 @@ SEXP R_amqp_create_consumer(SEXP ptr, SEXP queue, SEXP tag, SEXP no_ack,
   SEXP out = PROTECT(R_MakeExternalPtr(con, R_NilValue, R_NilValue));
   R_RegisterCFinalizerEx(out, R_finalize_consumer, 1);
   setAttrib(out, R_ClassSymbol, mkString("amqp_consumer"));
+
+  /* Add it to the global list of consumers. */
+  if (!conn->consumers) {
+    conn->consumers = (void *) con;
+  } else {
+    consumer *elt = (consumer *) conn->consumers;
+    while (elt->next) {
+      elt = elt->next;
+    }
+    elt->next = con;
+    con->prev = elt;
+  }
+
   UNPROTECT(1);
   return out;
 }
@@ -81,6 +108,10 @@ SEXP R_amqp_listen(SEXP ptr, SEXP fun, SEXP rho, SEXP timeout)
   if (ensure_valid_channel(conn, &conn->chan, errbuff, 200) < 0) {
     Rf_error("Failed to consume messages. %s", errbuff);
     return R_NilValue;
+  }
+
+  if (!conn->consumers) {
+    Rf_error("No consumers are declared on this connection.");
   }
 
   struct timeval tv;
@@ -95,6 +126,7 @@ SEXP R_amqp_listen(SEXP ptr, SEXP fun, SEXP rho, SEXP timeout)
 
   amqp_rpc_reply_t reply;
   amqp_envelope_t env;
+  consumer *elt;
 
   while (!finished) {
 
@@ -104,6 +136,18 @@ SEXP R_amqp_listen(SEXP ptr, SEXP fun, SEXP rho, SEXP timeout)
     /* The envelope contains a message. */
 
     if (reply.reply_type == AMQP_RESPONSE_NORMAL) {
+      /* Find the right consumer. */
+      elt = (consumer *) conn->consumers;
+      while (elt && strncmp(elt->tag.bytes, env.consumer_tag.bytes,
+                            elt->tag.len) != 0) {
+        elt = elt->next;
+      }
+      if (!elt) {
+        /* Quietly swallow messages sent to now-cancelled consumers. */
+        amqp_destroy_envelope(&env);
+        continue;
+      }
+
       /* Copy body. */
       size_t body_len = env.message.body.len;
       body = PROTECT(Rf_allocVector(RAWSXP, body_len));
@@ -138,30 +182,7 @@ SEXP R_amqp_destroy_consumer(SEXP ptr)
   if (!con) {
     Rf_error("Invalid consumer object.");
   }
-  if (!con->conn->is_connected || !con->chan.is_open) {
-    Rf_error("Consumer's channel or connection has already been closed.");
-  }
-
-  char errbuff[200];
-  amqp_rpc_reply_t reply;
-  amqp_basic_cancel_ok_t *cancel_ok;
-
-  cancel_ok = amqp_basic_cancel(con->conn->conn, con->chan.chan,
-                                con->tag);
-
-  if (cancel_ok == NULL) {
-    reply = amqp_get_rpc_reply(con->conn->conn);
-    render_amqp_error(reply, con->conn, &con->chan, errbuff, 200);
-    Rf_error("Failed to cancel the consumer. %s", errbuff);
-  }
-
-  con->chan.is_open = 0;
-  reply = amqp_channel_close(con->conn->conn, con->chan.chan,
-                             AMQP_REPLY_SUCCESS);
-  if (reply.reply_type != AMQP_RESPONSE_NORMAL) {
-    render_amqp_error(reply, con->conn, &con->chan, errbuff, 200);
-    Rf_error("Failed to close the consumer's channel. %s", errbuff);
-  }
+  R_finalize_consumer(ptr);
 
   return R_NilValue;
 }
