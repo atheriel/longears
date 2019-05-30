@@ -16,6 +16,7 @@ typedef struct consumer_ {
   amqp_bytes_t tag;
   SEXP fun;
   SEXP rho;
+  int no_ack;
   struct consumer_ *prev;
   struct consumer_ *next;
 } consumer;
@@ -70,6 +71,8 @@ SEXP R_amqp_create_consumer(SEXP ptr, SEXP queue, SEXP tag, SEXP fun, SEXP rho,
   const char *tag_str = CHAR(asChar(tag));
   int has_no_ack = asLogical(no_ack);
   int is_exclusive = asLogical(exclusive);
+
+  con->no_ack = has_no_ack;
 
   amqp_basic_consume_ok_t *consume_ok;
   consume_ok = amqp_basic_consume(conn->conn, con->chan.chan,
@@ -133,6 +136,7 @@ SEXP R_amqp_listen(SEXP ptr, SEXP timeout)
   SEXP R_fcall = PROTECT(allocList(2));
   SET_TYPEOF(R_fcall, LANGSXP);
 
+  int ack;
   amqp_rpc_reply_t reply;
   amqp_envelope_t env;
   consumer *elt;
@@ -179,7 +183,17 @@ SEXP R_amqp_listen(SEXP ptr, SEXP timeout)
 
       SETCAR(R_fcall, elt->fun);
       SETCADR(R_fcall, message);
+
+      /* TODO: This should happen inside unwind-protect so we can be sure that
+       * messages are nack'd if the callback fails. */
       Rf_eval(R_fcall, elt->rho);
+
+      if (!elt->no_ack) {
+        ack = amqp_basic_ack(conn->conn, elt->chan.chan, env.delivery_tag, 0);
+        if (ack != AMQP_STATUS_OK) {
+          Rf_warning("Failed to acknowledge message. %s", amqp_error_string2(ack));
+        }
+      }
 
       UNPROTECT(2);
     }
