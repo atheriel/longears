@@ -10,9 +10,19 @@ testthat::test_that("Consume works as expected", {
   )
 
   messages <- data.frame()
-  fun <- function(msg) {
+  f1 <- function(msg) {
     messages <<- rbind(messages, as.data.frame(msg))
     msg$delivery_tag > 1
+  }
+
+  count <- 0
+  f2 <- function(msg) {
+    count <<- count + 1
+  }
+
+  alt_count <- 0
+  f3 <- function(msg) {
+    alt_count <<- alt_count + 1
   }
 
   amqp_declare_exchange(conn, "test.exchange", auto_delete = TRUE)
@@ -23,9 +33,9 @@ testthat::test_that("Consume works as expected", {
   q3 <- amqp_declare_tmp_queue(conn)
   amqp_bind_queue(conn, q3, "test.exchange", routing_key = "#")
 
-  c1 <- testthat::expect_silent(amqp_consume(conn, q1, fun))
-  c2 <- testthat::expect_silent(amqp_consume(conn, q2, base::identity))
-  c3 <- testthat::expect_silent(amqp_consume(conn, q3, base::identity))
+  c1 <- testthat::expect_silent(amqp_consume(conn, q1, f1))
+  c2 <- testthat::expect_silent(amqp_consume(conn, q2, f2))
+  c3 <- testthat::expect_silent(amqp_consume(conn, q3, f3))
 
   amqp_publish(
     conn, body = "Hello, world", exchange = "test.exchange", routing_key = "#"
@@ -37,7 +47,10 @@ testthat::test_that("Consume works as expected", {
   amqp_listen(conn, timeout = 1)
 
   testthat::expect_equal(nrow(messages), 2)
+  testthat::expect_equal(count, 2)
+  testthat::expect_equal(alt_count, 2)
 
+  amqp_delete_queue(conn, q3)
   amqp_publish(
     conn, body = "Goodbye", exchange = "test.exchange", routing_key = "#"
   )
@@ -52,6 +65,12 @@ testthat::test_that("Consume works as expected", {
 
   # We don't want the cancelled consumer's callback to have been called again.
   testthat::expect_equal(nrow(messages), 2)
+
+  # We don't expect the callback for the deleted queue to have been called.
+  testthat::expect_equal(alt_count, 2)
+
+  # But we do expect this one to have been called.
+  testthat::expect_equal(count, 3)
 
   testthat::expect_silent(amqp_cancel_consumer(c3))
   testthat::expect_silent(amqp_cancel_consumer(c2))
