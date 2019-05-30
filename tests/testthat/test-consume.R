@@ -24,8 +24,8 @@ testthat::test_that("Consume works as expected", {
   amqp_bind_queue(conn, q3, "test.exchange", routing_key = "#")
 
   c1 <- testthat::expect_silent(amqp_consume(conn, q1, fun))
-  c2 <- testthat::expect_silent(amqp_consume(conn, q2, fun))
-  c3 <- testthat::expect_silent(amqp_consume(conn, q3, fun))
+  c2 <- testthat::expect_silent(amqp_consume(conn, q2, base::identity))
+  c3 <- testthat::expect_silent(amqp_consume(conn, q3, base::identity))
 
   amqp_publish(
     conn, body = "Hello, world", exchange = "test.exchange", routing_key = "#"
@@ -34,7 +34,7 @@ testthat::test_that("Consume works as expected", {
     conn, body = "Hello, again", exchange = "test.exchange", routing_key = "#"
   )
 
-  amqp_listen(conn)
+  amqp_listen(conn, timeout = 1)
 
   testthat::expect_equal(nrow(messages), 2)
 
@@ -48,7 +48,7 @@ testthat::test_that("Consume works as expected", {
     amqp_cancel_consumer(c1), regexp = "Invalid consumer object"
   )
 
-  amqp_listen(conn)
+  amqp_listen(conn, timeout = 1)
 
   # We don't want the cancelled consumer's callback to have been called again.
   testthat::expect_equal(nrow(messages), 2)
