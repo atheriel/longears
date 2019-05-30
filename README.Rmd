@@ -62,39 +62,59 @@ conn <- amqp_connect()
 conn
 ```
 
-Create an exchange to route messages and a queue to store them:
+Create an exchange to route messages and a couple of queues to store them:
 
 ```{r basic-exchange}
 amqp_declare_exchange(conn, "my.exchange")
-amqp_declare_queue(conn, "my.queue")
-amqp_bind_queue(conn, "my.queue", "my.exchange", routing_key = "#")
+amqp_declare_queue(conn, "my.queue1")
+amqp_declare_queue(conn, "my.queue2")
+amqp_bind_queue(conn, "my.queue1", "my.exchange", routing_key = "#")
+amqp_bind_queue(conn, "my.queue2", "my.exchange", routing_key = "#")
 ```
 
-Now, send a message to this exchange:
+You can also set up a consumer for one of these queues with a callback:
+
+```{r basic-consume}
+received <- 0
+consumer <- amqp_consume(conn, "my.queue2", function(msg) {
+  received <<- received + 1
+})
+```
+
+Now, send a few messages to this exchange:
 
 ```{r basic-publish}
-amqp_publish(conn, "#", "message", exchange = "my.exchange")
-amqp_publish(conn, "#", "second message", exchange = "my.exchange")
+amqp_publish(conn, "first", exchange = "my.exchange", routing_key = "#")
+amqp_publish(conn, "second", exchange = "my.exchange", routing_key = "#")
 ```
 
-Check if your messages are going into the queue:
+Check if your messages are going into the queues:
 
 ```shell
 $ rabbitmqctl list_queues
 ```
 
-And to pull messages back into R:
+You can use `amqp_get()` to pull individual messages back into R:
 
 ```{r basic-get}
-amqp_get(conn, "my.queue")
-amqp_get(conn, "my.queue")
-amqp_get(conn, "my.queue")
+amqp_get(conn, "my.queue1")
+amqp_get(conn, "my.queue1")
+amqp_get(conn, "my.queue1")
 ```
 
-Afterwards you can delete the queue and disconnect from the server:
+Or you can use `amqp_listen()` to run consumer callbacks:
+
+```{r basic-listen}
+amqp_listen(conn, timeout = 1)
+received
+```
+
+To clean things up, delete the queues, the exchange, and disconnect from the
+server.
 
 ```{r basic-disconnect}
-amqp_delete_queue(conn, "my.queue")
+amqp_delete_queue(conn, "my.queue1")
+amqp_delete_queue(conn, "my.queue2")
 amqp_delete_exchange(conn, "my.exchange")
 amqp_disconnect(conn)
 conn
@@ -111,14 +131,9 @@ $ rabbitmqctl list_connections
 There are many AMQP features missing at present but that will be added in the
 future. An incomplete list is as follows:
 
-- Additional Basic methods.
-- Additional Basic properties.
-- Message headers.
+- Support for additional AMQP methods.
+- Support for headers in Basic properties; and
 - Support for "table" arguments to e.g. exchange declarations.
-
-In addition, the API does not at present implement any asynchronous
-functionality. Most notably, there is no `consume` support, although it is my
-hope a design for one can be worked out in the future.
 
 ## License
 

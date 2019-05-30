@@ -1,34 +1,46 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file. -->
-longears
-========
 
-This repository contains an early stage RabbitMQ client for R. It wraps the [reference C library](https://github.com/alanxz/rabbitmq-c).
+# longears
 
-[RabbitMQ](https://www.rabbitmq.com/) is a popular and performant open-source message broker used to build highly distributed and asynchronous network topologies. This package may be of interest to you if you wish to have R speak to your organization's existing RabbitMQ servers; if you simply need a message queue library, you may be better off with [**txtq**](https://github.com/wlandau/txtq), [**litq**](https://github.com/r-lib/liteq), or the ZeroMQ package [**rzmq**](https://github.com/ropensci/rzmq).
+This repository contains an early stage RabbitMQ client for R. It wraps
+the [reference C library](https://github.com/alanxz/rabbitmq-c).
 
-The package implements a growing subset of the Advanced Message Queuing Protocol (AMQP) used by RabbitMQ (see [Limitations](#Limitations) for details), and the API largely reflects [the protocol itself](https://www.rabbitmq.com/amqp-0-9-1-reference.html).
+[RabbitMQ](https://www.rabbitmq.com/) is a popular and performant
+open-source message broker used to build highly distributed and
+asynchronous network topologies. This package may be of interest to you
+if you wish to have R speak to your organization’s existing RabbitMQ
+servers; if you simply need a message queue library, you may be better
+off with [**txtq**](https://github.com/wlandau/txtq),
+[**litq**](https://github.com/r-lib/liteq), or the ZeroMQ package
+[**rzmq**](https://github.com/ropensci/rzmq).
 
-Installation
-------------
+The package implements a growing subset of the Advanced Message Queuing
+Protocol (AMQP) used by RabbitMQ (see [Limitations](#Limitations) for
+details), and the API largely reflects [the protocol
+itself](https://www.rabbitmq.com/amqp-0-9-1-reference.html).
 
-You will need `librabbitmq`, otherwise the installation will fail. On Ubuntu, run
+## Installation
+
+You will need `librabbitmq`, otherwise the installation will fail. On
+Ubuntu, run
 
 ``` shell
 $ apt install librabbitmq-dev
 ```
 
-The package is only available from GitHub for now, so you can install it with
+The package is only available from GitHub for now, so you can install it
+with
 
 ``` r
 # install.packages("devtools")
 devtools::install_github("atheriel/longears")
 ```
 
-Usage
------
+## Usage
 
-You will need to have a local RabbitMQ server running with the default settings to test this.
+You will need to have a local RabbitMQ server running with the default
+settings to test this.
 
 ``` shell
 $ # apt install rabbitmq-server
@@ -47,49 +59,80 @@ conn
 #>   vhost:   '/'
 ```
 
-Create an exchange to route messages and a queue to store them:
+Create an exchange to route messages and a couple of queues to store
+them:
 
 ``` r
 amqp_declare_exchange(conn, "my.exchange")
-amqp_declare_queue(conn, "my.queue")
-#> AMQP queue 'my.queue'
+amqp_declare_queue(conn, "my.queue1")
+#> AMQP queue 'my.queue1'
 #>   messages:  0
 #>   consumers: 0
-amqp_bind_queue(conn, "my.queue", "my.exchange", routing_key = "#")
+amqp_declare_queue(conn, "my.queue2")
+#> AMQP queue 'my.queue2'
+#>   messages:  0
+#>   consumers: 0
+amqp_bind_queue(conn, "my.queue1", "my.exchange", routing_key = "#")
+amqp_bind_queue(conn, "my.queue2", "my.exchange", routing_key = "#")
 ```
 
-Now, send a message to this exchange:
+You can also set up a consumer for one of these queues with a callback:
 
 ``` r
-amqp_publish(conn, "#", "message", exchange = "my.exchange")
-amqp_publish(conn, "#", "second message", exchange = "my.exchange")
+received <- 0
+consumer <- amqp_consume(conn, "my.queue2", function(msg) {
+  received <<- received + 1
+})
 ```
 
-Check if your messages are going into the queue:
+Now, send a few messages to this exchange:
+
+``` r
+amqp_publish(conn, "first", exchange = "my.exchange", routing_key = "#")
+amqp_publish(conn, "second", exchange = "my.exchange", routing_key = "#")
+```
+
+Check if your messages are going into the queues:
 
 ``` shell
 $ rabbitmqctl list_queues
 ```
 
-And to pull messages back into R:
+You can use `amqp_get()` to pull individual messages back into R:
 
 ``` r
-amqp_get(conn, "my.queue")
-#> [1] "message"
-#> attr(,"content_type")
-#> [1] "text/plain"
-amqp_get(conn, "my.queue")
-#> [1] "second message"
-#> attr(,"content_type")
-#> [1] "text/plain"
-amqp_get(conn, "my.queue")
+amqp_get(conn, "my.queue1")
+#> Delivery Tag:    1
+#> Redelivered: FALSE
+#> Exchange:    my.exchange
+#> Routing Key: #
+#> Message Count:   1
+#> 66 69 72 73 74
+amqp_get(conn, "my.queue1")
+#> Delivery Tag:    2
+#> Redelivered: FALSE
+#> Exchange:    my.exchange
+#> Routing Key: #
+#> Message Count:   0
+#> 73 65 63 6f 6e 64
+amqp_get(conn, "my.queue1")
 #> character(0)
 ```
 
-Afterwards you can delete the queue and disconnect from the server:
+Or you can use `amqp_listen()` to run consumer callbacks:
 
 ``` r
-amqp_delete_queue(conn, "my.queue")
+amqp_listen(conn, timeout = 1)
+received
+#> [1] 2
+```
+
+To clean things up, delete the queues, the exchange, and disconnect from
+the server.
+
+``` r
+amqp_delete_queue(conn, "my.queue1")
+amqp_delete_queue(conn, "my.queue2")
 amqp_delete_exchange(conn, "my.exchange")
 amqp_disconnect(conn)
 conn
@@ -105,19 +148,15 @@ And check that the connection is closed:
 $ rabbitmqctl list_connections
 ```
 
-Limitations
------------
+## Limitations
 
-There are many AMQP features missing at present but that will be added in the future. An incomplete list is as follows:
+There are many AMQP features missing at present but that will be added
+in the future. An incomplete list is as follows:
 
--   Additional Basic methods.
--   Additional Basic properties.
--   Message headers.
--   Support for "table" arguments to e.g. exchange declarations.
+  - Support for additional AMQP methods.
+  - Support for headers in Basic properties; and
+  - Support for “table” arguments to e.g. exchange declarations.
 
-In addition, the API does not at present implement any asynchronous functionality. Most notably, there is no `consume` support, although it is my hope a design for one can be worked out in the future.
-
-License
--------
+## License
 
 The package is licensed under the GPL, version 2 or later.
