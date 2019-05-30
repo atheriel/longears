@@ -172,14 +172,6 @@ int connect(connection *conn, char *buffer, size_t len)
 
   conn->is_connected = 1;
 
-  // TODO: Maybe we shouldn't fail here.
-  char chan_buff[100];
-  if (ensure_valid_channel(conn, &conn->chan, chan_buff, 100) < 0) {
-    snprintf(buffer, len, "Failed to open channel. %s", chan_buff);
-    amqp_connection_close(conn->conn, AMQP_REPLY_SUCCESS);
-    return -1;
-  }
-
   return 0;
 }
 
@@ -198,7 +190,6 @@ int ensure_valid_channel(connection *conn, channel *chan, char *buffer, size_t l
     if (ret < 0) {
       snprintf(buffer, len, "Failed to reconnect to server. %s", msg);
     }
-    return ret;
   }
   if (chan->is_open) return 0;
 
