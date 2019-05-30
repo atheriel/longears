@@ -1,6 +1,6 @@
 #' @export
-amqp_create_consumer <- function(conn, queue, consumer = "", no_ack = FALSE,
-                                 exclusive = FALSE) {
+amqp_consume <- function(conn, queue, fun, consumer = "", no_ack = FALSE,
+                         exclusive = FALSE) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
@@ -12,7 +12,7 @@ amqp_create_consumer <- function(conn, queue, consumer = "", no_ack = FALSE,
 }
 
 #' @export
-amqp_destroy_consumer <- function(consumer) {
+amqp_cancel_consumer <- function(consumer) {
   if (!inherits(consumer, "amqp_consumer")) {
     stop("`consumer` is not an amqp_consumer object")
   }
