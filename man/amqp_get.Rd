@@ -11,7 +11,8 @@ amqp_get(conn, queue, no_ack = FALSE)
 
 \item{queue}{The name of a queue.}
 
-\item{no_ack}{When \code{TRUE}, do not acknowldge receipt of the message.}
+\item{no_ack}{When \code{TRUE}, tell the server not to expect that messages
+will be acknowledged.}
 }
 \value{
 A string containing the message, or a zero-length character vector if
@@ -20,4 +21,7 @@ A string containing the message, or a zero-length character vector if
 }
 \description{
 Get a message from a given queue.
+}
+\seealso{
+\code{\link{amqp_consume}} for handling messages with a callback.
 }

@@ -14,7 +14,7 @@ SEXP R_amqp_publish(SEXP ptr, SEXP body, SEXP exchange, SEXP routing_key,
 {
   connection *conn = (connection *) R_ExternalPtrAddr(ptr);
   char errbuff[200];
-  if (ensure_valid_channel(conn, errbuff, 200) < 0) {
+  if (ensure_valid_channel(conn, &conn->chan, errbuff, 200) < 0) {
     Rf_error("Failed to find an open channel. %s", errbuff);
     return R_NilValue;
   }
@@ -44,7 +44,7 @@ SEXP R_amqp_publish(SEXP ptr, SEXP body, SEXP exchange, SEXP routing_key,
 
   amqp_rpc_reply_t reply = amqp_get_rpc_reply(conn->conn);
   if (reply.reply_type != AMQP_RESPONSE_NORMAL) {
-    render_amqp_error(reply, conn, errbuff, 200);
+    render_amqp_error(reply, conn, &conn->chan, errbuff, 200);
     Rf_error("Failed to publish message. %s", errbuff);
   }
 
@@ -55,7 +55,7 @@ SEXP R_amqp_get(SEXP ptr, SEXP queue, SEXP no_ack)
 {
   connection *conn = (connection *) R_ExternalPtrAddr(ptr);
   char errbuff[200];
-  if (ensure_valid_channel(conn, errbuff, 200) < 0) {
+  if (ensure_valid_channel(conn, &conn->chan, errbuff, 200) < 0) {
     Rf_error("Failed to find an open channel. %s", errbuff);
     return R_NilValue;
   }
@@ -68,7 +68,7 @@ SEXP R_amqp_get(SEXP ptr, SEXP queue, SEXP no_ack)
                                           amqp_cstring_bytes(queue_str),
                                           has_no_ack);
   if (reply.reply_type != AMQP_RESPONSE_NORMAL) {
-    render_amqp_error(reply, conn, errbuff, 200);
+    render_amqp_error(reply, conn, &conn->chan, errbuff, 200);
     Rf_error("Failed to get message. %s", errbuff);
     return R_NilValue;
   } else if (reply.reply.id == AMQP_BASIC_GET_EMPTY_METHOD) {
@@ -86,7 +86,7 @@ SEXP R_amqp_get(SEXP ptr, SEXP queue, SEXP no_ack)
   amqp_message_t message;
   reply = amqp_read_message(conn->conn, conn->chan.chan, &message, 0);
   if (reply.reply_type != AMQP_RESPONSE_NORMAL) {
-    render_amqp_error(reply, conn, errbuff, 200);
+    render_amqp_error(reply, conn, &conn->chan, errbuff, 200);
     amqp_destroy_message(&message);
     Rf_error("Failed to read message. %s", errbuff);
   }
@@ -120,7 +120,7 @@ SEXP R_amqp_ack(SEXP ptr, SEXP delivery_tag, SEXP multiple)
 {
   connection *conn = (connection *) R_ExternalPtrAddr(ptr);
   char errbuff[200];
-  if (ensure_valid_channel(conn, errbuff, 200) < 0) {
+  if (ensure_valid_channel(conn, &conn->chan, errbuff, 200) < 0) {
     Rf_error("Failed to find an open channel. %s", errbuff);
     return R_NilValue;
   }
@@ -140,7 +140,7 @@ SEXP R_amqp_nack(SEXP ptr, SEXP delivery_tag, SEXP multiple, SEXP requeue)
 {
   connection *conn = (connection *) R_ExternalPtrAddr(ptr);
   char errbuff[200];
-  if (ensure_valid_channel(conn, errbuff, 200) < 0) {
+  if (ensure_valid_channel(conn, &conn->chan, errbuff, 200) < 0) {
     Rf_error("Failed to find an open channel. %s", errbuff);
     return R_NilValue;
   }

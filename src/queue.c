@@ -11,7 +11,7 @@ SEXP R_amqp_declare_queue(SEXP ptr, SEXP queue, SEXP passive, SEXP durable,
 {
   connection *conn = (connection *) R_ExternalPtrAddr(ptr);
   char errbuff[200];
-  if (ensure_valid_channel(conn, errbuff, 200) < 0) {
+  if (ensure_valid_channel(conn, &conn->chan, errbuff, 200) < 0) {
     Rf_error("Failed to find an open channel. %s", errbuff);
     return R_NilValue;
   }
@@ -29,15 +29,8 @@ SEXP R_amqp_declare_queue(SEXP ptr, SEXP queue, SEXP passive, SEXP durable,
 
   if (queue_ok == NULL) {
     amqp_rpc_reply_t reply = amqp_get_rpc_reply(conn->conn);
-    if (reply.reply_type == AMQP_RESPONSE_NORMAL) {
-      // This should never happen.
-      Rf_error("Unexpected error: queue declare response is NULL with a normal reply.");
-      return R_NilValue;
-    } else {
-      render_amqp_error(reply, conn, errbuff, 200);
-      Rf_error("Failed to declare queue. %s", errbuff);
-      return R_NilValue;
-    }
+    render_amqp_error(reply, conn, &conn->chan, errbuff, 200);
+    Rf_error("Failed to declare queue. %s", errbuff);
   }
 
   SEXP out = PROTECT(allocVector(VECSXP, 3));
@@ -62,7 +55,7 @@ SEXP R_amqp_delete_queue(SEXP ptr, SEXP queue, SEXP if_unused, SEXP if_empty)
 {
   connection *conn = (connection *) R_ExternalPtrAddr(ptr);
   char errbuff[200];
-  if (ensure_valid_channel(conn, errbuff, 200) < 0) {
+  if (ensure_valid_channel(conn, &conn->chan, errbuff, 200) < 0) {
     Rf_error("Failed to find an open channel. %s", errbuff);
     return R_NilValue;
   }
@@ -76,15 +69,8 @@ SEXP R_amqp_delete_queue(SEXP ptr, SEXP queue, SEXP if_unused, SEXP if_empty)
 
   if (delete_ok == NULL) {
     amqp_rpc_reply_t reply = amqp_get_rpc_reply(conn->conn);
-    if (reply.reply_type == AMQP_RESPONSE_NORMAL) {
-      // This should never happen.
-      Rf_error("Unexpected error: queue delete response is NULL with a normal reply.");
-      return R_NilValue;
-    } else {
-      render_amqp_error(reply, conn, errbuff, 200);
-      Rf_error("Failed to delete queue. %s", errbuff);
-      return R_NilValue;
-    }
+    render_amqp_error(reply, conn, &conn->chan, errbuff, 200);
+    Rf_error("Failed to delete queue. %s", errbuff);
   }
 
   return ScalarInteger(delete_ok->message_count);

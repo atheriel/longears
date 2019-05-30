@@ -39,12 +39,14 @@ amqp_publish <- function(conn, body, exchange = "", routing_key = "",
 #'
 #' @param conn An object returned by \code{\link{amqp_connect}}.
 #' @param queue The name of a queue.
-#' @param no_ack When \code{TRUE}, do not acknowldge receipt of the message.
+#' @param no_ack When \code{TRUE}, tell the server not to expect that messages
+#'   will be acknowledged.
 #'
 #' @return A string containing the message, or a zero-length character vector if
 #'   there is no message in the queue. Messages may have additional properties
 #'   (such as the content type) attached to them as attributes.
 #'
+#' @seealso \code{\link{amqp_consume}} for handling messages with a callback.
 #' @export
 amqp_get <- function(conn, queue, no_ack = FALSE) {
   if (!inherits(conn, "amqp_connection")) {

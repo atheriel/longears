@@ -7,12 +7,17 @@
 #include "utils.h"
 
 void render_amqp_error(const amqp_rpc_reply_t reply, connection *conn,
-                       char *buffer, size_t len)
+                       channel *chan, char *buffer, size_t len)
 {
   // This is mostly ported from rabbitmq-c/examples/utils.c.
   switch (reply.reply_type) {
   case AMQP_RESPONSE_NONE:
     snprintf(buffer, len, "RPC reply is missing.");
+    break;
+
+  case AMQP_RESPONSE_NORMAL:
+    // This should never happen.
+    snprintf(buffer, len, "Response is NULL with a normal reply.");
     break;
 
   case AMQP_RESPONSE_LIBRARY_EXCEPTION:
@@ -33,7 +38,7 @@ void render_amqp_error(const amqp_rpc_reply_t reply, connection *conn,
       amqp_channel_close_t *method = (amqp_channel_close_t *) reply.reply.decoded;
       snprintf(buffer, len, "%s", (char *) method->reply_text.bytes);
       // These errors close the channel and require us to open a new one.
-      conn->chan.is_open = 0;
+      chan->is_open = 0;
       break;
     }
     default:

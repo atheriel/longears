@@ -10,7 +10,7 @@ SEXP R_amqp_bind_queue(SEXP ptr, SEXP queue, SEXP exchange, SEXP routing_key)
 {
   connection *conn = (connection *) R_ExternalPtrAddr(ptr);
   char errbuff[200];
-  if (ensure_valid_channel(conn, errbuff, 200) < 0) {
+  if (ensure_valid_channel(conn, &conn->chan, errbuff, 200) < 0) {
     Rf_error("Failed to find an open channel. %s", errbuff);
     return R_NilValue;
   }
@@ -27,13 +27,8 @@ SEXP R_amqp_bind_queue(SEXP ptr, SEXP queue, SEXP exchange, SEXP routing_key)
 
   if (bind_ok == NULL) {
     amqp_rpc_reply_t reply = amqp_get_rpc_reply(conn->conn);
-    if (reply.reply_type == AMQP_RESPONSE_NORMAL) {
-      // This should never happen.
-      Rf_error("Unexpected error: queue bind response is NULL with a normal reply.");
-    } else {
-      render_amqp_error(reply, conn, errbuff, 200);
-      Rf_error("Failed to bind queue. %s", errbuff);
-    }
+    render_amqp_error(reply, conn, &conn->chan, errbuff, 200);
+    Rf_error("Failed to bind queue. %s", errbuff);
   }
 
   return R_NilValue;
@@ -43,7 +38,7 @@ SEXP R_amqp_unbind_queue(SEXP ptr, SEXP queue, SEXP exchange, SEXP routing_key)
 {
   connection *conn = (connection *) R_ExternalPtrAddr(ptr);
   char errbuff[200];
-  if (ensure_valid_channel(conn, errbuff, 200) < 0) {
+  if (ensure_valid_channel(conn, &conn->chan, errbuff, 200) < 0) {
     Rf_error("Failed to find an open channel. %s", errbuff);
     return R_NilValue;
   }
@@ -60,13 +55,8 @@ SEXP R_amqp_unbind_queue(SEXP ptr, SEXP queue, SEXP exchange, SEXP routing_key)
 
   if (unbind_ok == NULL) {
     amqp_rpc_reply_t reply = amqp_get_rpc_reply(conn->conn);
-    if (reply.reply_type == AMQP_RESPONSE_NORMAL) {
-      // This should never happen.
-      Rf_error("Unexpected error: queue unbind response is NULL with a normal reply.");
-    } else {
-      render_amqp_error(reply, conn, errbuff, 200);
-      Rf_error("Failed to unbind queue. %s", errbuff);
-    }
+    render_amqp_error(reply, conn, &conn->chan, errbuff, 200);
+    Rf_error("Failed to unbind queue. %s", errbuff);
   }
 
   return R_NilValue;
