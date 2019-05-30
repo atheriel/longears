@@ -38,6 +38,10 @@ testthat::test_that("Consume works as expected", {
 
   testthat::expect_equal(nrow(messages), 2)
 
+  amqp_publish(
+    conn, body = "Goodbye", exchange = "test.exchange", routing_key = "#"
+  )
+
   testthat::expect_silent(amqp_cancel_consumer(c1))
 
   testthat::expect_error(
@@ -45,6 +49,9 @@ testthat::test_that("Consume works as expected", {
   )
 
   amqp_listen(conn)
+
+  # We don't want the cancelled consumer's callback to have been called again.
+  testthat::expect_equal(nrow(messages), 2)
 
   testthat::expect_silent(amqp_cancel_consumer(c3))
   testthat::expect_silent(amqp_cancel_consumer(c2))

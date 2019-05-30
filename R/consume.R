@@ -19,8 +19,10 @@ amqp_cancel_consumer <- function(consumer) {
   invisible(.Call(R_amqp_destroy_consumer, consumer))
 }
 
+#' @param timeout Maximum number of seconds to wait for messages. Capped at 60.
+#'
 #' @export
-amqp_listen <- function(conn, fun, timeout = 10) {
+amqp_listen <- function(conn, timeout = 10L) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }

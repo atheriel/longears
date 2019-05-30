@@ -123,6 +123,8 @@ SEXP R_amqp_listen(SEXP ptr, SEXP timeout)
     Rf_error("No consumers are declared on this connection.");
   }
 
+  int current_wait = 0, max_wait = asInteger(timeout);
+  max_wait = max_wait > 60 ? 60 : max_wait;
   struct timeval tv;
   tv.tv_sec = 1;
   tv.tv_usec = 0;
@@ -136,10 +138,19 @@ SEXP R_amqp_listen(SEXP ptr, SEXP timeout)
   amqp_envelope_t env;
   consumer *elt;
 
-  while (!finished) {
+  while (!finished && current_wait < max_wait) {
 
     amqp_maybe_release_buffers(conn->conn);
     reply = amqp_consume_message(conn->conn, &env, &tv, 0);
+
+    /* Accumulate timeouts one second at a time until we hit the max. This is to
+     * make the loop more responsive and give the user the ability to interrupt
+     * the function early. */
+
+    if (reply.reply_type == AMQP_RESPONSE_LIBRARY_EXCEPTION &&
+        reply.library_error == AMQP_STATUS_TIMEOUT) {
+      current_wait++;
+    }
 
     /* The envelope contains a message. */
 
