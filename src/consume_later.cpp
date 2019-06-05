@@ -76,6 +76,7 @@ static void later_callback(void *data)
 
   UNPROTECT(3);
   amqp_destroy_envelope(cdata->env);
+  free(cdata->env);
   free(cdata);
   return;
 }
@@ -90,6 +91,7 @@ static void * consume_run(void *data)
 
   amqp_rpc_reply_t reply;
   amqp_envelope_t *env;
+  callback_data *ptr;
 
   for (;;) {
     /* Supress thread cancellation during allocation, etc. */
@@ -103,10 +105,13 @@ static void * consume_run(void *data)
     /* If the envelope contains a message, schedule a callback. Note that the callback
      * is responsible for releasing the memory of both (1) ptr; and (2) env. */
     if (reply.reply_type == AMQP_RESPONSE_NORMAL) {
-      callback_data *ptr = (callback_data *) malloc(sizeof(callback_data));
+      ptr = (callback_data *) malloc(sizeof(callback_data));
       ptr->con = con;
       ptr->env = env;
       later::later(later_callback, ptr, 0);
+    } else {
+      amqp_destroy_envelope(env);
+      free(env);
     }
 
     /* Allow the thread to be cancelled here. */
