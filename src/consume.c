@@ -10,17 +10,6 @@
 #include "connection.h"
 #include "utils.h"
 
-typedef struct consumer_ {
-  connection *conn;
-  channel chan;
-  amqp_bytes_t tag;
-  SEXP fun;
-  SEXP rho;
-  int no_ack;
-  struct consumer_ *prev;
-  struct consumer_ *next;
-} consumer;
-
 static void R_finalize_consumer(SEXP ptr)
 {
   consumer *con = (consumer *) R_ExternalPtrAddr(ptr);
@@ -36,7 +25,7 @@ static void R_finalize_consumer(SEXP ptr)
     }
     if (con->prev) {
       con->prev->next = con->next;
-    } else if (con->conn->consumers == (void *) con) {
+    } else if (con->conn->consumers == con) {
       con->conn->consumers = con->next;
     }
     amqp_bytes_free(con->tag);
@@ -96,9 +85,9 @@ SEXP R_amqp_create_consumer(SEXP ptr, SEXP queue, SEXP tag, SEXP fun, SEXP rho,
 
   /* Add it to the global list of consumers. */
   if (!conn->consumers) {
-    conn->consumers = (void *) con;
+    conn->consumers = con;
   } else {
-    consumer *elt = (consumer *) conn->consumers;
+    consumer *elt = conn->consumers;
     while (elt->next) {
       elt = elt->next;
     }
@@ -159,7 +148,7 @@ SEXP R_amqp_listen(SEXP ptr, SEXP timeout)
 
     if (reply.reply_type == AMQP_RESPONSE_NORMAL) {
       /* Find the right consumer. */
-      elt = (consumer *) conn->consumers;
+      elt = conn->consumers;
       while (elt && strncmp(elt->tag.bytes, env.consumer_tag.bytes,
                             elt->tag.len) != 0) {
         elt = elt->next;

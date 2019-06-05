@@ -5,7 +5,6 @@
 #include <later_api.h>
 
 #include "utils.h"
-#include "consume.h"
 
 typedef struct {
   connection *conn;
