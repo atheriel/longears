@@ -18,6 +18,9 @@ static void R_finalize_amqp_connection(SEXP ptr)
     // Attempt to close the connection.
     amqp_connection_close(conn->conn, AMQP_REPLY_SUCCESS);
     amqp_destroy_connection(conn->conn);
+    if (conn->bg_conn) {
+      destroy_bg_conn(conn->bg_conn);
+    }
     free(conn);
     conn = NULL;
   }
@@ -45,6 +48,7 @@ SEXP R_amqp_connect(SEXP host, SEXP port, SEXP vhost, SEXP username,
   conn->chan.is_open = 0;
   conn->next_chan = 1;
   conn->consumers = NULL;
+  conn->bg_conn = NULL;
   conn->is_connected = 0;
   conn->conn = amqp_new_connection();
 
