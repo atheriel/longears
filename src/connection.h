@@ -1,6 +1,7 @@
 #ifndef __LONGEARS_CONNECTION_H__
 #define __LONGEARS_CONNECTION_H__
 
+#include <pthread.h>
 #include <amqp.h> /* for amqp_channel_t, amqp_connection_state_t */
 
 #ifdef __cplusplus
@@ -9,6 +10,8 @@ extern "C" {
 
 /* Forward declaration. */
 struct consumer;
+struct bg_consumer;
+struct bg_conn;
 
 typedef struct channel {
   amqp_channel_t chan;
@@ -27,6 +30,7 @@ typedef struct connection {
   channel chan;
   int next_chan;
   struct consumer *consumers;
+  struct bg_conn *bg_conn;
 } connection;
 
 typedef struct consumer {
@@ -39,6 +43,16 @@ typedef struct consumer {
   struct consumer *prev;
   struct consumer *next;
 } consumer;
+
+typedef struct bg_conn {
+  connection *conn;
+  pthread_t thread;
+  pthread_mutex_t mutex;
+  struct bg_consumer *consumers;
+} bg_conn;
+
+int init_bg_conn(connection *conn);
+void destroy_bg_conn(bg_conn *conn);
 
 int ensure_valid_channel(connection *, channel *, char *, size_t);
 

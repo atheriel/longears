@@ -31,14 +31,24 @@ Consume messages "asynchronously" by using the machinery of the
 \strong{\link[later]{later}} package. This function is primarily for use
 inside applications (particularly Shiny applications) that already make use
 of \strong{later} to manage events.
+
+This interface is experimental and should be used with caution, since any
+bugs in the implementation have the potential to cause serious memory
+corruption issues that will terminate the R process.
 }
 \details{
-Because the \code{amqp_connection} object is not thread-safe, this
-function actually clones the connection properties and opens a new one for
-the consumer. This may lead to some surprising results, including the fact
-that consumers created with this interface will not stop running if the
-original connection is closed. Consumers can only be stopped by using
-\code{\link{amqp_cancel_consumer}}.
+An \code{amqp_connection} object will start a "background thread" for these
+consumers if any are declared. Because underlying components of the
+\code{amqp_connection} object are not thread-safe, this background thread
+creates a "clone" of the original connection using the same properties. This
+may lead to some surprising results, including the fact that consumers
+created with this interface will not stop running if the original connection
+is closed with \code{amqp_disconnect} or due to connection-level user errors.
+This may change in future versions.
+
+At present, consumers can only be cancelled by using
+\code{\link{amqp_cancel_consumer}} or by garbage collection when the original
+connection object expires.
 }
 \seealso{
 \code{\link{amqp_consume}} to consume messages in the main thread.
