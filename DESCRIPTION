@@ -1,6 +1,6 @@
 Package: longears
 Title: Interface to 'RabbitMQ' and the Advanced Message Queuing Protocol
-Version: 0.0.0.9000
+Version: 0.1.0
 Authors@R: c(
   person("Aaron", "Jacobs", role = c("aut", "cre"),
          email = "atheriel@gmail.com"),
