@@ -369,3 +369,8 @@ SEXP amqp_bytes_to_string(const amqp_bytes_t *in)
 {
   return ScalarString(mkCharLen(in->bytes, in->len));
 }
+
+SEXP amqp_bytes_to_char(const amqp_bytes_t *in)
+{
+  return mkCharLen(in->bytes, in->len);
+}

@@ -34,6 +34,8 @@ SEXP R_amqp_destroy_bg_consumer(SEXP ptr);
 
 SEXP R_amqp_encode_properties(SEXP list);
 SEXP R_amqp_decode_properties(SEXP ptr);
+SEXP R_amqp_encode_table(SEXP list);
+SEXP R_amqp_decode_table(SEXP ptr);
 
 #ifdef __cplusplus
 }
