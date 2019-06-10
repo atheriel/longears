@@ -46,7 +46,8 @@ NULL
 #' @export
 amqp_properties <- function(...) {
   args <- list(...)
-  if (!all(vapply(args, nchar, integer(1)) > 0)) {
+  if ((length(args) != 0 && is.null(names(args))) ||
+      !all(vapply(names(args), nchar, integer(1)) > 0)) {
     stop("All properties must be named.")
   }
   .Call(R_amqp_encode_properties, args)
