@@ -1,3 +1,7 @@
+# longears 0.1.0.9000
+
+- Tests requiring a local RMQ server will now be skipped unless one is detected.
+
 # longears 0.1.0 (2019-06-06)
 
 - First alpha release.

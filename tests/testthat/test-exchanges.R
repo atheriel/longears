@@ -1,6 +1,8 @@
 testthat::context("test-exchanges.R")
 
 testthat::test_that("Exchanges can be created and deleted", {
+  skip_if_no_local_rmq()
+
   conn <- amqp_connect()
 
   testthat::expect_silent(amqp_delete_exchange(conn, "test.exchange"))
@@ -32,6 +34,8 @@ testthat::test_that("Exchanges can be created and deleted", {
 })
 
 testthat::test_that("Queues can be bound to exchanges", {
+  skip_if_no_local_rmq()
+
   conn <- amqp_connect()
 
   tmp <- amqp_declare_tmp_queue(conn)

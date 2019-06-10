@@ -1,6 +1,8 @@
 testthat::context("test-queues.R")
 
 testthat::test_that("Queues can be created, deleted, and receive messages", {
+  skip_if_no_local_rmq()
+
   conn <- amqp_connect()
 
   # Attempt to declare a queue in a reserved namespace.

@@ -1,6 +1,8 @@
 testthat::context("test-consume.R")
 
 testthat::test_that("Consume works as expected", {
+  skip_if_no_local_rmq()
+
   conn <- amqp_connect()
 
   # Must create consumers first.
@@ -84,6 +86,8 @@ testthat::test_that("Consume works as expected", {
 })
 
 testthat::test_that("Consume later works as expected", {
+  skip_if_no_local_rmq()
+
   conn <- amqp_connect()
 
   amqp_declare_exchange(
