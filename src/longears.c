@@ -22,6 +22,8 @@ static const R_CallMethodDef longears_entries[] = {
   {"R_amqp_destroy_bg_consumer", (DL_FUNC) &R_amqp_destroy_bg_consumer, 1},
   {"R_amqp_encode_properties", (DL_FUNC) &R_amqp_encode_properties, 1},
   {"R_amqp_decode_properties", (DL_FUNC) &R_amqp_decode_properties, 1},
+  {"R_amqp_encode_table", (DL_FUNC) &R_amqp_encode_table, 1},
+  {"R_amqp_decode_table", (DL_FUNC) &R_amqp_decode_table, 1},
   {NULL, NULL, 0}
 };
 
