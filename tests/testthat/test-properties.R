@@ -19,6 +19,12 @@ testthat::test_that("Encoding and decoding properties works correctly", {
     regexp = "'priority' must be an integer"
   )
 
+  # Header support.
+  testthat::expect_warning(
+    amqp_properties("x-expires" = "180000"),
+    regexp = "Additional property arguments are not yet supported"
+  )
+
   valid_props <- list(
     content_type = "text/plain", content_encoding = "UTF-8", delivery_mode = 2,
     priority = 2, correlation_id = "2", reply_to = "1", expiration = "2020",
