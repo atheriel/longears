@@ -24,6 +24,8 @@
 #' @param auto_delete When \code{TRUE}, the queue is automatically deleted when
 #'   all consumers have finished with it (i.e. their connections have closed).
 #'   This does not come into effect until the queue has at least one consumer.
+#' @param ... Additional arguments, used to declare broker-specific AMQP
+#'   extensions. See \strong{Details}.
 #'
 #' @return \code{amqp_declare_tmp_queue()} will return the name of the new,
 #'   temporary queue, while \code{amqp_declare_queue()} will return an object
@@ -41,25 +43,28 @@
 #' @export
 amqp_declare_queue <- function(conn, queue = "", passive = FALSE,
                                durable = FALSE, exclusive = FALSE,
-                               auto_delete = FALSE) {
+                               auto_delete = FALSE, ...) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
+  args <- amqp_table(...)
   .Call(
     R_amqp_declare_queue, conn$ptr, queue, passive, durable, exclusive,
-    auto_delete
+    auto_delete, args$ptr
   )
 }
 
 #' @rdname amqp_queues
 #' @export
-amqp_declare_tmp_queue <- function(conn, passive = FALSE, exclusive = TRUE) {
+amqp_declare_tmp_queue <- function(conn, passive = FALSE, exclusive = TRUE,
+                                   ...) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
-  queue <- amqp_declare_queue(conn, queue = "", passive = passive,
-                              durable = FALSE, exclusive = exclusive,
-                              auto_delete = TRUE)
+  queue <- amqp_declare_queue(
+    conn, queue = "", passive = passive, durable = FALSE, exclusive = exclusive,
+    auto_delete = TRUE, ...
+  )
   queue$queue
 }
 

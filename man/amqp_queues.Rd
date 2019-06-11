@@ -8,9 +8,9 @@
 \title{Declare or Delete Queues}
 \usage{
 amqp_declare_queue(conn, queue = "", passive = FALSE,
-  durable = FALSE, exclusive = FALSE, auto_delete = FALSE)
+  durable = FALSE, exclusive = FALSE, auto_delete = FALSE, ...)
 
-amqp_declare_tmp_queue(conn, passive = FALSE, exclusive = TRUE)
+amqp_declare_tmp_queue(conn, passive = FALSE, exclusive = TRUE, ...)
 
 amqp_delete_queue(conn, queue, if_unused = FALSE, if_empty = FALSE)
 }
@@ -32,6 +32,9 @@ current connection, and will be deleted when that connection closes.}
 \item{auto_delete}{When \code{TRUE}, the queue is automatically deleted when
 all consumers have finished with it (i.e. their connections have closed).
 This does not come into effect until the queue has at least one consumer.}
+
+\item{...}{Additional arguments, used to declare broker-specific AMQP
+extensions. See \strong{Details}.}
 
 \item{if_unused}{Delete the queue only if it is unused.}
 
