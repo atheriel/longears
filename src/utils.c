@@ -4,6 +4,7 @@
 #include <Rinternals.h>
 
 #include "connection.h"
+#include "tables.h"
 #include "utils.h"
 
 void render_amqp_error(const amqp_rpc_reply_t reply, connection *conn,
@@ -55,14 +56,20 @@ void render_amqp_error(const amqp_rpc_reply_t reply, connection *conn,
   }
 }
 
-amqp_basic_properties_t * encode_properties(SEXP list)
+void encode_properties(const SEXP list, amqp_basic_properties_t *props)
 {
   SEXP names = PROTECT(Rf_getAttrib(list, R_NamesSymbol));
-  amqp_basic_properties_t *props = malloc(sizeof(amqp_basic_properties_t));
   props->_flags = 0;
+  props->headers.num_entries = 0;
 
+  /* We accumulate the indices of header arguments on the first pass, then
+   * actually fill the table on the second. */
+  int max_len = Rf_length(list);
+  int headers[max_len];
+
+  int i;
   SEXP elt, name;
-  for (int i = 0; i < Rf_length(list); i++) {
+  for (i = 0; i < max_len; i++) {
     elt = VECTOR_ELT(list, i);
     name = STRING_ELT(names, i);
 
@@ -118,13 +125,26 @@ amqp_basic_properties_t * encode_properties(SEXP list)
       props->_flags |= AMQP_BASIC_CLUSTER_ID_FLAG;
       props->cluster_id = amqp_cstring_bytes(CHAR(STRING_ELT(elt, 0)));
     } else {
-      /* TODO: Turn the remaining elements into headers. */
-      Rf_warning("Additional property arguments are not yet supported, and will be ignored.");
+      headers[props->headers.num_entries] = i;
+      props->headers.num_entries++;
+    }
+  }
+
+  if (props->headers.num_entries > 0) {
+    props->_flags |= AMQP_BASIC_HEADERS_FLAG;
+    props->headers.entries = calloc(props->headers.num_entries,
+                                    sizeof(amqp_table_entry_t));
+    for (i = 0; i < props->headers.num_entries; i++) {
+      elt = VECTOR_ELT(list, headers[i]);
+      name = STRING_ELT(names, headers[i]);
+
+      props->headers.entries[i].key = amqp_cstring_bytes(CHAR(name));
+      encode_value(elt, &props->headers.entries[i].value);
     }
   }
 
   UNPROTECT(1);
-  return props;
+  return;
 }
 
 SEXP decode_properties(amqp_basic_properties_t *props)
@@ -138,7 +158,11 @@ SEXP decode_properties(amqp_basic_properties_t *props)
   SEXP out = PROTECT(Rf_allocVector(VECSXP, flag_count));
   SEXP names = PROTECT(Rf_allocVector(STRSXP, flag_count));
 
-  /* TODO: Decode headers. */
+  if (props->_flags & AMQP_BASIC_HEADERS_FLAG) {
+    SET_VECTOR_ELT(out, index, decode_table(&props->headers));
+    SET_STRING_ELT(names, index, mkCharLen("headers", 7));
+    index++;
+  }
 
   if (props->_flags & AMQP_BASIC_CONTENT_TYPE_FLAG) {
     SEXP content_type = PROTECT(mkCharLen(props->content_type.bytes,
@@ -256,6 +280,9 @@ static void R_finalize_amqp_properties(SEXP ptr)
 {
   amqp_basic_properties_t *props = (amqp_basic_properties_t *) R_ExternalPtrAddr(ptr);
   if (props) {
+    if (props->headers.num_entries > 0) {
+      free(props->headers.entries);
+    }
     free(props);
   }
   R_ClearExternalPtr(ptr);
@@ -282,7 +309,8 @@ SEXP R_properties_object(amqp_basic_properties_t *props)
 
 SEXP R_amqp_encode_properties(SEXP list)
 {
-  amqp_basic_properties_t *props = encode_properties(list);
+  amqp_basic_properties_t *props = malloc(sizeof(amqp_basic_properties_t));
+  encode_properties(list, props);
   return R_properties_object(props);
 }
 
