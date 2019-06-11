@@ -20,10 +20,9 @@ testthat::test_that("Encoding and decoding properties works correctly", {
   )
 
   # Header support.
-  testthat::expect_warning(
-    amqp_properties("x-expires" = "180000"),
-    regexp = "Additional property arguments are not yet supported"
-  )
+  headers <- list("cc" = "name@example.com")
+  props <- do.call(amqp_properties, headers)
+  testthat::expect_equal(list(headers = headers), as.list(props))
 
   valid_props <- list(
     content_type = "text/plain", content_encoding = "UTF-8", delivery_mode = 2,
