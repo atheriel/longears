@@ -35,3 +35,22 @@ testthat::test_that("Encoding and decoding tables works correctly", {
   table <- testthat::expect_silent(do.call(amqp_table, coerced_fields))
   testthat::expect_equal(as.list(table), lapply(coerced_fields, as.list))
 })
+
+testthat::test_that("Queues can be created with additional arguments", {
+  skip_if_no_local_rmq()
+
+  conn <- amqp_connect()
+
+  # Test known x-argument extensions.
+  tmp <- testthat::expect_silent(amqp_declare_tmp_queue(
+    conn, "x-message-ttl" = 180000L, "x-expires" = 180000L,
+    "x-max-length" = 10L, "x-max-length-bytes" = 1048576L,
+    "x-overflow" = "drop-head", "x-queue-mode" = "lazy",
+    "x-max-priority" = 10L, "x-dead-letter-exchange" = "test.dlexchange",
+    "x-dead-letter-routing-key" = "#"
+  ))
+
+  testthat::expect_equal(amqp_delete_queue(conn, tmp), 0)
+
+  amqp_disconnect(conn)
+})
