@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 #include <sys/time.h>
 
 #include <amqp.h>
@@ -9,7 +10,7 @@
 #include "connection.h"
 #include "utils.h"
 
-int connect(connection *conn, char *buffer, size_t len);
+static int connect(connection *conn, char *buffer, size_t len);
 
 static void R_finalize_amqp_connection(SEXP ptr)
 {
@@ -59,6 +60,10 @@ SEXP R_amqp_connect(SEXP host, SEXP port, SEXP vhost, SEXP username,
   }
 
   char msg[120];
+  /* Although this should not really be necessary, it seems that under some
+   * connection error conditions the stack-allocated array above will trigger
+   * errors due to uninitialized memory. */
+  memset(msg, 0, 120);
   if (connect(conn, msg, 120) < 0) {
     amqp_destroy_connection(conn->conn);
     free(conn);
@@ -132,7 +137,7 @@ SEXP R_amqp_disconnect(SEXP ptr)
   return R_NilValue;
 }
 
-int connect(connection *conn, char *buffer, size_t len)
+static int connect(connection *conn, char *buffer, size_t len)
 {
   // Assume conn->conn is valid.
   if (conn->is_connected) return 0;
