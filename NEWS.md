@@ -1,4 +1,4 @@
-# longears 0.1.0.9000
+# longears 0.1.1 (2019-06-20)
 
 - Tests requiring a local RMQ server will now be skipped unless one is detected.
 - Fixes an issue where `amqp_properties()` would not handle missing names
