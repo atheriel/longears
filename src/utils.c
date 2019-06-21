@@ -21,8 +21,24 @@ void render_amqp_error(const amqp_rpc_reply_t reply, connection *conn,
     break;
 
   case AMQP_RESPONSE_LIBRARY_EXCEPTION:
-    snprintf(buffer, len, "Library error: %s",
-             amqp_error_string2(reply.library_error));
+    /* Some errors affect the connection state. */
+    switch (reply.library_error) {
+    case AMQP_STATUS_UNEXPECTED_STATE:
+      /* fallthrough */
+    case AMQP_STATUS_CONNECTION_CLOSED:
+      /* fallthrough */
+    case AMQP_STATUS_SOCKET_ERROR:
+      /* fallthrough */
+    case AMQP_STATUS_SOCKET_CLOSED:
+      chan->is_open = 0;
+      conn->is_connected = 0;
+      snprintf(buffer, len, "Disconnected from server.");
+      break;
+    default:
+      snprintf(buffer, len, "Library error: %s",
+               amqp_error_string2(reply.library_error));
+      break;
+    }
     break;
 
   case AMQP_RESPONSE_SERVER_EXCEPTION:
