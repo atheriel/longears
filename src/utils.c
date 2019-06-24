@@ -6,6 +6,35 @@
 #include "connection.h"
 #include "utils.h"
 
+void render_amqp_library_error(int err, connection *conn, channel *chan,
+                               char *buffer, size_t len) {
+  /* Some errors affect the connection state. */
+  switch (err) {
+  case AMQP_STATUS_WRONG_METHOD:
+    chan->is_open = 0;
+    conn->is_connected = 0;
+    snprintf(buffer, len, "Unexpected method received. Disconnected.");
+    break;
+  case AMQP_STATUS_UNEXPECTED_STATE:
+    chan->is_open = 0;
+    conn->is_connected = 0;
+    snprintf(buffer, len, "Unexpected state. Disconnected.");
+    break;
+  case AMQP_STATUS_CONNECTION_CLOSED:
+    /* fallthrough */
+  case AMQP_STATUS_SOCKET_ERROR:
+    /* fallthrough */
+  case AMQP_STATUS_SOCKET_CLOSED:
+    chan->is_open = 0;
+    conn->is_connected = 0;
+    snprintf(buffer, len, "Disconnected from server.");
+    break;
+  default:
+    snprintf(buffer, len, "Library error: %s", amqp_error_string2(err));
+    break;
+  }
+}
+
 void render_amqp_error(const amqp_rpc_reply_t reply, connection *conn,
                        channel *chan, char *buffer, size_t len)
 {
@@ -21,33 +50,7 @@ void render_amqp_error(const amqp_rpc_reply_t reply, connection *conn,
     break;
 
   case AMQP_RESPONSE_LIBRARY_EXCEPTION:
-    /* Some errors affect the connection state. */
-    switch (reply.library_error) {
-    case AMQP_STATUS_WRONG_METHOD: {
-      amqp_frame_t frame;
-      if (amqp_simple_wait_frame(conn->conn, &frame) == AMQP_STATUS_OK &&
-          frame.frame_type == AMQP_FRAME_METHOD) {
-        snprintf(buffer, len, "Unexpected method received: %s",
-                 amqp_method_name(frame.payload.method.id));
-      }
-      break;
-    }
-    case AMQP_STATUS_UNEXPECTED_STATE:
-      /* fallthrough */
-    case AMQP_STATUS_CONNECTION_CLOSED:
-      /* fallthrough */
-    case AMQP_STATUS_SOCKET_ERROR:
-      /* fallthrough */
-    case AMQP_STATUS_SOCKET_CLOSED:
-      chan->is_open = 0;
-      conn->is_connected = 0;
-      snprintf(buffer, len, "Disconnected from server.");
-      break;
-    default:
-      snprintf(buffer, len, "Library error: %s",
-               amqp_error_string2(reply.library_error));
-      break;
-    }
+    render_amqp_library_error(reply.library_error, conn, chan, buffer, len);
     break;
 
   case AMQP_RESPONSE_SERVER_EXCEPTION:

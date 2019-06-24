@@ -37,9 +37,8 @@ SEXP R_amqp_publish(SEXP ptr, SEXP body, SEXP exchange, SEXP routing_key,
                                   amqp_cstring_bytes(body_str));
 
   if (result != AMQP_STATUS_OK) {
-    Rf_error("Failed to publish message. Error: %s.",
-             amqp_error_string2(result));
-    return R_NilValue;
+    render_amqp_library_error(result, conn, &conn->chan, errbuff, 200);
+    Rf_error("Failed to publish message. %s", errbuff);
   }
 
   amqp_rpc_reply_t reply = amqp_get_rpc_reply(conn->conn);
@@ -104,7 +103,8 @@ SEXP R_amqp_get(SEXP ptr, SEXP queue, SEXP no_ack)
   if (!has_no_ack) {
     int ack = amqp_basic_ack(conn->conn, conn->chan.chan, delivery_tag, 0);
     if (ack != AMQP_STATUS_OK) {
-      Rf_warning("Failed to acknowledge message. %s", amqp_error_string2(ack));
+      render_amqp_library_error(ack, conn, &conn->chan, errbuff, 200);
+      Rf_warning("Failed to acknowledge message. %s", errbuff);
     }
   }
 
@@ -130,7 +130,8 @@ SEXP R_amqp_ack(SEXP ptr, SEXP delivery_tag, SEXP multiple)
   int result = amqp_basic_ack(conn->conn, conn->chan.chan, delivery_tag_,
                               multiple_);
   if (result != AMQP_STATUS_OK) {
-    Rf_error("Failed to acknowledge message(s). %s", amqp_error_string2(result));
+    render_amqp_library_error(result, conn, &conn->chan, errbuff, 200);
+    Rf_error("Failed to acknowledge message(s). %s", errbuff);
   }
 
   return R_NilValue;
@@ -151,7 +152,8 @@ SEXP R_amqp_nack(SEXP ptr, SEXP delivery_tag, SEXP multiple, SEXP requeue)
   int result = amqp_basic_nack(conn->conn, conn->chan.chan, delivery_tag_,
                                multiple_, requeue_);
   if (result != AMQP_STATUS_OK) {
-    Rf_error("Failed to nack message(s). %s", amqp_error_string2(result));
+    render_amqp_library_error(result, conn, &conn->chan, errbuff, 200);
+    Rf_error("Failed to nack message(s). %s", errbuff);
   }
 
   return R_NilValue;

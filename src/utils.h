@@ -8,6 +8,8 @@
 extern "C" {
 #endif
 
+void render_amqp_library_error(int err, connection *conn, channel *chan,
+                               char *buffer, size_t len);
 void render_amqp_error(const amqp_rpc_reply_t reply, connection *conn,
                        channel *chan, char *err_buffer, size_t buffer_len);
 SEXP R_properties_object(amqp_basic_properties_t *props);
