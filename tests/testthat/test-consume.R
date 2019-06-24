@@ -100,6 +100,7 @@ testthat::test_that("Consume later works as expected", {
 
   messages <- data.frame()
   last_tag <- NA
+  count <- 0L
 
   # Create two consumers.
 
@@ -118,15 +119,20 @@ testthat::test_that("Consume later works as expected", {
   amqp_publish(
     conn, body = "Hello, world", exchange = "test.exchange", routing_key = "#"
   )
-  testthat::expect_true(later::run_now(0.5, FALSE))
-  testthat::expect_true(later::run_now(0.5, FALSE))
-  testthat::expect_true(later::loop_empty())
+
+  # Wait around until we run the callbacks.
+  while (count < 2) {
+    count <- count + as.integer(later::run_now(0.5, FALSE))
+  }
+
   amqp_publish(
     conn, body = "Hello, again", exchange = "test.exchange", routing_key = "#"
   )
-  testthat::expect_true(later::run_now(0.5, FALSE))
-  testthat::expect_true(later::run_now(0.5, FALSE))
-  testthat::expect_true(later::loop_empty())
+
+  # Wait around until we run the callbacks.
+  while (count < 4) {
+    count <- count + as.integer(later::run_now(0.5, FALSE))
+  }
 
   testthat::expect_equal(nrow(messages), 2)
   testthat::expect_false(is.na(last_tag))
