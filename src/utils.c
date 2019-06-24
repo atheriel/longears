@@ -23,6 +23,15 @@ void render_amqp_error(const amqp_rpc_reply_t reply, connection *conn,
   case AMQP_RESPONSE_LIBRARY_EXCEPTION:
     /* Some errors affect the connection state. */
     switch (reply.library_error) {
+    case AMQP_STATUS_WRONG_METHOD: {
+      amqp_frame_t frame;
+      if (amqp_simple_wait_frame(conn->conn, &frame) == AMQP_STATUS_OK &&
+          frame.frame_type == AMQP_FRAME_METHOD) {
+        snprintf(buffer, len, "Unexpected method received: %s",
+                 amqp_method_name(frame.payload.method.id));
+      }
+      break;
+    }
     case AMQP_STATUS_UNEXPECTED_STATE:
       /* fallthrough */
     case AMQP_STATUS_CONNECTION_CLOSED:
