@@ -17,3 +17,17 @@ skip_if_no_local_rmq <- function() {
   }
 }
 
+skip_if_no_rabbitmqctl <- function() {
+  if (nchar(Sys.which("rabbitmqctl")) == 0) {
+    testthat::skip("no rabbitmqctl program detected")
+    return()
+  }
+
+  if (rabbitmqctl("status") != 0) {
+    testthat::skip("insufficient priviledges to run rabbitmqctl")
+  }
+}
+
+rabbitmqctl <- function(cmd, stdout = FALSE, stderr = FALSE) {
+  system2("sudo", c("rabbitmqctl", cmd), stdout = stdout, stderr = stderr)
+}
