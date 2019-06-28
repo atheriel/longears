@@ -11,6 +11,7 @@
 #include "utils.h"
 
 static int connect(connection *conn, char *buffer, size_t len);
+static void mark_consumers_closed(connection *conn);
 
 static void R_finalize_amqp_connection(SEXP ptr)
 {
@@ -131,6 +132,8 @@ SEXP R_amqp_disconnect(SEXP ptr)
   // be closed without this value having been set.
   conn->is_connected = 0;
 
+  mark_consumers_closed(conn);
+
   // NOTE: amqp_connection_close() does not seem to close the actual file
   // descriptor of the socket, and we do not seem to be able to re-use them for
   // e.g. reconnection, unfortunately.
@@ -181,6 +184,12 @@ static int connect(connection *conn, char *buffer, size_t len)
 
   conn->is_connected = 1;
 
+  /* Clean up any leftover consumers. */
+  if (conn->consumers) {
+    Rf_warning("Existing consumers have been lost and must be recreated.");
+    mark_consumers_closed(conn);
+  }
+
   return 0;
 }
 
@@ -217,4 +226,13 @@ int ensure_valid_channel(connection *conn, channel *chan, char *buffer, size_t l
 
   chan->is_open = 1;
   return 0;
+}
+
+static void mark_consumers_closed(connection *conn)
+{
+  consumer *elt = conn->consumers;
+  while (elt) {
+    elt->chan.is_open = 0;
+    elt = elt->next;
+  }
 }

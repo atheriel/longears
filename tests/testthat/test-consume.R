@@ -85,6 +85,52 @@ testthat::test_that("Consume works as expected", {
   amqp_disconnect(conn)
 })
 
+testthat::test_that("Consumers respond to disconnections correctly", {
+  skip_if_no_local_rmq()
+  skip_if_no_rabbitmqctl()
+
+  conn <- amqp_connect()
+
+  messages <- data.frame()
+  f1 <- function(msg) {
+    messages <<- rbind(messages, as.data.frame(msg))
+    msg$delivery_tag > 1
+  }
+
+  # We need durable queues/exchanges to test across server restarts.
+  amqp_delete_exchange(conn, "test.exchange")
+  amqp_declare_exchange(conn, "test.exchange", durable = TRUE)
+  amqp_declare_queue(conn, queue = "test.queue", durable = TRUE)
+  amqp_bind_queue(conn, "test.queue", "test.exchange", routing_key = "#")
+
+  c1 <- testthat::expect_silent(amqp_consume(conn, "test.queue", f1))
+
+  # Simulate an unexpected disconnection.
+  testthat::expect_equal(rabbitmqctl("stop_app"), 0)
+  testthat::expect_equal(rabbitmqctl("start_app"), 0)
+
+  testthat::expect_error(amqp_publish(
+    conn, body = "Hello, world", exchange = "test.exchange", routing_key = "#"
+  ), regexp = "Disconnected from server")
+
+  testthat::expect_warning(amqp_reconnect(conn), regexp = "must be recreated")
+
+  amqp_publish(
+    conn, body = "Hello, world", exchange = "test.exchange", routing_key = "#"
+  )
+
+  # The consumer should not trigger.
+  testthat::expect_silent(amqp_listen(conn, 1))
+  testthat::expect_equal(nrow(messages), 0)
+
+  # Unnecessary cancels should not cause a crash.
+  testthat::expect_silent(amqp_cancel_consumer(c1))
+
+  amqp_delete_queue(conn, "test.queue")
+  amqp_delete_exchange(conn, "test.exchange")
+  amqp_disconnect(conn)
+})
+
 testthat::test_that("Consume later works as expected", {
   skip_if_no_local_rmq()
 

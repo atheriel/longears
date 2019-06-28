@@ -1,7 +1,8 @@
 # longears 0.1.1.9000
 
 - Improves internal handling of server/socket issues. These errors will now be
-  reported in a much less cryptic manner.
+  reported in a much less cryptic manner. Users will also be warned about lost
+  consumers during reconnection.
 - Fixes poor handling of server disconnects in `amqp_listen()`.
 - Consumers will now set a prefetch count of 50 automatically, unless they are
   in `no_ack` mode.
