@@ -198,6 +198,7 @@ int ensure_valid_channel(connection *conn, channel *chan, char *buffer, size_t l
     int ret = connect(conn, msg, 120);
     if (ret < 0) {
       snprintf(buffer, len, "Failed to reconnect to server. %s", msg);
+      return ret;
     }
   }
   if (chan->is_open) return 0;

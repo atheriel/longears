@@ -36,3 +36,23 @@ testthat::test_that("Disconnection and reconnection works correctly", {
   testthat::expect_silent(amqp_reconnect(conn))
   testthat::expect_output(amqp_reconnect(conn), regexp = "already open")
 })
+
+testthat::test_that("Disconnections are handled correctly", {
+  skip_if_no_local_rmq()
+  skip_if_no_rabbitmqctl()
+
+  conn <- amqp_connect()
+
+  # Simulate an unexpected disconnection.
+  testthat::expect_equal(rabbitmqctl("stop_app"), 0)
+  testthat::expect_equal(rabbitmqctl("start_app"), 0)
+
+  testthat::expect_error(
+    amqp_declare_exchange(conn, "test.exchange"),
+    regexp = "Disconnected from server"
+  )
+
+  # Retry.
+  testthat::expect_silent(amqp_declare_exchange(conn, "test.exchange"))
+  testthat::expect_silent(amqp_delete_exchange(conn, "test.exchange"))
+})

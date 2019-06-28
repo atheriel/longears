@@ -139,9 +139,27 @@ SEXP R_amqp_listen(SEXP ptr, SEXP timeout)
      * make the loop more responsive and give the user the ability to interrupt
      * the function early. */
 
-    if (reply.reply_type == AMQP_RESPONSE_LIBRARY_EXCEPTION &&
-        reply.library_error == AMQP_STATUS_TIMEOUT) {
-      current_wait++;
+    if (reply.reply_type == AMQP_RESPONSE_LIBRARY_EXCEPTION) {
+      switch (reply.library_error) {
+      case AMQP_STATUS_TIMEOUT:
+        current_wait++;
+        break;
+      case AMQP_STATUS_UNEXPECTED_STATE:
+        /* fallthrough */
+      case AMQP_STATUS_CONNECTION_CLOSED:
+        /* fallthrough */
+      case AMQP_STATUS_SOCKET_CLOSED:
+        /* fallthrough */
+      case AMQP_STATUS_SOCKET_ERROR:
+        /* fallthrough */
+        conn->is_connected = 0;
+        Rf_error("Disconnected from server.");
+        break;
+      default:
+        Rf_error("Encountered unexpected library error: %s\n",
+                 amqp_error_string2(reply.library_error));
+        break;
+      }
     }
 
     /* The envelope contains a message. */
