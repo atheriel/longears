@@ -299,6 +299,25 @@ extern "C" SEXP R_amqp_consume_later(SEXP ptr, SEXP queue, SEXP fun, SEXP rho,
     Rf_error("Failed to start a queue consumer. %s", errbuff);
   }
 
+  if (!has_no_ack) {
+    amqp_basic_qos_ok_t *qos_ok = amqp_basic_qos(bg_conn->conn->conn,
+                                                 con->chan.chan, 0,
+                                                 DEFAULT_PREFETCH_COUNT, 0);
+    if (qos_ok == NULL) {
+      amqp_rpc_reply_t reply = amqp_get_rpc_reply(bg_conn->conn->conn);
+      render_amqp_error(reply, bg_conn->conn, &con->chan, errbuff, 1000);
+
+      /* Clean up. */
+      if (con->chan.is_open) {
+        amqp_channel_close(bg_conn->conn->conn, con->chan.chan,
+                           AMQP_REPLY_SUCCESS);
+      }
+      free(con);
+
+      Rf_error("Failed to set quality of service. %s", errbuff);
+    }
+  }
+
   con->tag = amqp_bytes_malloc_dup(consume_ok->consumer_tag);
 
   /* Inhibit GC for the function and environment. This is because R does not
