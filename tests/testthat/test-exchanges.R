@@ -21,16 +21,16 @@ testthat::test_that("Exchanges can be created and deleted", {
   )
 
   testthat::expect_silent(amqp_declare_exchange(conn, "test.exchange"))
+  testthat::expect_silent(amqp_delete_exchange(conn, "test.exchange"))
 
-  # Attempt to create an exchange with an invalid type.
+  # Attempt to create an exchange with an invalid type. This is actually a
+  # connection-level error.
   testthat::expect_error(
     amqp_declare_exchange(conn, "test.exchange2", type = "invalid"),
     regexp = "invalid exchange type"
   )
 
-  testthat::expect_silent(amqp_delete_exchange(conn, "test.exchange"))
-
-  amqp_disconnect(conn)
+  testthat::expect_output(amqp_disconnect(conn), "already closed")
 })
 
 testthat::test_that("Queues can be bound to exchanges", {

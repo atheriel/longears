@@ -267,7 +267,8 @@ extern "C" SEXP R_amqp_consume_later(SEXP ptr, SEXP queue, SEXP fun, SEXP rho,
   con->chan.is_open = 0;
   con->tag = amqp_empty_bytes;
   char errbuff[1000];
-  if (ensure_valid_channel(bg_conn->conn, &con->chan, errbuff, 1000) < 0) {
+  if (connect(bg_conn->conn, errbuff, 1000) < 0 ||
+      ensure_valid_channel(bg_conn->conn, &con->chan, errbuff, 1000) < 0) {
     Rf_error("Failed to clone connection. %s", errbuff);
     return R_NilValue;
   }

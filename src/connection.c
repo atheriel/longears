@@ -10,7 +10,6 @@
 #include "connection.h"
 #include "utils.h"
 
-static int connect(connection *conn, char *buffer, size_t len);
 static void mark_consumers_closed(connection *conn);
 
 static void R_finalize_amqp_connection(SEXP ptr)
@@ -140,7 +139,7 @@ SEXP R_amqp_disconnect(SEXP ptr)
   return R_NilValue;
 }
 
-static int connect(connection *conn, char *buffer, size_t len)
+int connect(connection *conn, char *buffer, size_t len)
 {
   // Assume conn->conn is valid.
   if (conn->is_connected) return 0;
@@ -200,15 +199,10 @@ int ensure_valid_channel(connection *conn, channel *chan, char *buffer, size_t l
     return -1;
   }
 
-  // Automatically reconnect.
   if (!conn->is_connected) {
-    char msg[120];
     chan->is_open = 0;
-    int ret = connect(conn, msg, 120);
-    if (ret < 0) {
-      snprintf(buffer, len, "Failed to reconnect to server. %s", msg);
-      return ret;
-    }
+    snprintf(buffer, len, "Not connected to a server.");
+    return -1;
   }
   if (chan->is_open) return 0;
 

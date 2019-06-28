@@ -52,6 +52,13 @@ testthat::test_that("Disconnections are handled correctly", {
     regexp = "Disconnected from server"
   )
 
+  testthat::expect_error(
+    amqp_declare_exchange(conn, "test.exchange"),
+    regexp = "Not connected to a server"
+  )
+
+  testthat::expect_silent(amqp_reconnect(conn))
+
   # Retry.
   testthat::expect_silent(amqp_declare_exchange(conn, "test.exchange"))
   testthat::expect_silent(amqp_delete_exchange(conn, "test.exchange"))

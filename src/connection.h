@@ -56,6 +56,7 @@ typedef struct bg_conn {
 int init_bg_conn(connection *conn);
 void destroy_bg_conn(bg_conn *conn);
 
+int connect(connection *conn, char *buffer, size_t len);
 int ensure_valid_channel(connection *, channel *, char *, size_t);
 
 #ifdef __cplusplus
