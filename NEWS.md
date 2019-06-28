@@ -1,3 +1,9 @@
+# longears 0.1.1.9000
+
+- Improves internal handling of server/socket issues. These errors will now be
+  reported in a much less cryptic manner.
+- Fixes poor handling of server disconnects in `amqp_listen()`.
+
 # longears 0.1.1 (2019-06-20)
 
 - Tests requiring a local RMQ server will now be skipped unless one is detected.
