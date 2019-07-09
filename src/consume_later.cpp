@@ -179,6 +179,8 @@ connection *clone_connection(const connection *old)
   conn->chan.chan = 0;
   conn->chan.is_open = 0;
   conn->next_chan = 1;
+  conn->consumers = NULL;
+  conn->bg_conn = NULL;
   conn->is_connected = 0;
   conn->conn = amqp_new_connection();
 
