@@ -27,7 +27,7 @@ typedef struct {
 static void R_finalize_bg_consumer(SEXP ptr)
 {
   bg_consumer *con = (bg_consumer *) R_ExternalPtrAddr(ptr);
-  if (con) {
+  if (con && con->conn) {
     pthread_mutex_lock(&con->conn->mutex);
 
     /* Attempt to cancel the consumer and close the channel. We need to ensure
@@ -59,7 +59,9 @@ static void R_finalize_bg_consumer(SEXP ptr)
     }
 
     pthread_mutex_unlock(&con->conn->mutex);
+  }
 
+  if (con) {
     amqp_bytes_free(con->tag);
     R_ReleaseObject(con->fun);
     R_ReleaseObject(con->rho);
@@ -114,6 +116,12 @@ static void later_callback(void *data)
   return;
 }
 
+static void later_warn_callback(void *data)
+{
+  Rf_warning("Disconnected from server. Existing background consumers have been lost and must be recreated.");
+  return;
+}
+
 static void * consume_run(void *data)
 {
   bg_conn *con = (bg_conn *) data;
@@ -153,7 +161,33 @@ static void * consume_run(void *data)
       ptr->conn = con;
       ptr->env = env;
       later::later(later_callback, ptr, 0);
+    } else if (reply.reply_type == AMQP_RESPONSE_LIBRARY_EXCEPTION) {
+      /* Terminate the thread on connection errors and schedule a warning to be
+         surfaced to the user at some point in the future. */
+      switch (reply.library_error) {
+      case AMQP_STATUS_WRONG_METHOD:
+        /* fallthrough */
+      case AMQP_STATUS_UNEXPECTED_STATE:
+        /* fallthrough */
+      case AMQP_STATUS_CONNECTION_CLOSED:
+        /* fallthrough */
+      case AMQP_STATUS_SOCKET_CLOSED:
+        /* fallthrough */
+      case AMQP_STATUS_SOCKET_ERROR:
+        con->conn->is_connected = 0;
+        amqp_destroy_envelope(env);
+        free(env);
+        pthread_mutex_unlock(&con->mutex);
+        later::later(later_warn_callback, NULL, 0);
+        return NULL;
+      default:
+        /* Tolerate other errors. */
+        amqp_destroy_envelope(env);
+        free(env);
+        break;
+      }
     } else {
+      /* FIXME: Can this ever happen? What should we do if it does? */
       amqp_destroy_envelope(env);
       free(env);
     }
@@ -189,7 +223,18 @@ connection *clone_connection(const connection *old)
 
 extern "C" int init_bg_conn(connection *conn)
 {
-  if (conn->bg_conn) return 0;
+  bg_conn *con = conn->bg_conn;
+  if (con) {
+    /* If the connection has been marked as closed by the background thread, we
+       need to clean up and start again. TODO: Do we need to lock the mutex here
+       to safely check the connection state? */
+    if (!con->conn->is_connected) {
+      destroy_bg_conn(conn->bg_conn);
+    } else {
+      return 0;
+    }
+  }
+
   bg_conn *out = (bg_conn *) malloc(sizeof(bg_conn));
 
   /* Need to do this before pthread_create() to avoid a data race on
@@ -220,15 +265,16 @@ extern "C" void destroy_bg_conn(bg_conn *conn)
   }
   pthread_mutex_destroy(&conn->mutex);
 
-  /* Destroy all consumers attached to this thread. */
+  /* Ensure all consumers attached to this thread know that the connection is
+     dead. Instead of cleaning up consumers, rely on their finalizers to run. */
 
   bg_consumer *next, *elt = conn->consumers;
   while (elt) {
     next = elt->next;
-    R_ReleaseObject(elt->fun);
-    R_ReleaseObject(elt->rho);
-    amqp_bytes_free(elt->tag);
-    free(elt);
+    elt->conn = NULL;
+    elt->chan.is_open = 0;
+    elt->prev = NULL;
+    elt->next = NULL;
     elt = next;
   }
 
