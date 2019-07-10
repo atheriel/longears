@@ -1,17 +1,29 @@
-# longears 0.1.1.9000
+# longears 0.1.2 (2019-07-10)
 
-- Improves internal handling of server/socket issues. These errors will now be
-  reported in a much less cryptic manner. Users will also be warned about lost
-  consumers during reconnection.
-- Fixes poor handling of server disconnects in `amqp_listen()`.
-- Consumers will now set a prefetch count of 50 automatically, unless they are
-  in `no_ack` mode.
+- Connection objects will no longer attempt to automatically reconnect. Instead,
+  they will surface an error for the user. This is because "automatic"
+  reconnection has turned out to be a bit dishonest: connections have state --
+  exclusive or auto-deleting queues and exchanges, plus consumers -- that will
+  be lost during disconnections. Thus, the user must be informed about these
+  events so that they can properly restore the expected state.
+
+- Internal handling of server/socket issues has dramatically improved. These
+  errors will now be identified earlier and reported in a much less cryptic
+  manner. Users will also be warned about lost consumers, either during
+  reconnection for the foreground consumers or via a **later** callback for
+  background consumers.
+
+- Consumers will now set a prefetch count of 50 automatically and attempt to
+  acknowledge all messages even if the callback fails (unless they are in
+  `no_ack` mode).
 
 # longears 0.1.1 (2019-06-20)
 
 - Tests requiring a local RMQ server will now be skipped unless one is detected.
+
 - Fixes an issue where `amqp_properties()` would not handle missing names
   correctly.
+
 - Fixes an issue where connection errors could sometimes encounter uninitialized
   memory.
 
