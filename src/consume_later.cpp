@@ -91,6 +91,18 @@ static void later_callback(void *data)
     return;
   }
 
+  /* Acknowledge message receipt. TODO: Can we n'ack messages for cancelled
+     consumers swallowed above? */
+  if (!elt->no_ack) {
+    pthread_mutex_lock(&cdata->conn->mutex);
+    int ack = amqp_basic_ack(cdata->conn->conn->conn, elt->chan.chan,
+                             cdata->env->delivery_tag, 0);
+    if (ack != AMQP_STATUS_OK) {
+      Rf_warning("Failed to acknowledge message. %s", amqp_error_string2(ack));
+    }
+    pthread_mutex_unlock(&cdata->conn->mutex);
+  }
+
   /* Create R-level message object. */
   size_t body_len = cdata->env->message.body.len;
   SEXP body = PROTECT(Rf_allocVector(RAWSXP, body_len));

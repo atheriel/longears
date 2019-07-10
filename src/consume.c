@@ -198,12 +198,8 @@ SEXP R_amqp_listen(SEXP ptr, SEXP timeout)
                                          &env.message.properties));
       amqp_destroy_envelope(&env);
 
-      SETCAR(R_fcall, elt->fun);
-      SETCADR(R_fcall, message);
-
-      /* TODO: This should happen inside unwind-protect so we can be sure that
-       * messages are nack'd if the callback fails. */
-      Rf_eval(R_fcall, elt->rho);
+      /* Acknowledge the message before we run the callback, just in case it
+       * fails. */
 
       if (!elt->no_ack) {
         ack = amqp_basic_ack(conn->conn, elt->chan.chan, env.delivery_tag, 0);
@@ -211,6 +207,10 @@ SEXP R_amqp_listen(SEXP ptr, SEXP timeout)
           Rf_warning("Failed to acknowledge message. %s", amqp_error_string2(ack));
         }
       }
+
+      SETCAR(R_fcall, elt->fun);
+      SETCADR(R_fcall, message);
+      Rf_eval(R_fcall, elt->rho);
 
       UNPROTECT(2);
     }
