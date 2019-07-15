@@ -1,3 +1,8 @@
+# longears 0.1.3 (2019-07-15)
+
+- Fixes a C-level namespace collision with `connect(2)` that could result in
+  the wrong function being used by the linker.
+
 # longears 0.1.2 (2019-07-10)
 
 - Connection objects will no longer attempt to automatically reconnect. Instead,
