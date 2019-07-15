@@ -64,7 +64,7 @@ SEXP R_amqp_connect(SEXP host, SEXP port, SEXP vhost, SEXP username,
    * connection error conditions the stack-allocated array above will trigger
    * errors due to uninitialized memory. */
   memset(msg, 0, 120);
-  if (connect(conn, msg, 120) < 0) {
+  if (lconnect(conn, msg, 120) < 0) {
     amqp_destroy_connection(conn->conn);
     free(conn);
     Rf_error("Failed to connect to server. %s", msg);
@@ -99,7 +99,7 @@ SEXP R_amqp_reconnect(SEXP ptr)
     Rprintf("Connection is already open.\n");
   } else {
     char msg[120];
-    if (connect(conn, msg, 120) < 0) {
+    if (lconnect(conn, msg, 120) < 0) {
       Rf_error("Failed to reconnect to server. %s", msg);
       return R_NilValue;
     }
@@ -139,7 +139,7 @@ SEXP R_amqp_disconnect(SEXP ptr)
   return R_NilValue;
 }
 
-int connect(connection *conn, char *buffer, size_t len)
+int lconnect(connection *conn, char *buffer, size_t len)
 {
   // Assume conn->conn is valid.
   if (conn->is_connected) return 0;
