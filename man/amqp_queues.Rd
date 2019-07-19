@@ -10,7 +10,7 @@
 amqp_declare_queue(conn, queue = "", passive = FALSE,
   durable = FALSE, exclusive = FALSE, auto_delete = FALSE, ...)
 
-amqp_declare_tmp_queue(conn, passive = FALSE, exclusive = TRUE, ...)
+amqp_declare_tmp_queue(conn, passive = FALSE, exclusive = FALSE, ...)
 
 amqp_delete_queue(conn, queue, if_unused = FALSE, if_empty = FALSE)
 }

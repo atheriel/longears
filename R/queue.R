@@ -99,7 +99,7 @@ amqp_declare_queue <- function(conn, queue = "", passive = FALSE,
 
 #' @rdname amqp_queues
 #' @export
-amqp_declare_tmp_queue <- function(conn, passive = FALSE, exclusive = TRUE,
+amqp_declare_tmp_queue <- function(conn, passive = FALSE, exclusive = FALSE,
                                    ...) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
