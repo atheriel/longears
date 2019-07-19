@@ -45,11 +45,19 @@ testthat::test_that("Queues can be bound to exchanges", {
                          regexp = "NOT_FOUND")
 
   amqp_declare_exchange(conn, "test.exchange", auto_delete = TRUE)
+  amqp_declare_exchange(conn, "test.exchange2", auto_delete = TRUE)
 
   testthat::expect_silent(amqp_bind_queue(conn, tmp, "test.exchange"))
+  testthat::expect_silent(
+    amqp_bind_exchange(conn, "test.exchange2", "test.exchange")
+  )
+
+  testthat::expect_silent(amqp_unbind_queue(conn, tmp, "test.exchange"))
+  testthat::expect_silent(
+    amqp_unbind_exchange(conn, "test.exchange2", "test.exchange")
+  )
 
   # The (auto_delete) exchange should be deleted when the queue is unbound.
-  testthat::expect_silent(amqp_unbind_queue(conn, tmp, "test.exchange"))
   testthat::expect_error(amqp_bind_queue(conn, tmp, "test.exchange"),
                          regexp = "NOT_FOUND")
 

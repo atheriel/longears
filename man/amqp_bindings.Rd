@@ -4,25 +4,34 @@
 \alias{amqp_bindings}
 \alias{amqp_bind_queue}
 \alias{amqp_unbind_queue}
-\title{Bind Queues to Exchanges}
+\alias{amqp_bind_exchange}
+\alias{amqp_unbind_exchange}
+\title{Bind Queues to Exchanges, or Exchanges to Other Exchanges}
 \usage{
 amqp_bind_queue(conn, queue, exchange, routing_key = "", ...)
 
 amqp_unbind_queue(conn, queue, exchange, routing_key = "", ...)
+
+amqp_bind_exchange(conn, dest, exchange, routing_key = "", ...)
+
+amqp_unbind_exchange(conn, dest, exchange, routing_key = "", ...)
 }
 \arguments{
 \item{conn}{An object returned by \code{\link{amqp_connect}}.}
 
 \item{queue}{The name of the queue.}
 
-\item{exchange}{The name of an exchange.}
+\item{exchange}{The exchange to source messages from.}
 
 \item{routing_key}{The routing key to use (if applicable).}
 
 \item{...}{Binding arguments, if any.}
+
+\item{dest}{The exchange to send messages to.}
 }
 \description{
 In order for messages to be routed to a queue, the queue must be bound to
 the exchange, although the nature of this binding depends on the type of
-exchange.
+exchange. Exchange-to-exchange bindings can be used to construct complex
+routing topologies.
 }

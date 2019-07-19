@@ -1,5 +1,8 @@
 # longears 0.1.3.9000
 
+- Exchange-to-exchange bindings are now available through `amqp_bind_exchange()`
+  and `amqp_unbind_exchange()`.
+
 - The background thread now checks messages at much higher frequency: 100 Hz
   instead of 1 Hz. This means that `consume_later()` is no longer limited to
   ingesting 1 message per second -- it can now handle as many as 100.

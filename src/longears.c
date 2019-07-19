@@ -11,6 +11,8 @@ static const R_CallMethodDef longears_entries[] = {
   {"R_amqp_delete_queue", (DL_FUNC) &R_amqp_delete_queue, 4},
   {"R_amqp_bind_queue", (DL_FUNC) &R_amqp_bind_queue, 5},
   {"R_amqp_unbind_queue", (DL_FUNC) &R_amqp_unbind_queue, 5},
+  {"R_amqp_bind_exchange", (DL_FUNC) &R_amqp_bind_exchange, 5},
+  {"R_amqp_unbind_exchange", (DL_FUNC) &R_amqp_unbind_exchange, 5},
   {"R_amqp_publish", (DL_FUNC) &R_amqp_publish, 7},
   {"R_amqp_get", (DL_FUNC) &R_amqp_get, 3},
   {"R_amqp_ack", (DL_FUNC) &R_amqp_ack, 3},
