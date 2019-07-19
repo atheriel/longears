@@ -15,10 +15,12 @@ off with [**txtq**](https://github.com/wlandau/txtq),
 [**litq**](https://github.com/r-lib/liteq), or the ZeroMQ package
 [**rzmq**](https://github.com/ropensci/rzmq).
 
-The package implements a growing subset of the Advanced Message Queuing
-Protocol (AMQP) used by RabbitMQ (see [Limitations](#Limitations) for
-details), and the API largely reflects [the protocol
-itself](https://www.rabbitmq.com/amqp-0-9-1-reference.html).
+The package implements a large portion of the Advanced Message Queuing
+Protocol (AMQP) used by RabbitMQ , and the API largely reflects [the
+protocol itself](https://www.rabbitmq.com/amqp-0-9-1-reference.html).
+However, `longears` is not a true low-level package: it abstracts away
+many details of AMQP for end users. See [Limitations](#Limitations) for
+details.
 
 ## Installation
 
@@ -37,10 +39,15 @@ with
 devtools::install_github("atheriel/longears")
 ```
 
-## Usage
+## Basic Usage
 
-You will need to have a local RabbitMQ server running with the default
-settings to test this.
+If you are not already familiar with RabbitMQ and the
+message/queue/binding/exchange terminology, I suggest their excellent
+[conceptual
+overview](https://www.rabbitmq.com/tutorials/amqp-concepts.html).
+
+You will also need to have a local RabbitMQ server running with the
+default settings to follow this guide.
 
 ``` shell
 $ # apt install rabbitmq-server
@@ -48,7 +55,7 @@ $ systemctl start rabbitmq-server
 $ rabbitmqctl status
 ```
 
-First, connect to the server (with default settings):
+First, connect to the server (with the default settings):
 
 ``` r
 conn <- amqp_connect()
@@ -63,7 +70,7 @@ Create an exchange to route messages and a couple of queues to store
 them:
 
 ``` r
-amqp_declare_exchange(conn, "my.exchange")
+amqp_declare_exchange(conn, "my.exchange", type = "fanout")
 amqp_declare_queue(conn, "my.queue1")
 #> AMQP queue 'my.queue1'
 #>   messages:  0
@@ -150,12 +157,16 @@ $ rabbitmqctl list_connections
 
 ## Limitations
 
-There are many AMQP features missing at present but that will be added
-in the future. An incomplete list is as follows:
+Some AMQP features are not present, notably transaction support (which
+there are no plans to implement). Others are not exposed through the API
+but are handled internally according to best practices: channels,
+message acknowledgements, and prefetch counts, among others. The current
+design goal of the package is to keep these details from the eyes of
+users, insofar as that is possible.
 
-  - Support for additional AMQP methods.
-  - Support for headers in Basic properties; and
-  - Support for “table” arguments to e.g. exchange declarations.
+If you have need of an AMQP feature (or RabbitMQ extension) that is not
+currently available or accessible, please consider filing an issue
+explaining the use case you have in mind.
 
 ## License
 
