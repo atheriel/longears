@@ -1,4 +1,4 @@
-# longears 0.1.3.9000
+# longears 0.2.0 (2019-07-19)
 
 - Additional arguments can now be passed to exchange and queue declarations,
   consumers, and bindings, allowing users to employ most of RabbitMQ's
