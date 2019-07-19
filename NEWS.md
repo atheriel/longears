@@ -1,5 +1,13 @@
 # longears 0.1.3.9000
 
+- Additional arguments can now be passed to exchange and queue declarations,
+  consumers, and bindings, allowing users to employ most of RabbitMQ's
+  extensions to the AMQP protocol.
+
+- Additional arguments passed to `amqp_properties()` are now interpreted as
+  custom message headers, with R types mapped to an appropriate AMQP field
+  automatically.
+
 - Exchange-to-exchange bindings are now available through `amqp_bind_exchange()`
   and `amqp_unbind_exchange()`.
 
