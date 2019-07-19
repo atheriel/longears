@@ -1,3 +1,9 @@
+# longears 0.1.3.9000
+
+- The background thread now checks messages at much higher frequency: 100 Hz
+  instead of 1 Hz. This means that `consume_later()` is no longer limited to
+  ingesting 1 message per second -- it can now handle as many as 100.
+
 # longears 0.1.3 (2019-07-15)
 
 - Fixes a C-level namespace collision with `connect(2)` that could result in

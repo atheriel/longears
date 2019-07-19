@@ -1,4 +1,4 @@
-#include <unistd.h> /* for sleep */
+#include <time.h> /* for nanosleep */
 
 #include <amqp.h>
 #include <amqp_framing.h>
@@ -142,12 +142,22 @@ static void * consume_run(void *data)
   tv.tv_sec = 0;
   tv.tv_usec = 0;
 
+  /* Sleeping between checks for messages allows us to reliably acquire the
+     mutex on the main thread. However, it also effectively sets the maximum
+     thoroughput for consumers.
+
+     I estimate R code will not handle more than 100 messages/second, so use
+     that to infer a sleep time of 0.01 seconds. */
+  struct timespec sleeptime;
+  sleeptime.tv_sec = 0;
+  sleeptime.tv_nsec = 10000000;
+
   amqp_rpc_reply_t reply;
   amqp_envelope_t *env;
   callback_data *ptr;
 
   for (;;) {
-    sleep(1);
+    nanosleep(&sleeptime, NULL);
 
     /* Supress thread cancellation during allocation, etc. */
     pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
