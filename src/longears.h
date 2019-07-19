@@ -12,7 +12,7 @@ SEXP R_amqp_is_connected(SEXP ptr);
 SEXP R_amqp_reconnect(SEXP ptr);
 SEXP R_amqp_disconnect(SEXP ptr);
 
-SEXP R_amqp_declare_exchange(SEXP ptr, SEXP exchange, SEXP type, SEXP passive, SEXP durable, SEXP auto_delete, SEXP internal);
+SEXP R_amqp_declare_exchange(SEXP ptr, SEXP exchange, SEXP type, SEXP passive, SEXP durable, SEXP auto_delete, SEXP internal, SEXP args);
 SEXP R_amqp_delete_exchange(SEXP ptr, SEXP exchange, SEXP if_unused);
 
 SEXP R_amqp_declare_queue(SEXP ptr, SEXP queue, SEXP passive, SEXP exclusive, SEXP durable, SEXP auto_delete, SEXP args);

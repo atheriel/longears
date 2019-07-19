@@ -7,7 +7,7 @@
 \title{Declare or Delete Exchanges}
 \usage{
 amqp_declare_exchange(conn, exchange, type = "direct", passive = FALSE,
-  durable = FALSE, auto_delete = FALSE, internal = FALSE)
+  durable = FALSE, auto_delete = FALSE, internal = FALSE, ...)
 
 amqp_delete_exchange(conn, exchange, if_unused = FALSE)
 }
@@ -33,6 +33,9 @@ messages; it can only be \link[=amqp_bindings]{bound} to other exchanges.
 This is for creating complex routing topologies that are not visible to
 consumers.}
 
+\item{...}{Additional arguments, used to declare broker-specific AMQP
+extensions. See \strong{Details}.}
+
 \item{if_unused}{Delete the exchange only if it is unused (i.e. no queues are
 \link[=amqp_bindings]{bound} to it).}
 }
@@ -43,6 +46,16 @@ additional exchanges can be declared and subsequently deleted by clients.
 
 Both \code{amqp_declare_exchange()} and \code{amqp_delete_exchange()} will
 raise errors if there is a problem declaring/deleting the exchange.
+}
+\details{
+Additional arguments can be used to declare broker-specific extensions. An
+incomplete list is as follows:
+
+\describe{
+  \item{\code{"alternate-exchange"}}{Specify an
+    \href{https://www.rabbitmq.com/ae.html}{alternate exchange} to handle
+    messages the broker is unable to route.}
+}
 }
 \examples{
 \dontrun{

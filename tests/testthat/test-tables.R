@@ -36,10 +36,15 @@ testthat::test_that("Encoding and decoding tables works correctly", {
   testthat::expect_equal(as.list(table), lapply(coerced_fields, as.list))
 })
 
-testthat::test_that("Queues can be created with additional arguments", {
+testthat::test_that("Additional arguments to exchanges and queues work correctly", {
   skip_if_no_local_rmq()
 
   conn <- amqp_connect()
+
+  # Test known extensions.
+  testthat::expect_silent(amqp_declare_exchange(
+    conn, "test.exchange", "alternate-exchange" = "test.altexchange"
+  ))
 
   # Test known x-argument extensions.
   tmp <- testthat::expect_silent(amqp_declare_tmp_queue(
@@ -51,6 +56,6 @@ testthat::test_that("Queues can be created with additional arguments", {
   ))
 
   testthat::expect_equal(amqp_delete_queue(conn, tmp), 0)
-
+  amqp_delete_exchange(conn, "test.exchange")
   amqp_disconnect(conn)
 })
