@@ -38,7 +38,7 @@ static void R_finalize_consumer(SEXP ptr)
 }
 
 SEXP R_amqp_create_consumer(SEXP ptr, SEXP queue, SEXP tag, SEXP fun, SEXP rho,
-                            SEXP no_ack, SEXP exclusive)
+                            SEXP no_ack, SEXP exclusive, SEXP args)
 {
   connection *conn = (connection *) R_ExternalPtrAddr(ptr);
   consumer *con = malloc(sizeof(consumer));
@@ -60,6 +60,7 @@ SEXP R_amqp_create_consumer(SEXP ptr, SEXP queue, SEXP tag, SEXP fun, SEXP rho,
   const char *tag_str = CHAR(asChar(tag));
   int has_no_ack = asLogical(no_ack);
   int is_exclusive = asLogical(exclusive);
+  amqp_table_t *arg_table = (amqp_table_t *) R_ExternalPtrAddr(args);
 
   con->no_ack = has_no_ack;
 
@@ -68,7 +69,7 @@ SEXP R_amqp_create_consumer(SEXP ptr, SEXP queue, SEXP tag, SEXP fun, SEXP rho,
                                   amqp_cstring_bytes(queue_str),
                                   amqp_cstring_bytes(tag_str),
                                   0, has_no_ack, is_exclusive,
-                                  amqp_empty_table);
+                                  *arg_table);
 
   if (consume_ok == NULL) {
     free(con);

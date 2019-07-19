@@ -7,7 +7,7 @@
 \title{Consume Messages from a Queue}
 \usage{
 amqp_consume(conn, queue, fun, tag = "", no_ack = FALSE,
-  exclusive = FALSE)
+  exclusive = FALSE, ...)
 
 amqp_cancel_consumer(consumer)
 
@@ -30,6 +30,9 @@ will be acknowledged.}
 
 \item{exclusive}{When \code{TRUE}, request that this consumer has exclusive
 access to the queue.}
+
+\item{...}{Additional arguments, used to declare broker-specific AMQP
+extensions. See \strong{Details}.}
 
 \item{consumer}{An object created by \code{\link{amqp_consume}}.}
 
@@ -54,6 +57,16 @@ receive and process messages. As an alternative, you can consume messages on
 a background thread by using \code{\link{amqp_consume_later}}.
 }
 \details{
+Additional arguments can be used to declare broker-specific extensions. An
+incomplete list is as follows:
+
+\describe{
+
+  \item{\code{"x-priority"}}{Specify a consumer
+    \href{https://www.rabbitmq.com/consumer-priority.html}{priority}.}
+
+}
+
 Unless \code{no_ack} is \code{TRUE}, messages are acknowledged automatically
 after the callback executes.
 }

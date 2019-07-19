@@ -36,7 +36,7 @@ testthat::test_that("Encoding and decoding tables works correctly", {
   testthat::expect_equal(as.list(table), lapply(coerced_fields, as.list))
 })
 
-testthat::test_that("Additional arguments to exchanges and queues work correctly", {
+testthat::test_that("Additional arguments work correctly", {
   skip_if_no_local_rmq()
 
   conn <- amqp_connect()
@@ -58,6 +58,10 @@ testthat::test_that("Additional arguments to exchanges and queues work correctly
   testthat::expect_silent(amqp_bind_queue(
     conn, tmp, "test.exchange", "x-match" = "all", "key" = "value"
   ))
+
+  testthat::expect_silent(
+    amqp_consume(conn, tmp, function(msg) "Beep!", "x-priority" = 10L)
+  )
 
   testthat::expect_silent(amqp_unbind_queue(
     conn, tmp, "test.exchange", "x-match" = "all", "key" = "value"
