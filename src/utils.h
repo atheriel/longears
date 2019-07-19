@@ -18,6 +18,7 @@ SEXP R_message_object(SEXP body, int delivery_tag, int redelivered,
                       int message_count, amqp_bytes_t consumer_tag,
                       amqp_basic_properties_t *props);
 SEXP amqp_bytes_to_string(const amqp_bytes_t *in);
+SEXP amqp_bytes_to_char(const amqp_bytes_t *in);
 
 #ifdef __cplusplus
 }

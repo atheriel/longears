@@ -65,3 +65,16 @@ as.list.amqp_properties <- function(x, ...) {
 print.amqp_properties <- function(x, ...) {
   cat("AMQP Message Properties\n")
 }
+
+amqp_table <- function(...) {
+  args <- list(...)
+  if ((length(args) != 0 && is.null(names(args))) ||
+      !all(vapply(names(args), nchar, integer(1)) > 0)) {
+    stop("All arguments must be named.", call. = FALSE)
+  }
+  .Call(R_amqp_encode_table, args)
+}
+
+as.list.amqp_table <- function(x, ...) {
+  .Call(R_amqp_decode_table, x$ptr)
+}

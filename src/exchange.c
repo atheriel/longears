@@ -7,7 +7,8 @@
 #include "utils.h"
 
 SEXP R_amqp_declare_exchange(SEXP ptr, SEXP exchange, SEXP type, SEXP passive,
-                             SEXP durable, SEXP auto_delete, SEXP internal)
+                             SEXP durable, SEXP auto_delete, SEXP internal,
+                             SEXP args)
 {
   connection *conn = (connection *) R_ExternalPtrAddr(ptr);
   char errbuff[200];
@@ -21,13 +22,14 @@ SEXP R_amqp_declare_exchange(SEXP ptr, SEXP exchange, SEXP type, SEXP passive,
   int is_durable = asLogical(durable);
   int is_auto_delete = asLogical(auto_delete);
   int is_internal = asLogical(internal);
+  amqp_table_t *arg_table = (amqp_table_t *) R_ExternalPtrAddr(args);
 
   amqp_exchange_declare_ok_t *exch_ok;
   exch_ok = amqp_exchange_declare(conn->conn, conn->chan.chan,
                                   amqp_cstring_bytes(exchange_str),
                                   amqp_cstring_bytes(type_str), is_passive,
                                   is_durable, is_auto_delete, is_internal,
-                                  amqp_empty_table);
+                                  *arg_table);
 
   if (exch_ok == NULL) {
     amqp_rpc_reply_t reply = amqp_get_rpc_reply(conn->conn);

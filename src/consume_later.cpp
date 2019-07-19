@@ -314,13 +314,15 @@ extern "C" void destroy_bg_conn(bg_conn *conn)
 }
 
 extern "C" SEXP R_amqp_consume_later(SEXP ptr, SEXP queue, SEXP fun, SEXP rho,
-                                     SEXP consumer, SEXP no_ack, SEXP exclusive)
+                                     SEXP consumer, SEXP no_ack, SEXP exclusive,
+                                     SEXP args)
 {
 
   const char *queue_str = CHAR(Rf_asChar(queue));
   const char *consumer_str = CHAR(Rf_asChar(consumer));
   int has_no_ack = Rf_asLogical(no_ack);
   int is_exclusive = Rf_asLogical(exclusive);
+  amqp_table_t *arg_table = (amqp_table_t *) R_ExternalPtrAddr(args);
 
   connection *conn = (connection *) R_ExternalPtrAddr(ptr);
   int res = init_bg_conn(conn);
@@ -354,7 +356,7 @@ extern "C" SEXP R_amqp_consume_later(SEXP ptr, SEXP queue, SEXP fun, SEXP rho,
                                   amqp_cstring_bytes(queue_str),
                                   amqp_cstring_bytes(consumer_str),
                                   0, has_no_ack, is_exclusive,
-                                  amqp_empty_table);
+                                  *arg_table);
 
   if (consume_ok == NULL) {
     amqp_rpc_reply_t reply = amqp_get_rpc_reply(bg_conn->conn->conn);

@@ -24,10 +24,55 @@
 #' @param auto_delete When \code{TRUE}, the queue is automatically deleted when
 #'   all consumers have finished with it (i.e. their connections have closed).
 #'   This does not come into effect until the queue has at least one consumer.
+#' @param ... Additional arguments, used to declare broker-specific AMQP
+#'   extensions. See \strong{Details}.
 #'
 #' @return \code{amqp_declare_tmp_queue()} will return the name of the new,
 #'   temporary queue, while \code{amqp_declare_queue()} will return an object
 #'   containing some additional information.
+#'
+#' @details
+#'
+#' Additional arguments can be used to declare broker-specific extensions. An
+#' incomplete list is as follows:
+#'
+#' \describe{
+#'
+#'   \item{\code{"x-dead-letter-exchange"}}{Specify a
+#'     \href{https://www.rabbitmq.com/dlx.html}{dead letter exchange} for the
+#'     queue.}
+#'
+#'   \item{\code{"x-dead-letter-routing-key"}}{Specify a
+#'     \href{https://www.rabbitmq.com/dlx.html}{dead letter routing key} for the
+#'     queue.}
+#'
+#'   \item{\code{"x-expires"}}{Specify a queue
+#'     \href{https://www.rabbitmq.com/ttl.html}{expiration}, in seconds.}
+#'
+#'   \item{\code{"x-max-length"}}{Specify the
+#'     \href{https://www.rabbitmq.com/maxlength.html}{maximum number of messsages}
+#'     to store in the queue before it overflows.}
+#'
+#'   \item{\code{"x-max-length-bytes"}}{Specify the
+#'     \href{https://www.rabbitmq.com/maxlength.html}{total number of bytes}
+#'     that messages can take up in the queue before it overflows.}
+#'
+#'   \item{\code{"x-max-priority"}}{Specify the
+#'     \href{https://www.rabbitmq.com/priority.html}{maximum priority}
+#'     supported by the queue.}
+#'
+#'   \item{\code{"x-message-ttl"}}{Specify a message
+#'     \href{https://www.rabbitmq.com/ttl.html}{time-to-live}, in seconds.}
+#'
+#'   \item{\code{"x-overflow"}}{Specify queue
+#'     \href{https://www.rabbitmq.com/maxlength.html}{overflow behaviour}.
+#'     Either \code{"drop-head"} (the default) or \code{"reject-publish"}.}
+#'
+#'   \item{\code{"x-queue-mode"}}{Specify queue
+#'     \href{https://www.rabbitmq.com/lazy-queues.html}{mode}. Either
+#'     \code{"normal"} (the default) or \code{"lazy"}.}
+#'
+#' }
 #'
 #' @examples
 #' \dontrun{
@@ -41,25 +86,28 @@
 #' @export
 amqp_declare_queue <- function(conn, queue = "", passive = FALSE,
                                durable = FALSE, exclusive = FALSE,
-                               auto_delete = FALSE) {
+                               auto_delete = FALSE, ...) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
+  args <- amqp_table(...)
   .Call(
     R_amqp_declare_queue, conn$ptr, queue, passive, durable, exclusive,
-    auto_delete
+    auto_delete, args$ptr
   )
 }
 
 #' @rdname amqp_queues
 #' @export
-amqp_declare_tmp_queue <- function(conn, passive = FALSE, exclusive = TRUE) {
+amqp_declare_tmp_queue <- function(conn, passive = FALSE, exclusive = TRUE,
+                                   ...) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
-  queue <- amqp_declare_queue(conn, queue = "", passive = passive,
-                              durable = FALSE, exclusive = exclusive,
-                              auto_delete = TRUE)
+  queue <- amqp_declare_queue(
+    conn, queue = "", passive = passive, durable = FALSE, exclusive = exclusive,
+    auto_delete = TRUE, ...
+  )
   queue$queue
 }
 

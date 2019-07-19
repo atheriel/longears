@@ -23,6 +23,19 @@
 #'   messages; it can only be \link[=amqp_bindings]{bound} to other exchanges.
 #'   This is for creating complex routing topologies that are not visible to
 #'   consumers.
+#' @param ... Additional arguments, used to declare broker-specific AMQP
+#'   extensions. See \strong{Details}.
+#'
+#' @details
+#'
+#' Additional arguments can be used to declare broker-specific extensions. An
+#' incomplete list is as follows:
+#'
+#' \describe{
+#'   \item{\code{"alternate-exchange"}}{Specify an
+#'     \href{https://www.rabbitmq.com/ae.html}{alternate exchange} to handle
+#'     messages the broker is unable to route.}
+#' }
 #'
 #' @examples
 #' \dontrun{
@@ -36,13 +49,14 @@
 #' @export
 amqp_declare_exchange <- function(conn, exchange, type = "direct",
                                   passive = FALSE, durable = FALSE,
-                                  auto_delete = FALSE, internal = FALSE) {
+                                  auto_delete = FALSE, internal = FALSE, ...) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
+  args <- amqp_table(...)
   invisible(.Call(
     R_amqp_declare_exchange, conn$ptr, exchange, type, passive, durable,
-    auto_delete, internal
+    auto_delete, internal, args$ptr
   ))
 }
 

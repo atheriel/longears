@@ -19,6 +19,20 @@
 #'   server will generate one automatically.
 #' @param exclusive When \code{TRUE}, request that this consumer has exclusive
 #'   access to the queue.
+#' @param ... Additional arguments, used to declare broker-specific AMQP
+#'   extensions. See \strong{Details}.
+#'
+#' @details
+#'
+#' Additional arguments can be used to declare broker-specific extensions. An
+#' incomplete list is as follows:
+#'
+#' \describe{
+#'
+#'   \item{\code{"x-priority"}}{Specify a consumer
+#'     \href{https://www.rabbitmq.com/consumer-priority.html}{priority}.}
+#'
+#' }
 #'
 #' @return
 #'
@@ -59,14 +73,15 @@
 #'
 #' @export
 amqp_consume <- function(conn, queue, fun, tag = "", no_ack = FALSE,
-                         exclusive = FALSE) {
+                         exclusive = FALSE, ...) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
   stopifnot(is.function(fun))
+  args <- amqp_table(...)
   .Call(
     R_amqp_create_consumer, conn$ptr, queue, tag, fun, new.env(), no_ack,
-    exclusive
+    exclusive, args$ptr
   )
 }
 
@@ -134,12 +149,13 @@ amqp_listen <- function(conn, timeout = 10L) {
 #' @export
 #' @import later
 amqp_consume_later <- function(conn, queue, fun, tag = "", no_ack = FALSE,
-                               exclusive = FALSE) {
+                               exclusive = FALSE, ...) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
+  args <- amqp_table(...)
   .Call(
     R_amqp_consume_later, conn$ptr, queue, fun, new.env(), tag, no_ack,
-    exclusive
+    exclusive, args$ptr
   )
 }

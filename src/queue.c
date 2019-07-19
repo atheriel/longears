@@ -7,7 +7,7 @@
 #include "utils.h"
 
 SEXP R_amqp_declare_queue(SEXP ptr, SEXP queue, SEXP passive, SEXP durable,
-                          SEXP exclusive, SEXP auto_delete)
+                          SEXP exclusive, SEXP auto_delete, SEXP args)
 {
   connection *conn = (connection *) R_ExternalPtrAddr(ptr);
   char errbuff[200];
@@ -20,12 +20,13 @@ SEXP R_amqp_declare_queue(SEXP ptr, SEXP queue, SEXP passive, SEXP durable,
   int is_exclusive = asLogical(exclusive);
   int is_durable = asLogical(durable);
   int is_auto_delete = asLogical(auto_delete);
+  amqp_table_t *arg_table = (amqp_table_t *) R_ExternalPtrAddr(args);
 
   amqp_queue_declare_ok_t *queue_ok;
   queue_ok = amqp_queue_declare(conn->conn, conn->chan.chan,
                                 amqp_cstring_bytes(queue_str), is_passive,
                                 is_durable, is_exclusive, is_auto_delete,
-                                amqp_empty_table);
+                                *arg_table);
 
   if (queue_ok == NULL) {
     amqp_rpc_reply_t reply = amqp_get_rpc_reply(conn->conn);
