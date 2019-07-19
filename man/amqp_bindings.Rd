@@ -6,9 +6,9 @@
 \alias{amqp_unbind_queue}
 \title{Bind Queues to Exchanges}
 \usage{
-amqp_bind_queue(conn, queue, exchange, routing_key = "")
+amqp_bind_queue(conn, queue, exchange, routing_key = "", ...)
 
-amqp_unbind_queue(conn, queue, exchange, routing_key = "")
+amqp_unbind_queue(conn, queue, exchange, routing_key = "", ...)
 }
 \arguments{
 \item{conn}{An object returned by \code{\link{amqp_connect}}.}
@@ -18,6 +18,8 @@ amqp_unbind_queue(conn, queue, exchange, routing_key = "")
 \item{exchange}{The name of an exchange.}
 
 \item{routing_key}{The routing key to use (if applicable).}
+
+\item{...}{Binding arguments, if any.}
 }
 \description{
 In order for messages to be routed to a queue, the queue must be bound to

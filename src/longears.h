@@ -18,8 +18,8 @@ SEXP R_amqp_delete_exchange(SEXP ptr, SEXP exchange, SEXP if_unused);
 SEXP R_amqp_declare_queue(SEXP ptr, SEXP queue, SEXP passive, SEXP exclusive, SEXP durable, SEXP auto_delete, SEXP args);
 SEXP R_amqp_delete_queue(SEXP ptr, SEXP queue, SEXP if_unused, SEXP if_empty);
 
-SEXP R_amqp_bind_queue(SEXP ptr, SEXP queue, SEXP exchange, SEXP routing_key);
-SEXP R_amqp_unbind_queue(SEXP ptr, SEXP queue, SEXP exchange, SEXP routing_key);
+SEXP R_amqp_bind_queue(SEXP ptr, SEXP queue, SEXP exchange, SEXP routing_key, SEXP args);
+SEXP R_amqp_unbind_queue(SEXP ptr, SEXP queue, SEXP exchange, SEXP routing_key, SEXP args);
 
 SEXP R_amqp_publish(SEXP ptr, SEXP routing_key, SEXP body, SEXP exchange, SEXP context_type, SEXP mandatory, SEXP immediate);
 SEXP R_amqp_get(SEXP ptr, SEXP queue, SEXP no_ack);

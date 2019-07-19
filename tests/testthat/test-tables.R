@@ -55,6 +55,14 @@ testthat::test_that("Additional arguments to exchanges and queues work correctly
     "x-dead-letter-routing-key" = "#"
   ))
 
+  testthat::expect_silent(amqp_bind_queue(
+    conn, tmp, "test.exchange", "x-match" = "all", "key" = "value"
+  ))
+
+  testthat::expect_silent(amqp_unbind_queue(
+    conn, tmp, "test.exchange", "x-match" = "all", "key" = "value"
+  ))
+
   testthat::expect_equal(amqp_delete_queue(conn, tmp), 0)
   amqp_delete_exchange(conn, "test.exchange")
   amqp_disconnect(conn)
