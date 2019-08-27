@@ -4,3 +4,7 @@ language: R
 cache: packages
 apt_packages:
   - librabbitmq-dev
+r_binary_packages:
+  - later
+  - Rcpp
+  - testthat
