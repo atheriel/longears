@@ -2,3 +2,4 @@
 ^\.Rproj\.user$
 ^README\.Rmd$
 ^\.dir-locals.el$
+^\.travis\.yml$

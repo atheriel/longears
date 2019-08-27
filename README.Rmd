@@ -15,6 +15,10 @@ library(longears)
 ```
 # longears
 
+<!-- badges: start -->
+[![travis-ci build status](https://travis-ci.org/atheriel/longears.svg?branch=master)](https://travis-ci.org/atheriel/longears)
+<!-- badges: end -->
+
 This repository contains an early stage RabbitMQ client for R. It wraps the
 [reference C library](https://github.com/alanxz/rabbitmq-c).
 
