@@ -1,3 +1,9 @@
+# longears 0.2.1 (2019-08-28)
+
+- First public release.
+
+- Includes various improvements to top-level documentation.
+
 # longears 0.2.0 (2019-07-19)
 
 - Additional arguments can now be passed to exchange and queue declarations,
