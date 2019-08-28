@@ -3505,6 +3505,9 @@ fi
 CC=`"${R_HOME}/bin/R" CMD config CC`
 CFLAGS=`"${R_HOME}/bin/R" CMD config CFLAGS`
 
+# Look for librabbitmq/rabbitmq-c.
+have_librabbitmq=no
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing amqp_new_connection" >&5
 $as_echo_n "checking for library containing amqp_new_connection... " >&6; }
 if ${ac_cv_search_amqp_new_connection+:} false; then :
@@ -3558,9 +3561,7 @@ $as_echo "$ac_cv_search_amqp_new_connection" >&6; }
 ac_res=$ac_cv_search_amqp_new_connection
 if test "$ac_res" != no; then :
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-
-else
-  as_fn_error $? "librabbitmq is required. Try 'apt install librabbitmq-dev'." "$LINENO" 5
+  have_librabbitmq=yes
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for grep that handles long lines and -e" >&5
@@ -3829,13 +3830,31 @@ if test "x$ac_cv_header_amqp_h" = xyes; then :
   cat >>confdefs.h <<_ACEOF
 #define HAVE_AMQP_H 1
 _ACEOF
-
-else
-  as_fn_error $? "The librabbitmq headers are required. Try 'apt install librabbitmq-dev'." "$LINENO" 5
+ have_librabbitmq=yes
 fi
 
 done
 
+
+if test "x${have_librabbitmq}" = xno; then
+  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "
+---
+  The librabbitmq/rabbitmq-c headers could not be found. Please install
+
+    - librabbitmq-dev on Debian-based systems (including Ubuntu)
+    - librabbitmq-devel on Fedora-based systems (including CentOS, RHEL)
+    - librabbitmq-c on Arch-based systems
+    - rabbitmq-c (via Homebrew) on macOS
+
+  and try again. If you do have this library and this installation still fails,
+  you can provide the location of the library directly with
+
+  R CMD INSTALL longears --configure-vars='LIBS=-L/path/to/libs CPPFLAGS=-I/path/to/headers'
+---
+See \`config.log' for more details" "$LINENO" 5; }
+fi
 
 PKG_LIBS="${PKG_LIBS} ${ac_cv_search_amqp_new_connection}"
 
@@ -4999,11 +5018,11 @@ $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
 
 
-echo "
-Configuration:
-==============
+echo "---
+  Configuration:
 
-cc:      ${CC}
-cflags:  ${CFLAGS}
-libs:    ${PKG_LIBS}
-"
+  CC:        ${CC}
+  CFLAGS:    ${CFLAGS}
+  CPPFLAGS:  ${PKG_CPPFLAGS}
+  LIBS:      ${PKG_LIBS}
+---"

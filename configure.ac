@@ -13,19 +13,39 @@ fi
 CC=`"${R_HOME}/bin/R" CMD config CC`
 CFLAGS=`"${R_HOME}/bin/R" CMD config CFLAGS`
 
-AC_SEARCH_LIBS(amqp_new_connection, rabbitmq, [], [AC_ERROR([librabbitmq is required. Try 'apt install librabbitmq-dev'.])])
-AC_CHECK_HEADERS(amqp.h, [], [AC_ERROR([The librabbitmq headers are required. Try 'apt install librabbitmq-dev'.])])
+# Look for librabbitmq/rabbitmq-c.
+have_librabbitmq=no
+
+AC_SEARCH_LIBS(amqp_new_connection, rabbitmq, [have_librabbitmq=yes])
+AC_CHECK_HEADERS(amqp.h, [have_librabbitmq=yes])
+
+if test "x${have_librabbitmq}" = xno; then
+  AC_MSG_FAILURE([
+---
+  The librabbitmq/rabbitmq-c headers could not be found. Please install
+
+    - librabbitmq-dev on Debian-based systems (including Ubuntu)
+    - librabbitmq-devel on Fedora-based systems (including CentOS, RHEL)
+    - librabbitmq-c on Arch-based systems
+    - rabbitmq-c (via Homebrew) on macOS
+
+  and try again. If you do have this library and this installation still fails,
+  you can provide the location of the library directly with
+
+  R CMD INSTALL longears --configure-vars='LIBS=-L/path/to/libs CPPFLAGS=-I/path/to/headers'
+---])
+fi
 
 AC_SUBST([PKG_LIBS],["${PKG_LIBS} ${ac_cv_search_amqp_new_connection}"])
 AC_SUBST([PKG_CPPFLAGS],["${PKG_CPPFLAGS}"])
 AC_CONFIG_FILES([src/Makevars])
 AC_OUTPUT
 
-echo "
-Configuration:
-==============
+echo "---
+  Configuration:
 
-cc:      ${CC}
-cflags:  ${CFLAGS}
-libs:    ${PKG_LIBS}
-"
+  CC:        ${CC}
+  CFLAGS:    ${CFLAGS}
+  CPPFLAGS:  ${PKG_CPPFLAGS}
+  LIBS:      ${PKG_LIBS}
+---"
