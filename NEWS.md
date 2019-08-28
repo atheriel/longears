@@ -74,6 +74,6 @@
   - Consuming many messages from queues using a combination of `amqp_consume()`
     and `amqp_listen()`. This is the "push" interface.
 
-- Also includes an experimentatal `amqp_consume_later()` function for
+- Also includes an experimental `amqp_consume_later()` function for
   "asynchronous" message handling. Requires that the user has an event loop
   compatible with the **later** package, such as a Shiny application.

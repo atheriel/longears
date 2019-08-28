@@ -40,7 +40,7 @@
 #' later be used to cancel the consumer. Keep in mind that if you do not assign
 #' the result of this function to a variable, you will have no way of
 #' cancelling the consumer directly -- instead, you will be relying on
-#' \code{\link[base]{gc}} to take care of this at some indeterminant point in
+#' \code{\link[base]{gc}} to take care of this at some indeterminate point in
 #' the future.
 #'
 #' @details

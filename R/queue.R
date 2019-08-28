@@ -50,7 +50,7 @@
 #'     \href{https://www.rabbitmq.com/ttl.html}{expiration}, in seconds.}
 #'
 #'   \item{\code{"x-max-length"}}{Specify the
-#'     \href{https://www.rabbitmq.com/maxlength.html}{maximum number of messsages}
+#'     \href{https://www.rabbitmq.com/maxlength.html}{maximum number of messages}
 #'     to store in the queue before it overflows.}
 #'
 #'   \item{\code{"x-max-length-bytes"}}{Specify the
