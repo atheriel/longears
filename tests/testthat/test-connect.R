@@ -21,6 +21,7 @@ testthat::test_that("Local server connection errors are reported correctly", {
     amqp_connect(password = "invalid"), regexp = "ACCESS_REFUSED"
   )
 
+  testthat::skip_on_travis()
   testthat::expect_error(
     amqp_connect(vhost = "invalid"), regexp = "NOT_ALLOWED"
   )
