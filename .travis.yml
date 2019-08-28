@@ -4,7 +4,11 @@ language: R
 cache: packages
 apt_packages:
   - librabbitmq-dev
+  # For integration testing.
+  - rabbitmq-server
 r_binary_packages:
   - later
   - Rcpp
   - testthat
+before_script:
+  - sudo systemctl start rabbitmq-server
