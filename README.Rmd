@@ -20,34 +20,50 @@ library(longears)
 [![CRAN status](https://www.r-pkg.org/badges/version/longears)](https://cran.r-project.org/package=longears)
 <!-- badges: end -->
 
-This repository contains an early stage RabbitMQ client for R. It wraps the
-[reference C library](https://github.com/alanxz/rabbitmq-c).
+**longears** is a fast and fully-featured RabbitMQ client for R, built on top of
+the reference C library, [`librabbitmq`](https://github.com/alanxz/rabbitmq-c).
 
-[RabbitMQ](https://www.rabbitmq.com/) is a popular and performant open-source
-message broker used to build highly distributed and asynchronous network
-topologies. This package may be of interest to you if you wish to have R speak
-to your organization's existing RabbitMQ servers; if you simply need a message
-queue library, you may be better off with [**txtq**](https://github.com/wlandau/txtq),
-[**litq**](https://github.com/r-lib/liteq), or the ZeroMQ package [**rzmq**](https://github.com/ropensci/rzmq).
+[RabbitMQ](https://www.rabbitmq.com/) itself is a highly popular, performant,
+and robust open-source message broker used to build distributed systems.
 
-The package implements a large portion of the Advanced Message Queuing Protocol
+**longears** implements a large portion of the Advanced Message Queuing Protocol
 (AMQP) used by RabbitMQ , and the API largely reflects [the protocol itself](https://www.rabbitmq.com/amqp-0-9-1-reference.html).
-However, `longears` is not a true low-level package: it abstracts away many
+However, this package is not a true low-level interface: it abstracts away many
 details of AMQP for end users. See [Limitations](#Limitations) for details.
+
+This package may be of interest to you if you wish to have R speak to your
+organization's existing RabbitMQ servers; if you simply need a message queue
+library, you may be better off with [**txtq**](https://cran.r-project.org/package=txtq),
+[**litq**](https://cran.r-project.org/package=liteq), or the ZeroMQ package
+[**rzmq**](https://cran.r-project.org/package=rzmq).
 
 ## Installation
 
-You will need `librabbitmq`, otherwise the installation will fail. On Ubuntu, run
+To install **longears** as a source package you will need its system dependency,
+`librabbitmq`. For example, on Debian-based systems (including Ubuntu) you can
+get this library by running the following from the command line:
 
 ```shell
 $ apt install librabbitmq-dev
 ```
 
-The package is only available from GitHub for now, so you can install it with
+For other platforms:
+
+* macOS (via Homebrew): `brew install rabbitmq-c`
+* Fedora-based: `yum install librabbitmq-devel`
+* Arch-based: `pacman -S librabbitmq-c`
+
+You can then install **longears** from CRAN with
 
 ``` r
-# install.packages("devtools")
-devtools::install_github("atheriel/longears")
+install.packages("longears")
+```
+
+or from GitHub with
+
+``` r
+# install.packages("remotes")
+remotes::install_github("atheriel/longears")
 ```
 
 ## Basic Usage
