@@ -1,5 +1,5 @@
 Package: longears
-Title: Interface to 'RabbitMQ' and the Advanced Message Queuing Protocol
+Title: A Fast and Fully-Featured 'RabbitMQ' Client
 Version: 0.2.0
 Authors@R: c(
   person("Aaron", "Jacobs", role = c("aut", "cre"),
@@ -7,8 +7,10 @@ Authors@R: c(
   person("Crescendo Technology Ltd.", role = "cph")
   )
 Maintainer: Aaron Jacobs <atheriel@gmail.com>
-Description: This package provides a way to send and consume the 'AMQP'
-  messages used by 'RabbitMQ' servers.
+Description: Provides a client for the 'RabbitMQ' message broker, allowing users
+  to publish and consume messages via the Advanced Message Queuing Protocol
+  ('AMQP'), as well as declare, delete, and bind the exchanges and queues used to
+  route them.
 License: GPL (>= 2)
 URL: https://github.com/atheriel/longears
 BugReports: https://github.com/atheriel/longears/issues
