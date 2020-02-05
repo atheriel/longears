@@ -3,7 +3,10 @@
 #' Publishes a message to an exchange with a given routing key.
 #'
 #' @param conn An object returned by \code{\link{amqp_connect}}.
-#' @param body The message to send.
+#' @param body The message to send. This should be a \code{raw} vector.
+#' For testing purposes however it is possible to a \code{character} vector of length one.
+#' In this case it will be converted to a raw vector internally using \code{charToRaw}.
+#' function.
 #' @param exchange The exchange to route the message through.
 #' @param routing_key The routing key for the message. For the default exchange,
 #'   this is the name of a queue.
@@ -21,6 +24,15 @@ amqp_publish <- function(conn, body, exchange = "", routing_key = "",
                          properties = NULL) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
+  }
+  if (inherits(body, "character")) {
+    if (length(body) > 1) {
+      stop("`body` argument should be 'raw' vector or character of length 1 (string)")
+    }
+    body = charToRaw(body)
+  }
+  if (!inherits(body, "raw")) {
+    stop("`body` argument should be 'raw' vector or character of length 1 (string)")
   }
   props <- if (inherits(properties, "amqp_properties")) {
     properties$ptr

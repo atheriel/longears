@@ -10,7 +10,10 @@ amqp_publish(conn, body, exchange = "", routing_key = "",
 \arguments{
 \item{conn}{An object returned by \code{\link{amqp_connect}}.}
 
-\item{body}{The message to send.}
+\item{body}{The message to send. This should be a \code{raw} vector.
+For testing purposes however it is possible to a \code{character} vector of length one.
+In this case it will be converted to a raw vector internally using \code{charToRaw}.
+function.}
 
 \item{exchange}{The exchange to route the message through.}
 
