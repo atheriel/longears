@@ -23,6 +23,9 @@ amqp_publish <- function(conn, body, exchange = "", routing_key = "",
     stop("`conn` is not an amqp_connection object")
   }
   if (is.character(body)) {
+    if (length(body) != 1L) {
+      stop("body should be a string or a raw vector")
+    }
     body <- charToRaw(body)
   }
   props <- if (inherits(properties, "amqp_properties")) {

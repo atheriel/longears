@@ -8,11 +8,9 @@ testthat::test_that("basic publish works as expected", {
   q1 <- amqp_declare_tmp_queue(conn)
   amqp_bind_queue(conn, q1, "test.exchange", routing_key = "#")
 
-  testthat::expect_warning(
+  testthat::expect_error(
     amqp_publish(conn, body = c("Hello", "world"), exchange = "test.exchange", routing_key = "#")
   )
-  msg <- amqp_get(conn, q1)
-  testthat::expect_equal(msg$body, charToRaw("Hello"))
 
   testthat::expect_error(
     amqp_publish(conn, body = list("Hello"), exchange = "test.exchange", routing_key = "#")
