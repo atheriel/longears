@@ -18,7 +18,8 @@ SEXP R_amqp_publish(SEXP ptr, SEXP body, SEXP exchange, SEXP routing_key,
     Rf_error("Failed to find an open channel. %s", errbuff);
     return R_NilValue;
   }
-  const char *body_str = CHAR(asChar(body));
+
+  amqp_bytes_t body_bytes = {.len = XLENGTH(body), .bytes = (void *)RAW(body)};
   const char *exchange_str = CHAR(asChar(exchange));
   const char *routing_key_str = CHAR(asChar(routing_key));
   int is_mandatory = asLogical(mandatory);
@@ -34,7 +35,7 @@ SEXP R_amqp_publish(SEXP ptr, SEXP body, SEXP exchange, SEXP routing_key,
                                   amqp_cstring_bytes(exchange_str),
                                   amqp_cstring_bytes(routing_key_str),
                                   is_mandatory, is_immediate, props_,
-                                  amqp_cstring_bytes(body_str));
+                                  body_bytes);
 
   if (result != AMQP_STATUS_OK) {
     render_amqp_library_error(result, conn, &conn->chan, errbuff, 200);

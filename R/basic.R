@@ -3,7 +3,7 @@
 #' Publishes a message to an exchange with a given routing key.
 #'
 #' @param conn An object returned by \code{\link{amqp_connect}}.
-#' @param body The message to send.
+#' @param body The message to send, either a string or a \code{raw} vector.
 #' @param exchange The exchange to route the message through.
 #' @param routing_key The routing key for the message. For the default exchange,
 #'   this is the name of a queue.
@@ -21,6 +21,12 @@ amqp_publish <- function(conn, body, exchange = "", routing_key = "",
                          properties = NULL) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
+  }
+  if (is.character(body)) {
+    if (length(body) != 1L) {
+      stop("body should be a string or a raw vector")
+    }
+    body <- charToRaw(body)
   }
   props <- if (inherits(properties, "amqp_properties")) {
     properties$ptr

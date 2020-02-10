@@ -10,7 +10,7 @@ amqp_publish(conn, body, exchange = "", routing_key = "",
 \arguments{
 \item{conn}{An object returned by \code{\link{amqp_connect}}.}
 
-\item{body}{The message to send.}
+\item{body}{The message to send, either a string or a \code{raw} vector.}
 
 \item{exchange}{The exchange to route the message through.}
 
