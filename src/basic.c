@@ -19,7 +19,9 @@ SEXP R_amqp_publish(SEXP ptr, SEXP body, SEXP exchange, SEXP routing_key,
     return R_NilValue;
   }
 
-  amqp_bytes_t body_bytes = {.len = XLENGTH(body), .bytes = (void *)RAW(body)};
+  amqp_bytes_t body_bytes;
+  body_bytes.len = XLENGTH(body);
+  body_bytes.bytes = (void *) RAW(body);
   const char *exchange_str = CHAR(asChar(exchange));
   const char *routing_key_str = CHAR(asChar(routing_key));
   int is_mandatory = asLogical(mandatory);
