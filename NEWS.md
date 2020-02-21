@@ -1,3 +1,8 @@
+# longears 0.2.1.9000
+
+- `amqp_publish()` will now accept raw vectors for the message body in addition
+  to strings. (#4 by @dselivanov)
+
 # longears 0.2.1 (2019-08-28)
 
 - First public release.
