@@ -8,7 +8,7 @@ testthat::test_that("Publish works as expected", {
   q1 <- amqp_declare_tmp_queue(conn)
   amqp_bind_queue(conn, q1, exch, routing_key = "#")
 
-  testthat::expect_error(
+  testthat::expect_warning(
     amqp_publish(
       conn, body = c("hello", "hello"), exchange = exch, routing_key = "#"
     )
