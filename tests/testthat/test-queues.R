@@ -3,6 +3,7 @@ testthat::context("test-queues.R")
 testthat::test_that("Queues can be created, deleted, and receive messages", {
   skip_if_no_local_rmq()
 
+  queue <- random_name()
   conn <- amqp_connect()
 
   # Attempt to declare a queue in a reserved namespace.
@@ -12,22 +13,21 @@ testthat::test_that("Queues can be created, deleted, and receive messages", {
   )
 
   testthat::expect_error(
-    amqp_declare_queue(conn, "test.queue", passive = TRUE),
-    regexp = "NOT_FOUND"
+    amqp_declare_queue(conn, queue, passive = TRUE), regexp = "NOT_FOUND"
   )
 
   testthat::expect_silent(
-    amqp_declare_queue(conn, "test.queue", durable = FALSE, auto_delete = TRUE)
+    amqp_declare_queue(conn, queue, durable = FALSE, auto_delete = TRUE)
   )
 
   # Attempt to declare a queue with inconsistent parameters.
   testthat::expect_error(
-    amqp_declare_queue(conn, "test.queue", durable = TRUE),
+    amqp_declare_queue(conn, queue, durable = TRUE),
     regexp = "PRECONDITION_FAILED"
   )
 
   testthat::expect_equal(
-    amqp_delete_queue(conn, "test.queue", if_empty = TRUE), 0
+    amqp_delete_queue(conn, queue, if_empty = TRUE), 0
   )
 
   # Queues should be able to receive messages.

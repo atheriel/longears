@@ -27,24 +27,20 @@ testthat::test_that("Consume works as expected", {
     alt_count <<- alt_count + 1
   }
 
-  amqp_declare_exchange(conn, "test.exchange", auto_delete = TRUE)
+  exch <- amqp_declare_tmp_exchange(conn)
   q1 <- amqp_declare_tmp_queue(conn)
-  amqp_bind_queue(conn, q1, "test.exchange", routing_key = "#")
+  amqp_bind_queue(conn, q1, exch, routing_key = "#")
   q2 <- amqp_declare_tmp_queue(conn)
-  amqp_bind_queue(conn, q2, "test.exchange", routing_key = "#")
+  amqp_bind_queue(conn, q2, exch, routing_key = "#")
   q3 <- amqp_declare_tmp_queue(conn)
-  amqp_bind_queue(conn, q3, "test.exchange", routing_key = "#")
+  amqp_bind_queue(conn, q3, exch, routing_key = "#")
 
   c1 <- testthat::expect_silent(amqp_consume(conn, q1, f1))
   c2 <- testthat::expect_silent(amqp_consume(conn, q2, f2))
   c3 <- testthat::expect_silent(amqp_consume(conn, q3, f3))
 
-  amqp_publish(
-    conn, body = "Hello, world", exchange = "test.exchange", routing_key = "#"
-  )
-  amqp_publish(
-    conn, body = "Hello, again", exchange = "test.exchange", routing_key = "#"
-  )
+  amqp_publish(conn, body = "Hello, world", exchange = exch, routing_key = "#")
+  amqp_publish(conn, body = "Hello, again", exchange = exch, routing_key = "#")
 
   amqp_listen(conn, timeout = 1)
 
@@ -53,9 +49,7 @@ testthat::test_that("Consume works as expected", {
   testthat::expect_equal(alt_count, 2)
 
   amqp_delete_queue(conn, q3)
-  amqp_publish(
-    conn, body = "Goodbye", exchange = "test.exchange", routing_key = "#"
-  )
+  amqp_publish(conn, body = "Goodbye", exchange = exch, routing_key = "#")
 
   testthat::expect_silent(amqp_cancel_consumer(c1))
 
@@ -98,26 +92,25 @@ testthat::test_that("Consumers respond to disconnections correctly", {
   }
 
   # We need durable queues/exchanges to test across server restarts.
-  amqp_delete_exchange(conn, "test.exchange")
-  amqp_declare_exchange(conn, "test.exchange", durable = TRUE)
-  amqp_declare_queue(conn, queue = "test.queue", durable = TRUE)
-  amqp_bind_queue(conn, "test.queue", "test.exchange", routing_key = "#")
+  exch <- random_name()
+  queue <- random_name()
+  amqp_declare_exchange(conn, exch, durable = TRUE)
+  amqp_declare_queue(conn, queue = queue, durable = TRUE)
+  amqp_bind_queue(conn, queue, exch, routing_key = "#")
 
-  c1 <- testthat::expect_silent(amqp_consume(conn, "test.queue", f1))
+  c1 <- testthat::expect_silent(amqp_consume(conn, queue, f1))
 
   # Simulate an unexpected disconnection.
   testthat::expect_equal(rabbitmqctl("stop_app"), 0)
   testthat::expect_equal(rabbitmqctl("start_app"), 0)
 
   testthat::expect_error(amqp_publish(
-    conn, body = "Hello, world", exchange = "test.exchange", routing_key = "#"
+    conn, body = "Hello, world", exchange = exch, routing_key = "#"
   ), regexp = "Disconnected from server")
 
   testthat::expect_warning(amqp_reconnect(conn), regexp = "must be recreated")
 
-  amqp_publish(
-    conn, body = "Hello, world", exchange = "test.exchange", routing_key = "#"
-  )
+  amqp_publish(conn, body = "Hello, world", exchange = exch, routing_key = "#")
 
   # The consumer should not trigger.
   testthat::expect_silent(amqp_listen(conn, 1))
@@ -126,8 +119,8 @@ testthat::test_that("Consumers respond to disconnections correctly", {
   # Unnecessary cancels should not cause a crash.
   testthat::expect_silent(amqp_cancel_consumer(c1))
 
-  amqp_delete_queue(conn, "test.queue")
-  amqp_delete_exchange(conn, "test.exchange")
+  amqp_delete_queue(conn, queue)
+  amqp_delete_exchange(conn, exch)
   amqp_disconnect(conn)
 })
 
@@ -136,13 +129,11 @@ testthat::test_that("Consume later works as expected", {
 
   conn <- amqp_connect()
 
-  amqp_declare_exchange(
-    conn, "test.exchange", type = "direct", auto_delete = TRUE
-  )
+  exch <- amqp_declare_tmp_exchange(conn)
   q1 <- amqp_declare_tmp_queue(conn, exclusive = FALSE)
-  amqp_bind_queue(conn, q1, "test.exchange", routing_key = "#")
+  amqp_bind_queue(conn, q1, exch, routing_key = "#")
   q2 <- amqp_declare_tmp_queue(conn, exclusive = FALSE)
-  amqp_bind_queue(conn, q2, "test.exchange", routing_key = "#")
+  amqp_bind_queue(conn, q2, exch, routing_key = "#")
 
   messages <- data.frame()
   last_tag <- NA
@@ -161,16 +152,12 @@ testthat::test_that("Consume later works as expected", {
     })
   )
 
-  amqp_publish(
-    conn, body = "Hello, world", exchange = "test.exchange", routing_key = "#"
-  )
+  amqp_publish(conn, body = "Hello, world", exchange = exch, routing_key = "#")
 
   # Ensure that the callbacks trigger.
   expect_callbacks(2)
 
-  amqp_publish(
-    conn, body = "Hello, again", exchange = "test.exchange", routing_key = "#"
-  )
+  amqp_publish(conn, body = "Hello, again", exchange = exch, routing_key = "#")
 
   # Ensure that the callbacks trigger.
   expect_callbacks(2)
@@ -195,17 +182,15 @@ testthat::test_that("Consume later responds to disconnections correctly", {
   }
 
   # We need durable queues/exchanges to test across server restarts.
-  amqp_delete_exchange(conn, "test.exchange")
-  amqp_delete_queue(conn, "test.queue")
-  amqp_declare_exchange(conn, "test.exchange", durable = TRUE)
-  amqp_declare_queue(conn, queue = "test.queue", durable = TRUE)
-  amqp_bind_queue(conn, "test.queue", "test.exchange", routing_key = "#")
+  exch <- random_name()
+  queue <- random_name()
+  amqp_declare_exchange(conn, exch, durable = TRUE)
+  amqp_declare_queue(conn, queue = queue, durable = TRUE)
+  amqp_bind_queue(conn, queue, exch, routing_key = "#")
 
-  c1 <- testthat::expect_silent(amqp_consume_later(conn, "test.queue", f1))
+  c1 <- testthat::expect_silent(amqp_consume_later(conn, queue, f1))
 
-  amqp_publish(
-    conn, body = "Hello, world", exchange = "test.exchange", routing_key = "#"
-  )
+  amqp_publish(conn, body = "Hello, world", exchange = exch, routing_key = "#")
 
   # Ensure that the callback triggers.
   expect_callbacks(1)
@@ -215,7 +200,7 @@ testthat::test_that("Consume later responds to disconnections correctly", {
   testthat::expect_equal(rabbitmqctl("start_app"), 0)
 
   testthat::expect_error(amqp_publish(
-    conn, body = "Hello, world", exchange = "test.exchange", routing_key = "#"
+    conn, body = "Hello, world", exchange = exch, routing_key = "#"
   ), regexp = "Disconnected from server")
 
   amqp_reconnect(conn)
@@ -223,10 +208,10 @@ testthat::test_that("Consume later responds to disconnections correctly", {
   # Esnure the warning callback runs.
   testthat::expect_warning(wait_for_callbacks(1), regexp = "must be recreated")
 
-  c2 <- testthat::expect_silent(amqp_consume_later(conn, "test.queue", f1))
+  c2 <- testthat::expect_silent(amqp_consume_later(conn, queue, f1))
 
   amqp_publish(
-    conn, body = "Hello, world", exchange = "test.exchange", routing_key = "#"
+    conn, body = "Hello, world", exchange = exch, routing_key = "#"
   )
 
   # Unnecessary cancels should not cause a crash.
@@ -235,7 +220,7 @@ testthat::test_that("Consume later responds to disconnections correctly", {
   # Ensure that the callback triggers.
   expect_callbacks(1)
 
-  amqp_delete_queue(conn, "test.queue")
-  amqp_delete_exchange(conn, "test.exchange")
+  amqp_delete_queue(conn, queue)
+  amqp_delete_exchange(conn, exch)
   amqp_disconnect(conn)
 })

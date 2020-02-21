@@ -39,15 +39,16 @@ testthat::test_that("Encoding and decoding tables works correctly", {
 testthat::test_that("Additional arguments work correctly", {
   skip_if_no_local_rmq()
 
+  exch <- random_name()
   conn <- amqp_connect()
 
   # Test known extensions.
   testthat::expect_silent(amqp_declare_exchange(
-    conn, "test.exchange", "alternate-exchange" = "test.altexchange"
+    conn, exch, "alternate-exchange" = "test.altexchange", auto_delete = TRUE
   ))
 
   # Test known x-argument extensions.
-  tmp <- testthat::expect_silent(amqp_declare_tmp_queue(
+  testthat::expect_silent(queue <- amqp_declare_tmp_queue(
     conn, "x-message-ttl" = 180000L, "x-expires" = 180000L,
     "x-max-length" = 10L, "x-max-length-bytes" = 1048576L,
     "x-overflow" = "drop-head", "x-queue-mode" = "lazy",
@@ -55,19 +56,17 @@ testthat::test_that("Additional arguments work correctly", {
     "x-dead-letter-routing-key" = "#"
   ))
 
-  testthat::expect_silent(amqp_bind_queue(
-    conn, tmp, "test.exchange", "x-match" = "all", "key" = "value"
-  ))
-
   testthat::expect_silent(
-    amqp_consume(conn, tmp, function(msg) "Beep!", "x-priority" = 10L)
+    amqp_bind_queue(conn, queue, exch, "x-match" = "all", "key" = "value")
   )
 
-  testthat::expect_silent(amqp_unbind_queue(
-    conn, tmp, "test.exchange", "x-match" = "all", "key" = "value"
-  ))
+  testthat::expect_silent(
+    amqp_consume(conn, queue, function(msg) "Beep!", "x-priority" = 10L)
+  )
 
-  testthat::expect_equal(amqp_delete_queue(conn, tmp), 0)
-  amqp_delete_exchange(conn, "test.exchange")
+  testthat::expect_silent(
+    amqp_unbind_queue(conn, queue, exch, "x-match" = "all", "key" = "value")
+  )
+
   amqp_disconnect(conn)
 })

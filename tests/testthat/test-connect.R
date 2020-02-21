@@ -49,18 +49,17 @@ testthat::test_that("Disconnections are handled correctly", {
   testthat::expect_equal(rabbitmqctl("start_app"), 0)
 
   testthat::expect_error(
-    amqp_declare_exchange(conn, "test.exchange"),
+    amqp_declare_tmp_exchange(conn),
     regexp = "Disconnected from server"
   )
 
   testthat::expect_error(
-    amqp_declare_exchange(conn, "test.exchange"),
+    amqp_declare_tmp_exchange(conn),
     regexp = "Not connected to a server"
   )
 
   testthat::expect_silent(amqp_reconnect(conn))
 
   # Retry.
-  testthat::expect_silent(amqp_declare_exchange(conn, "test.exchange"))
-  testthat::expect_silent(amqp_delete_exchange(conn, "test.exchange"))
+  testthat::expect_silent(amqp_declare_tmp_exchange(conn))
 })

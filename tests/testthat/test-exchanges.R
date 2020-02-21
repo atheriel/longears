@@ -5,28 +5,30 @@ testthat::test_that("Exchanges can be created and deleted", {
 
   conn <- amqp_connect()
 
-  testthat::expect_silent(amqp_delete_exchange(conn, "test.exchange"))
+  testthat::expect_silent(exch <- amqp_declare_tmp_exchange(conn))
 
   testthat::expect_error(
-    amqp_declare_exchange(conn, "test.exchange", type = "fanout", passive = TRUE),
+    amqp_declare_exchange(conn, "longears-doesnotexist", passive = TRUE),
     regexp = "NOT_FOUND"
   )
 
-  testthat::expect_silent(amqp_declare_exchange(conn, "test.exchange"))
-
-  # Attempt to declare an exchange with an inconsistent type.
+  # Attempt to redeclare an exchange with an inconsistent type.
   testthat::expect_error(
-    amqp_declare_exchange(conn, "test.exchange", type = "fanout"),
+    amqp_declare_exchange(conn, exch, type = "fanout"),
     regexp = "PRECONDITION_FAILED"
   )
 
-  testthat::expect_silent(amqp_declare_exchange(conn, "test.exchange"))
-  testthat::expect_silent(amqp_delete_exchange(conn, "test.exchange"))
+  # Redeclare the exchange with the same parameters.
+  testthat::expect_silent(
+    amqp_declare_exchange(conn, exch, auto_delete = TRUE)
+  )
+
+  testthat::expect_silent(amqp_delete_exchange(conn, exch))
 
   # Attempt to create an exchange with an invalid type. This is actually a
   # connection-level error.
   testthat::expect_error(
-    amqp_declare_exchange(conn, "test.exchange2", type = "invalid"),
+    amqp_declare_tmp_exchange(conn, type = "invalid"),
     regexp = "invalid exchange type"
   )
 
@@ -41,25 +43,24 @@ testthat::test_that("Queues can be bound to exchanges", {
   tmp <- amqp_declare_tmp_queue(conn)
 
   # Bind to a non-existant exchange.
-  testthat::expect_error(amqp_bind_queue(conn, tmp, "doesnotexist"),
-                         regexp = "NOT_FOUND")
-
-  amqp_declare_exchange(conn, "test.exchange", auto_delete = TRUE)
-  amqp_declare_exchange(conn, "test.exchange2", auto_delete = TRUE)
-
-  testthat::expect_silent(amqp_bind_queue(conn, tmp, "test.exchange"))
-  testthat::expect_silent(
-    amqp_bind_exchange(conn, "test.exchange2", "test.exchange")
+  testthat::expect_error(
+    amqp_bind_queue(conn, tmp, "longears-doesnotexist"),
+    regexp = "NOT_FOUND"
   )
 
-  testthat::expect_silent(amqp_unbind_queue(conn, tmp, "test.exchange"))
-  testthat::expect_silent(
-    amqp_unbind_exchange(conn, "test.exchange2", "test.exchange")
-  )
+  exch1 <- amqp_declare_tmp_exchange(conn)
+  exch2 <- amqp_declare_tmp_exchange(conn)
+
+  testthat::expect_silent(amqp_bind_queue(conn, tmp, exch1))
+  testthat::expect_silent(amqp_bind_exchange(conn, exch2, exch1))
+
+  testthat::expect_silent(amqp_unbind_queue(conn, tmp, exch1))
+  testthat::expect_silent(amqp_unbind_exchange(conn, exch2, exch1))
 
   # The (auto_delete) exchange should be deleted when the queue is unbound.
-  testthat::expect_error(amqp_bind_queue(conn, tmp, "test.exchange"),
-                         regexp = "NOT_FOUND")
+  testthat::expect_error(
+    amqp_bind_queue(conn, tmp, exch1), regexp = "NOT_FOUND"
+  )
 
   amqp_delete_queue(conn, tmp, if_empty = TRUE)
   amqp_disconnect(conn)
