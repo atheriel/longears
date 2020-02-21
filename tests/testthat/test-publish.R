@@ -1,6 +1,6 @@
 testthat::context("test-publish.R")
 
-testthat::test_that("basic publish works as expected", {
+testthat::test_that("Publish works as expected", {
   skip_if_no_local_rmq()
 
   conn <- amqp_connect()
