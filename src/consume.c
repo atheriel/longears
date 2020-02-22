@@ -151,12 +151,29 @@ SEXP R_amqp_listen(SEXP ptr, SEXP timeout)
      * the function early. */
 
     if (reply.reply_type == AMQP_RESPONSE_LIBRARY_EXCEPTION) {
-      switch (reply.library_error) {
+      int status = reply.library_error;
+
+      /* If we get into an unexpected state, try to decode a relevant method
+         (e.g. connection.close). */
+      if (status == AMQP_STATUS_UNEXPECTED_STATE) {
+        amqp_frame_t frame;
+        status = amqp_simple_wait_frame(conn->conn, &frame);
+        /* If the server shuts down gracefully, this is how we will probably be
+           notified. */
+        if (status == AMQP_STATUS_OK && frame.frame_type == AMQP_FRAME_METHOD &&
+            frame.payload.method.id == AMQP_CONNECTION_CLOSE_METHOD) {
+          status = AMQP_STATUS_CONNECTION_CLOSED;
+        } else if (status == AMQP_STATUS_OK) {
+          status = AMQP_STATUS_UNEXPECTED_STATE;
+        } else {
+          /* Act on whatever status amqp_simple_wait_frame() gave us. */
+        }
+      }
+
+      switch (status) {
       case AMQP_STATUS_TIMEOUT:
         current_wait++;
         break;
-      case AMQP_STATUS_UNEXPECTED_STATE:
-        /* fallthrough */
       case AMQP_STATUS_CONNECTION_CLOSED:
         /* fallthrough */
       case AMQP_STATUS_SOCKET_CLOSED:
@@ -168,7 +185,7 @@ SEXP R_amqp_listen(SEXP ptr, SEXP timeout)
         break;
       default:
         Rf_error("Encountered unexpected library error: %s\n",
-                 amqp_error_string2(reply.library_error));
+                 amqp_error_string2(status));
         break;
       }
     }

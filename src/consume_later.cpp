@@ -184,9 +184,28 @@ static void * consume_run(void *data)
       ptr->env = env;
       later::later(later_callback, ptr, 0);
     } else if (reply.reply_type == AMQP_RESPONSE_LIBRARY_EXCEPTION) {
+      int status = reply.library_error;
+
+      /* If we get into an unexpected state, try to decode a relevant method
+         (e.g. connection.close). */
+      if (status == AMQP_STATUS_UNEXPECTED_STATE) {
+        amqp_frame_t frame;
+        status = amqp_simple_wait_frame(con->conn->conn, &frame);
+        /* If the server shuts down gracefully, this is how we will probably be
+           notified. */
+        if (status == AMQP_STATUS_OK && frame.frame_type == AMQP_FRAME_METHOD &&
+            frame.payload.method.id == AMQP_CONNECTION_CLOSE_METHOD) {
+          status = AMQP_STATUS_CONNECTION_CLOSED;
+        } else if (status == AMQP_STATUS_OK) {
+          status = AMQP_STATUS_UNEXPECTED_STATE;
+        } else {
+          /* Act on whatever status amqp_simple_wait_frame() gave us. */
+        }
+      }
+
       /* Terminate the thread on connection errors and schedule a warning to be
          surfaced to the user at some point in the future. */
-      switch (reply.library_error) {
+      switch (status) {
       case AMQP_STATUS_WRONG_METHOD:
         /* fallthrough */
       case AMQP_STATUS_UNEXPECTED_STATE:

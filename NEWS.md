@@ -7,6 +7,8 @@
   bugs where R would hang when trying to send messages to a closed socket
   (especially inside finalizers).
 
+- Handling of closed connections on background threads has been improved.
+
 # longears 0.2.1 (2019-08-28)
 
 - First public release.
