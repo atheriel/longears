@@ -163,6 +163,18 @@ SEXP R_amqp_listen(SEXP ptr, SEXP timeout)
         if (status == AMQP_STATUS_OK && frame.frame_type == AMQP_FRAME_METHOD &&
             frame.payload.method.id == AMQP_CONNECTION_CLOSE_METHOD) {
           status = AMQP_STATUS_CONNECTION_CLOSED;
+        } else if (status == AMQP_STATUS_OK &&
+                   frame.frame_type == AMQP_FRAME_METHOD &&
+                   frame.payload.method.id == AMQP_BASIC_CANCEL_METHOD) {
+          /* If we have consumer_cancel_notify enabled, this is how we are
+             notified that e.g. deleted queues have cancelled a consumer. */
+          amqp_basic_cancel_t *cancel;
+          cancel = (amqp_basic_cancel_t *) frame.payload.method.decoded;
+          char tag[128];
+          strncpy(tag, (const char *) cancel->consumer_tag.bytes,
+                  cancel->consumer_tag.len);
+          tag[cancel->consumer_tag.len] = '\0';
+          Rf_error("Consumer '%s' cancelled by the broker.", tag);
         } else if (status == AMQP_STATUS_OK) {
           status = AMQP_STATUS_UNEXPECTED_STATE;
         } else {

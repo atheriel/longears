@@ -57,6 +57,12 @@ testthat::test_that("Consume works as expected", {
     amqp_cancel_consumer(c1), regexp = "Invalid consumer object"
   )
 
+  # Triggered by deleting the queue.
+  testthat::expect_error(
+    amqp_listen(conn, timeout = 1),
+    regexp = "cancelled by the broker"
+  )
+
   amqp_listen(conn, timeout = 1)
 
   # We don't want the cancelled consumer's callback to have been called again.

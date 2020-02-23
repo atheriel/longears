@@ -130,13 +130,15 @@ static void later_callback(void *data)
 
 enum bg_consumer_err {
   BG_ERR_DISCONNECTED,
-  BG_ERR_UNEXPECTED_STATUS
+  BG_ERR_UNEXPECTED_STATUS,
+  BG_ERR_CONSUMER_CANCEL
 };
 
 struct bg_consumer_err_data {
   enum bg_consumer_err kind;
   union {
     int status;
+    amqp_bytes_t tag;
   } payload;
 };
 
@@ -153,6 +155,16 @@ static void later_warn_callback(void *data)
       int status = err->payload.status;
       free(err);
       Rf_warning("Unexpected AMQP status during consume: %d.", status);
+    }
+    break;
+  case BG_ERR_CONSUMER_CANCEL:
+    {
+      char tag[128];
+      strncpy(tag, (const char *) err->payload.tag.bytes, err->payload.tag.len);
+      tag[err->payload.tag.len] = '\0';
+      amqp_bytes_free(err->payload.tag);
+      free(err);
+      Rf_warning("Consumer '%s' cancelled by the broker.", tag);
     }
     break;
   }
@@ -222,6 +234,17 @@ static void * consume_run(void *data)
         if (status == AMQP_STATUS_OK && frame.frame_type == AMQP_FRAME_METHOD &&
             frame.payload.method.id == AMQP_CONNECTION_CLOSE_METHOD) {
           status = AMQP_STATUS_CONNECTION_CLOSED;
+        } else if (status == AMQP_STATUS_OK &&
+                   frame.frame_type == AMQP_FRAME_METHOD &&
+                   frame.payload.method.id == AMQP_BASIC_CANCEL_METHOD) {
+          /* If we have consumer_cancel_notify enabled, this is how we are
+             notified that e.g. deleted queues have cancelled a consumer. */
+          amqp_basic_cancel_t *cancel;
+          cancel = (amqp_basic_cancel_t *) frame.payload.method.decoded;
+          cdata = (struct bg_consumer_err_data *) malloc(sizeof(struct bg_consumer_err_data));
+          cdata->kind = BG_ERR_CONSUMER_CANCEL;
+          cdata->payload.tag = amqp_bytes_malloc_dup(cancel->consumer_tag);
+          later::later(later_warn_callback, (void *) cdata, 0);
         } else if (status == AMQP_STATUS_OK) {
           status = AMQP_STATUS_UNEXPECTED_STATE;
         } else {

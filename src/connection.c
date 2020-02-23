@@ -170,9 +170,28 @@ int lconnect(connection *conn, char *buffer, size_t len)
     return -1;
   }
 
-  reply = amqp_login(conn->conn, conn->vhost, AMQP_DEFAULT_MAX_CHANNELS,
-                     AMQP_DEFAULT_FRAME_SIZE, 60, AMQP_SASL_METHOD_PLAIN,
-                     conn->username, conn->password);
+  /* Tell the server that we can handle consumer cancel notifications. */
+  amqp_table_t props, capabilities;
+  amqp_table_entry_t pentry, centry;
+
+  props.num_entries = 1;
+  props.entries = &pentry;
+  capabilities.num_entries = 1;
+  capabilities.entries = &centry;
+
+  pentry.key = amqp_cstring_bytes("capabilities");
+  pentry.value.kind = AMQP_FIELD_KIND_TABLE;
+  pentry.value.value.table = capabilities;
+
+  centry.key = amqp_cstring_bytes("consumer_cancel_notify");
+  centry.value.kind = AMQP_FIELD_KIND_BOOLEAN;
+  centry.value.value.boolean = 1;
+
+  reply = amqp_login_with_properties(conn->conn, conn->vhost,
+                                     AMQP_DEFAULT_MAX_CHANNELS,
+                                     AMQP_DEFAULT_FRAME_SIZE, 60, &props,
+                                     AMQP_SASL_METHOD_PLAIN, conn->username,
+                                     conn->password);
 
   if (reply.reply_type != AMQP_RESPONSE_NORMAL) {
     render_amqp_error(reply, conn, &conn->chan, buffer, len);
