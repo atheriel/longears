@@ -128,9 +128,34 @@ static void later_callback(void *data)
   return;
 }
 
+enum bg_consumer_err {
+  BG_ERR_DISCONNECTED,
+  BG_ERR_UNEXPECTED_STATUS
+};
+
+struct bg_consumer_err_data {
+  enum bg_consumer_err kind;
+  union {
+    int status;
+  } payload;
+};
+
 static void later_warn_callback(void *data)
 {
-  Rf_warning("Disconnected from server. Existing background consumers have been lost and must be recreated.");
+  struct bg_consumer_err_data *err = (struct bg_consumer_err_data *) data;
+  switch(err->kind) {
+  case BG_ERR_DISCONNECTED:
+    free(err);
+    Rf_warning("Disconnected from server. Existing background consumers have been lost and must be recreated.");
+    break;
+  case BG_ERR_UNEXPECTED_STATUS:
+    {
+      int status = err->payload.status;
+      free(err);
+      Rf_warning("Unexpected AMQP status during consume: %d.", status);
+    }
+    break;
+  }
   return;
 }
 
@@ -155,6 +180,7 @@ static void * consume_run(void *data)
   amqp_rpc_reply_t reply;
   amqp_envelope_t *env;
   callback_data *ptr;
+  struct bg_consumer_err_data *cdata;
 
   for (;;) {
     nanosleep(&sleeptime, NULL);
@@ -219,10 +245,23 @@ static void * consume_run(void *data)
         amqp_destroy_envelope(env);
         free(env);
         pthread_mutex_unlock(&con->mutex);
-        later::later(later_warn_callback, NULL, 0);
+        cdata = (struct bg_consumer_err_data *) malloc(sizeof(struct bg_consumer_err_data));
+        cdata->kind = BG_ERR_DISCONNECTED;
+        later::later(later_warn_callback, (void *) cdata, 0);
         return NULL;
+      case AMQP_STATUS_OK:
+        /* fallthrough */
+      case AMQP_STATUS_TIMEOUT:
+        /* Nothing to consume right now. */
+        amqp_destroy_envelope(env);
+        free(env);
+        break;
       default:
-        /* Tolerate other errors. */
+        /* Warn on other errors. */
+        cdata = (struct bg_consumer_err_data *) malloc(sizeof(struct bg_consumer_err_data));
+        cdata->kind = BG_ERR_UNEXPECTED_STATUS;
+        cdata->payload.status = status;
+        later::later(later_warn_callback, (void *) cdata, 0);
         amqp_destroy_envelope(env);
         free(env);
         break;
