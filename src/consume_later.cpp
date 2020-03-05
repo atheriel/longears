@@ -241,10 +241,36 @@ static void * consume_run(void *data)
              notified that e.g. deleted queues have cancelled a consumer. */
           amqp_basic_cancel_t *cancel;
           cancel = (amqp_basic_cancel_t *) frame.payload.method.decoded;
-          cdata = (struct bg_consumer_err_data *) malloc(sizeof(struct bg_consumer_err_data));
-          cdata->kind = BG_ERR_CONSUMER_CANCEL;
-          cdata->payload.tag = amqp_bytes_malloc_dup(cancel->consumer_tag);
-          later::later(later_warn_callback, (void *) cdata, 0);
+          bg_consumer *elt = con->consumers;
+          while (elt && strncmp((const char *) elt->tag.bytes,
+                                (const char *) cancel->consumer_tag.bytes,
+                                elt->tag.len) != 0) {
+            elt = elt->next;
+          }
+          if (!elt) {
+            /* Ignore consumers we dont recognize, for now. */
+            status = AMQP_STATUS_OK;
+          } else {
+            cdata = (struct bg_consumer_err_data *) malloc(sizeof(struct bg_consumer_err_data));
+            cdata->kind = BG_ERR_CONSUMER_CANCEL;
+            cdata->payload.tag = amqp_bytes_malloc_dup(cancel->consumer_tag);
+            later::later(later_warn_callback, (void *) cdata, 0);
+
+            /* Close the corresponding channel now so we don't try to during the
+               finalizer. */
+            reply = amqp_channel_close(con->conn->conn, elt->chan.chan,
+                                       AMQP_REPLY_SUCCESS);
+            if (reply.reply_type == AMQP_RESPONSE_NORMAL) {
+              amqp_maybe_release_buffers_on_channel(con->conn->conn,
+                                                    elt->chan.chan);
+              status = AMQP_STATUS_OK;
+            } else if (reply.reply_type == AMQP_RESPONSE_LIBRARY_EXCEPTION) {
+              status = reply.library_error;
+            } else {
+              /* Probably the server closed the connection. */
+              status = AMQP_STATUS_UNEXPECTED_STATE;
+            }
+          }
         } else if (status == AMQP_STATUS_OK) {
           status = AMQP_STATUS_UNEXPECTED_STATE;
         } else {
