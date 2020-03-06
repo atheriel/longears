@@ -3,6 +3,10 @@
 - `amqp_publish()` will now accept raw vectors for the message body in addition
   to strings. (#4 by @dselivanov)
 
+- Connections now set a heartbeat of 60 seconds. This should hopefully eliminate
+  bugs where R would hang when trying to send messages to a closed socket
+  (especially inside finalizers).
+
 # longears 0.2.1 (2019-08-28)
 
 - First public release.

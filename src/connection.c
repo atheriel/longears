@@ -171,7 +171,7 @@ int lconnect(connection *conn, char *buffer, size_t len)
   }
 
   reply = amqp_login(conn->conn, conn->vhost, AMQP_DEFAULT_MAX_CHANNELS,
-                     AMQP_DEFAULT_FRAME_SIZE, 0, AMQP_SASL_METHOD_PLAIN,
+                     AMQP_DEFAULT_FRAME_SIZE, 60, AMQP_SASL_METHOD_PLAIN,
                      conn->username, conn->password);
 
   if (reply.reply_type != AMQP_RESPONSE_NORMAL) {
