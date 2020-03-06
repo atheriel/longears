@@ -621,8 +621,11 @@ ac_includes_default="\
 
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
+DTRACE_OBJS
+DTRACE_HEADERS
 PKG_CPPFLAGS
 PKG_LIBS
+DTRACE
 EGREP
 GREP
 CPP
@@ -3856,9 +3859,72 @@ as_fn_error $? "
 See \`config.log' for more details" "$LINENO" 5; }
 fi
 
+# dtrace-compatible USDT probe support
+DTRACE=
+DTRACE_HEADERS=
+DTRACE_OBJS=
+
+# Extract the first word of "dtrace", so it can be a program name with args.
+set dummy dtrace; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_DTRACE+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $DTRACE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_DTRACE="$DTRACE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_DTRACE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+DTRACE=$ac_cv_path_DTRACE
+if test -n "$DTRACE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DTRACE" >&5
+$as_echo "$DTRACE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+
+if test "x${DTRACE}" != x; then
+  PKG_CPPFLAGS="${PKG_CPPFLAGS} -DHAVE_DTRACE"
+  DTRACE_HEADERS=dtrace_probes.h
+  # OS X dtrace does not require files to be modified in-place.
+  case "${host_os}" in
+    darwin*)
+      DTRACE_OBJS=
+      ;;
+    *)
+      DTRACE_OBJS=dtrace.o
+      ;;
+  esac
+fi
+
 PKG_LIBS="${PKG_LIBS} ${ac_cv_search_amqp_new_connection}"
 
 PKG_CPPFLAGS="${PKG_CPPFLAGS}"
+
+
+
 
 ac_config_files="$ac_config_files src/Makevars"
 
@@ -5025,4 +5091,5 @@ echo "---
   CFLAGS:    ${CFLAGS}
   CPPFLAGS:  ${PKG_CPPFLAGS}
   LIBS:      ${PKG_LIBS}
+  dtrace:    ${DTRACE}
 ---"

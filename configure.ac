@@ -36,8 +36,32 @@ if test "x${have_librabbitmq}" = xno; then
 ---])
 fi
 
+# dtrace-compatible USDT probe support
+DTRACE=
+DTRACE_HEADERS=
+DTRACE_OBJS=
+
+AC_PATH_PROG(DTRACE, [dtrace], [])
+
+if test "x${DTRACE}" != x; then
+  PKG_CPPFLAGS="${PKG_CPPFLAGS} -DHAVE_DTRACE"
+  DTRACE_HEADERS=dtrace_probes.h
+  # OS X dtrace does not require files to be modified in-place.
+  case "${host_os}" in
+    darwin*)
+      DTRACE_OBJS=
+      ;;
+    *)
+      DTRACE_OBJS=dtrace.o
+      ;;
+  esac
+fi
+
 AC_SUBST([PKG_LIBS],["${PKG_LIBS} ${ac_cv_search_amqp_new_connection}"])
 AC_SUBST([PKG_CPPFLAGS],["${PKG_CPPFLAGS}"])
+AC_SUBST(DTRACE)
+AC_SUBST(DTRACE_HEADERS)
+AC_SUBST(DTRACE_OBJS)
 AC_CONFIG_FILES([src/Makevars])
 AC_OUTPUT
 
@@ -48,4 +72,5 @@ echo "---
   CFLAGS:    ${CFLAGS}
   CPPFLAGS:  ${PKG_CPPFLAGS}
   LIBS:      ${PKG_LIBS}
+  dtrace:    ${DTRACE}
 ---"

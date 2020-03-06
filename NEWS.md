@@ -15,6 +15,11 @@
 
 - Handling of closed connections on background threads has been improved.
 
+- Adds experimental [DTrace-compatible USDT probes](http://dtrace.org/guide/chp-usdt.html)
+  for dynamically instrumenting background consumers. These can be helpful for
+  debugging behaviour using DTrace on macOS, Solaris, and *BSD, or BPF-based
+  tools on Linux. Existing probes are found in `src/dtrace_probes`.
+
 # longears 0.2.1 (2019-08-28)
 
 - First public release.

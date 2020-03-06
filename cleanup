@@ -1,4 +1,4 @@
 #!/bin/sh
 
-rm -f config.* src/Makevars
+rm -f config.* src/Makevars src/dtrace_probes.h
 rm -rf autom4te.cache

@@ -6,6 +6,7 @@
 #include <pthread.h>
 #include <later_api.h>
 
+#include "dtrace.h"
 #include "utils.h"
 
 typedef struct bg_consumer {
@@ -23,6 +24,12 @@ typedef struct {
   bg_conn *conn;
   amqp_envelope_t *env;
 } callback_data;
+
+/* Use a function for dtrace probes called from multiple places. */
+static void longears_consumer_close_notify(amqp_bytes_t *tag, int by_server)
+{
+  LONGEARS_CONSUMER_CLOSE(tag, by_server);
+}
 
 static void R_finalize_bg_consumer(SEXP ptr)
 {
@@ -46,6 +53,7 @@ static void R_finalize_bg_consumer(SEXP ptr)
         amqp_maybe_release_buffers_on_channel(con->conn->conn->conn,
                                               con->chan.chan);
       }
+      longears_consumer_close_notify(&con->tag, 0);
     }
 
     /* Remove it from the global list of consumers. */
@@ -102,6 +110,7 @@ static void later_callback(void *data)
     }
     pthread_mutex_unlock(&cdata->conn->mutex);
   }
+  LONGEARS_CONSUMER_EVAL_CALLBACK(cdata->env);
 
   /* Create R-level message object. */
   size_t body_len = cdata->env->message.body.len;
@@ -220,6 +229,7 @@ static void * consume_run(void *data)
       ptr = (callback_data *) malloc(sizeof(callback_data));
       ptr->conn = con;
       ptr->env = env;
+      LONGEARS_CONSUMER_QUEUE_CALLBACK(env);
       later::later(later_callback, ptr, 0);
     } else if (reply.reply_type == AMQP_RESPONSE_LIBRARY_EXCEPTION) {
       int status = reply.library_error;
@@ -250,7 +260,9 @@ static void * consume_run(void *data)
           if (!elt) {
             /* Ignore consumers we dont recognize, for now. */
             status = AMQP_STATUS_OK;
+            longears_consumer_close_notify(&cancel->consumer_tag, 1);
           } else {
+            longears_consumer_close_notify(&elt->tag, 1);
             cdata = (struct bg_consumer_err_data *) malloc(sizeof(struct bg_consumer_err_data));
             cdata->kind = BG_ERR_CONSUMER_CANCEL;
             cdata->payload.tag = amqp_bytes_malloc_dup(cancel->consumer_tag);
@@ -401,6 +413,9 @@ extern "C" void destroy_bg_conn(bg_conn *conn)
   while (elt) {
     next = elt->next;
     elt->conn = NULL;
+    if (elt->chan.is_open) {
+      longears_consumer_close_notify(&elt->tag, 0);
+    }
     elt->chan.is_open = 0;
     elt->prev = NULL;
     elt->next = NULL;
@@ -499,6 +514,7 @@ extern "C" SEXP R_amqp_consume_later(SEXP ptr, SEXP queue, SEXP fun, SEXP rho,
   }
 
   con->tag = amqp_bytes_malloc_dup(consume_ok->consumer_tag);
+  LONGEARS_CONSUMER_DECLARE(&con->tag, con->no_ack);
 
   /* Inhibit GC for the function and environment. This is because R does not
    * have a way of knowing we are storing them in a C struct. */

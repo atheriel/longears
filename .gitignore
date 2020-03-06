@@ -4,6 +4,7 @@
 *.dll
 # Autoconf artifacts:
 src/Makevars
+src/dtrace_probes.h
 config.status
 config.log
 # R project artifacts:

@@ -1,2 +1,15 @@
 PKG_CPPFLAGS = -I. @PKG_CPPFLAGS@
 PKG_LIBS = @PKG_LIBS@
+DTRACE = @DTRACE@
+DTRACE_HEADERS = @DTRACE_HEADERS@
+DTRACE_OBJS = @DTRACE_OBJS@
+# Files which contain USDT probes.
+DTRACE_DEPS = consume_later.o
+
+all: $(DTRACE_HEADERS) $(DTRACE_OBJS) $(SHLIB)
+
+dtrace_probes.h: dtrace_probes
+	$(DTRACE) $(DFLAGS) -o $@ -h -s $<
+
+dtrace.o: dtrace_probes $(DTRACE_DEPS)
+	$(DTRACE) $(DFLAGS) -o $@ -G -s $< $(DTRACE_DEPS)

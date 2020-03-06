@@ -1,0 +1,9 @@
+#include <amqp.h>
+
+/* longears DTrace provider */
+provider longears {
+    probe consumer__declare(amqp_bytes_t *tag, int no_ack);
+    probe consumer__queue__callback(amqp_envelope_t *env);
+    probe consumer__eval__callback(amqp_envelope_t *env);
+    probe consumer__close(amqp_bytes_t *tag, int by_server);
+};
