@@ -128,9 +128,46 @@ static void later_callback(void *data)
   return;
 }
 
+enum bg_consumer_err {
+  BG_ERR_DISCONNECTED,
+  BG_ERR_UNEXPECTED_STATUS,
+  BG_ERR_CONSUMER_CANCEL
+};
+
+struct bg_consumer_err_data {
+  enum bg_consumer_err kind;
+  union {
+    int status;
+    amqp_bytes_t tag;
+  } payload;
+};
+
 static void later_warn_callback(void *data)
 {
-  Rf_warning("Disconnected from server. Existing background consumers have been lost and must be recreated.");
+  struct bg_consumer_err_data *err = (struct bg_consumer_err_data *) data;
+  switch(err->kind) {
+  case BG_ERR_DISCONNECTED:
+    free(err);
+    Rf_warning("Disconnected from server. Existing background consumers have been lost and must be recreated.");
+    break;
+  case BG_ERR_UNEXPECTED_STATUS:
+    {
+      int status = err->payload.status;
+      free(err);
+      Rf_warning("Unexpected AMQP status during consume: %d.", status);
+    }
+    break;
+  case BG_ERR_CONSUMER_CANCEL:
+    {
+      char tag[128];
+      strncpy(tag, (const char *) err->payload.tag.bytes, err->payload.tag.len);
+      tag[err->payload.tag.len] = '\0';
+      amqp_bytes_free(err->payload.tag);
+      free(err);
+      Rf_warning("Consumer '%s' cancelled by the broker.", tag);
+    }
+    break;
+  }
   return;
 }
 
@@ -155,6 +192,7 @@ static void * consume_run(void *data)
   amqp_rpc_reply_t reply;
   amqp_envelope_t *env;
   callback_data *ptr;
+  struct bg_consumer_err_data *cdata;
 
   for (;;) {
     nanosleep(&sleeptime, NULL);
@@ -184,9 +222,65 @@ static void * consume_run(void *data)
       ptr->env = env;
       later::later(later_callback, ptr, 0);
     } else if (reply.reply_type == AMQP_RESPONSE_LIBRARY_EXCEPTION) {
+      int status = reply.library_error;
+
+      /* If we get into an unexpected state, try to decode a relevant method
+         (e.g. connection.close). */
+      if (status == AMQP_STATUS_UNEXPECTED_STATE) {
+        amqp_frame_t frame;
+        status = amqp_simple_wait_frame(con->conn->conn, &frame);
+        /* If the server shuts down gracefully, this is how we will probably be
+           notified. */
+        if (status == AMQP_STATUS_OK && frame.frame_type == AMQP_FRAME_METHOD &&
+            frame.payload.method.id == AMQP_CONNECTION_CLOSE_METHOD) {
+          status = AMQP_STATUS_CONNECTION_CLOSED;
+        } else if (status == AMQP_STATUS_OK &&
+                   frame.frame_type == AMQP_FRAME_METHOD &&
+                   frame.payload.method.id == AMQP_BASIC_CANCEL_METHOD) {
+          /* If we have consumer_cancel_notify enabled, this is how we are
+             notified that e.g. deleted queues have cancelled a consumer. */
+          amqp_basic_cancel_t *cancel;
+          cancel = (amqp_basic_cancel_t *) frame.payload.method.decoded;
+          bg_consumer *elt = con->consumers;
+          while (elt && strncmp((const char *) elt->tag.bytes,
+                                (const char *) cancel->consumer_tag.bytes,
+                                elt->tag.len) != 0) {
+            elt = elt->next;
+          }
+          if (!elt) {
+            /* Ignore consumers we dont recognize, for now. */
+            status = AMQP_STATUS_OK;
+          } else {
+            cdata = (struct bg_consumer_err_data *) malloc(sizeof(struct bg_consumer_err_data));
+            cdata->kind = BG_ERR_CONSUMER_CANCEL;
+            cdata->payload.tag = amqp_bytes_malloc_dup(cancel->consumer_tag);
+            later::later(later_warn_callback, (void *) cdata, 0);
+
+            /* Close the corresponding channel now so we don't try to during the
+               finalizer. */
+            reply = amqp_channel_close(con->conn->conn, elt->chan.chan,
+                                       AMQP_REPLY_SUCCESS);
+            if (reply.reply_type == AMQP_RESPONSE_NORMAL) {
+              amqp_maybe_release_buffers_on_channel(con->conn->conn,
+                                                    elt->chan.chan);
+              status = AMQP_STATUS_OK;
+            } else if (reply.reply_type == AMQP_RESPONSE_LIBRARY_EXCEPTION) {
+              status = reply.library_error;
+            } else {
+              /* Probably the server closed the connection. */
+              status = AMQP_STATUS_UNEXPECTED_STATE;
+            }
+          }
+        } else if (status == AMQP_STATUS_OK) {
+          status = AMQP_STATUS_UNEXPECTED_STATE;
+        } else {
+          /* Act on whatever status amqp_simple_wait_frame() gave us. */
+        }
+      }
+
       /* Terminate the thread on connection errors and schedule a warning to be
          surfaced to the user at some point in the future. */
-      switch (reply.library_error) {
+      switch (status) {
       case AMQP_STATUS_WRONG_METHOD:
         /* fallthrough */
       case AMQP_STATUS_UNEXPECTED_STATE:
@@ -200,10 +294,23 @@ static void * consume_run(void *data)
         amqp_destroy_envelope(env);
         free(env);
         pthread_mutex_unlock(&con->mutex);
-        later::later(later_warn_callback, NULL, 0);
+        cdata = (struct bg_consumer_err_data *) malloc(sizeof(struct bg_consumer_err_data));
+        cdata->kind = BG_ERR_DISCONNECTED;
+        later::later(later_warn_callback, (void *) cdata, 0);
         return NULL;
+      case AMQP_STATUS_OK:
+        /* fallthrough */
+      case AMQP_STATUS_TIMEOUT:
+        /* Nothing to consume right now. */
+        amqp_destroy_envelope(env);
+        free(env);
+        break;
       default:
-        /* Tolerate other errors. */
+        /* Warn on other errors. */
+        cdata = (struct bg_consumer_err_data *) malloc(sizeof(struct bg_consumer_err_data));
+        cdata->kind = BG_ERR_UNEXPECTED_STATUS;
+        cdata->payload.status = status;
+        later::later(later_warn_callback, (void *) cdata, 0);
         amqp_destroy_envelope(env);
         free(env);
         break;

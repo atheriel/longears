@@ -7,6 +7,14 @@
   bugs where R would hang when trying to send messages to a closed socket
   (especially inside finalizers).
 
+- Adds support for consumer cancel notifications, under which the RabbitMQ
+  broker will send an appropriate message when e.g. a consumer's queue is
+  deleted on the server side. The background thread will throw a warning,
+  similar to how connection errors are currently surfaced. Prior to this,
+  consumers would simply fall silent without a warning of any kind.
+
+- Handling of closed connections on background threads has been improved.
+
 # longears 0.2.1 (2019-08-28)
 
 - First public release.
