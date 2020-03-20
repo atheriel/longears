@@ -206,7 +206,7 @@ testthat::test_that("Consume later responds to disconnections correctly", {
   amqp_reconnect(conn)
 
   # Esnure the warning callback runs.
-  testthat::expect_warning(wait_for_callbacks(1), regexp = "must be recreated")
+  wait_for_callbacks(1)
 
   c2 <- testthat::expect_silent(amqp_consume_later(conn, queue, f1))
 
