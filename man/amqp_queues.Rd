@@ -7,8 +7,8 @@
 \alias{amqp_delete_queue}
 \title{Declare or Delete Queues}
 \usage{
-amqp_declare_queue(conn, queue = "", passive = FALSE,
-  durable = FALSE, exclusive = FALSE, auto_delete = FALSE, ...)
+amqp_declare_queue(conn, queue = "", passive = FALSE, durable = FALSE,
+  exclusive = FALSE, auto_delete = FALSE, ...)
 
 amqp_declare_tmp_queue(conn, passive = FALSE, exclusive = FALSE, ...)
 
