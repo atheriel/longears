@@ -22,18 +22,10 @@ amqp_publish <- function(conn, body, exchange = "", routing_key = "",
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
-  if (is.character(body)) {
-    body <- charToRaw(body)
-  }
-  props <- if (inherits(properties, "amqp_properties")) {
-    properties$ptr
-  } else {
-    NULL
-  }
-  invisible(.Call(
-    R_amqp_publish, conn$ptr, body, exchange, routing_key, mandatory,
-    immediate, props
-  ))
+  conn$publish(
+    body = body, exchange = exchange, routing_key = routing_key,
+    mandatory = mandatory, immediate = immediate, properties = properties
+  )
 }
 
 #' Get a Message from a Queue
@@ -55,7 +47,7 @@ amqp_get <- function(conn, queue, no_ack = FALSE) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
-  .Call(R_amqp_get, conn$ptr, queue, no_ack)
+  conn$get(queue = queue, no_ack = no_ack)
 }
 
 #' @export

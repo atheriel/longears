@@ -18,10 +18,9 @@ amqp_bind_queue <- function(conn, queue, exchange, routing_key = "", ...) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
-  args <- amqp_table(...)
-  invisible(.Call(
-    R_amqp_bind_queue, conn$ptr, queue, exchange, routing_key, args$ptr
-  ))
+  conn$bind_queue(
+    queue = queue, exchange = exchange, routing_key = routing_key, ...
+  )
 }
 
 #' @rdname amqp_bindings
@@ -30,10 +29,9 @@ amqp_unbind_queue <- function(conn, queue, exchange, routing_key = "", ...) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
-  args <- amqp_table(...)
-  invisible(.Call(
-    R_amqp_unbind_queue, conn$ptr, queue, exchange, routing_key, args$ptr
-  ))
+  conn$unbind_queue(
+    queue = queue, exchange = exchange, routing_key = routing_key, ...
+  )
 }
 
 #' @param dest The exchange to send messages to.
@@ -44,10 +42,9 @@ amqp_bind_exchange <- function(conn, dest, exchange, routing_key = "", ...) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
-  args <- amqp_table(...)
-  invisible(.Call(
-    R_amqp_bind_exchange, conn$ptr, dest, exchange, routing_key, args$ptr
-  ))
+  conn$bind_exchange(
+    dest = dest, exchange = exchange, routing_key = routing_key, ...
+  )
 }
 
 #' @rdname amqp_bindings
@@ -56,8 +53,7 @@ amqp_unbind_exchange <- function(conn, dest, exchange, routing_key = "", ...) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
-  args <- amqp_table(...)
-  invisible(.Call(
-    R_amqp_unbind_exchange, conn$ptr, dest, exchange, routing_key, args$ptr
-  ))
+  conn$unbind_exchange(
+    dest = dest, exchange = exchange, routing_key = routing_key, ...
+  )
 }

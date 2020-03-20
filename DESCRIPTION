@@ -15,7 +15,8 @@ License: GPL (>= 2)
 URL: https://github.com/atheriel/longears
 BugReports: https://github.com/atheriel/longears/issues
 Imports:
-  later
+  later,
+  R6
 Suggests:
   testthat
 LinkingTo:

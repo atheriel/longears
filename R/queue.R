@@ -90,10 +90,9 @@ amqp_declare_queue <- function(conn, queue = "", passive = FALSE,
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
-  args <- amqp_table(...)
-  .Call(
-    R_amqp_declare_queue, conn$ptr, queue, passive, durable, exclusive,
-    auto_delete, args$ptr
+  conn$declare_queue(
+    queue = queue, passive = passive, durable = durable, exclusive = exclusive,
+    auto_delete = auto_delete, ...
   )
 }
 
@@ -104,8 +103,8 @@ amqp_declare_tmp_queue <- function(conn, passive = FALSE, exclusive = FALSE,
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
-  queue <- amqp_declare_queue(
-    conn, queue = "", passive = passive, durable = FALSE, exclusive = exclusive,
+  queue <- conn$declare_queue(
+    queue = "", passive = passive, durable = FALSE, exclusive = exclusive,
     auto_delete = TRUE, ...
   )
   queue$queue
@@ -123,7 +122,7 @@ amqp_delete_queue <- function(conn, queue, if_unused = FALSE, if_empty = FALSE) 
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
-  invisible(.Call(R_amqp_delete_queue, conn$ptr, queue, if_unused, if_empty))
+  conn$delete_queue(queue = queue, if_unused = if_unused, if_empty = if_empty)
 }
 
 #' @export

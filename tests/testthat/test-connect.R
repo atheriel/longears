@@ -63,3 +63,12 @@ testthat::test_that("Disconnections are handled correctly", {
   # Retry.
   testthat::expect_silent(amqp_declare_tmp_exchange(conn))
 })
+
+testthat::test_that("Connections can be cloned", {
+  skip_if_no_local_rmq()
+
+  conn <- amqp_connect()
+  conn2 <- conn$clone()
+
+  testthat::expect_silent(amqp_declare_tmp_exchange(conn2))
+})

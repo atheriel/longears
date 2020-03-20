@@ -77,11 +77,9 @@ amqp_consume <- function(conn, queue, fun, tag = "", no_ack = FALSE,
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
-  stopifnot(is.function(fun))
-  args <- amqp_table(...)
-  .Call(
-    R_amqp_create_consumer, conn$ptr, queue, tag, fun, new.env(), no_ack,
-    exclusive, args$ptr
+  conn$consume(
+    queue = queue, fun = fun, tag = tag, no_ack = no_ack, exclusive = exclusive,
+    ...
   )
 }
 
@@ -107,7 +105,7 @@ amqp_listen <- function(conn, timeout = 10L) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
-  invisible(.Call(R_amqp_listen, conn$ptr, timeout))
+  conn$listen(timeout = timeout)
 }
 
 #' Consume Messages from a Queue, Later
@@ -153,9 +151,8 @@ amqp_consume_later <- function(conn, queue, fun, tag = "", no_ack = FALSE,
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
-  args <- amqp_table(...)
-  .Call(
-    R_amqp_consume_later, conn$ptr, queue, fun, new.env(), tag, no_ack,
-    exclusive, args$ptr
+  conn$consume_later(
+    queue = queue, fun = fun, tag = tag, no_ack = no_ack, exclusive = exclusive,
+    ...
   )
 }
