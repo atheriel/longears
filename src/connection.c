@@ -170,19 +170,39 @@ int lconnect(connection *conn, char *buffer, size_t len)
     return -1;
   }
 
-  /* Tell the server that we can handle consumer cancel notifications. */
   amqp_table_t props, capabilities;
-  amqp_table_entry_t pentry, centry;
+  amqp_table_entry_t pentry[6], centry;
 
-  props.num_entries = 1;
-  props.entries = &pentry;
+  props.num_entries = 6;
+  props.entries = pentry;
   capabilities.num_entries = 1;
   capabilities.entries = &centry;
 
-  pentry.key = amqp_cstring_bytes("capabilities");
-  pentry.value.kind = AMQP_FIELD_KIND_TABLE;
-  pentry.value.value.table = capabilities;
+  pentry[0].key = amqp_cstring_bytes("version");
+  pentry[0].value.kind = AMQP_FIELD_KIND_UTF8;
+  pentry[0].value.value.bytes = amqp_cstring_bytes(LONGEARS_FULL_VERSION);
 
+  pentry[1].key = amqp_cstring_bytes("product");
+  pentry[1].value.kind = AMQP_FIELD_KIND_UTF8;
+  pentry[1].value.value.bytes = amqp_cstring_bytes("longears");
+
+  pentry[2].key = amqp_cstring_bytes("copyright");
+  pentry[2].value.kind = AMQP_FIELD_KIND_UTF8;
+  pentry[2].value.value.bytes = amqp_cstring_bytes("Copyright (c) Crescendo Technology Ltd.");
+
+  pentry[3].key = amqp_cstring_bytes("information");
+  pentry[3].value.kind = AMQP_FIELD_KIND_UTF8;
+  pentry[3].value.value.bytes = amqp_cstring_bytes("Licensed under the GPL (>=2). See https://github.com/atheriel/longears/");
+
+  pentry[4].key = amqp_cstring_bytes("connection_name");
+  pentry[4].value.kind = AMQP_FIELD_KIND_UTF8;
+  pentry[4].value.value.bytes = amqp_cstring_bytes("longears");
+
+  pentry[5].key = amqp_cstring_bytes("capabilities");
+  pentry[5].value.kind = AMQP_FIELD_KIND_TABLE;
+  pentry[5].value.value.table = capabilities;
+
+  /* Tell the server that we can handle consumer cancel notifications. */
   centry.key = amqp_cstring_bytes("consumer_cancel_notify");
   centry.value.kind = AMQP_FIELD_KIND_BOOLEAN;
   centry.value.value.boolean = 1;

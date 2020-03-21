@@ -2,6 +2,12 @@
 #define __LONGEARS_H__
 
 #include <Rinternals.h> /* for SEXP */
+#include <Rversion.h>
+
+#define LONGEARS_VERSION "0.2.2.9000"
+#define LONGEARS_FULL_VERSION "longears " LONGEARS_VERSION "; R " R_MAJOR "." \
+    R_MINOR "; rabbitmq-c " AMQ_VERSION_STRING
+
 
 #ifdef __cplusplus
 extern "C" {

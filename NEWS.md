@@ -1,3 +1,8 @@
+# longears 0.2.2.9000
+
+- Connections now set common client properties, which are visible in the
+  RabbitMQ management plugin web interface.
+
 # longears 0.2.2
 
 - `amqp_publish()` will now accept raw vectors for the message body in addition
