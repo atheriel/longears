@@ -9,7 +9,8 @@
 \title{Connections to a RabbitMQ Server}
 \usage{
 amqp_connect(host = "localhost", port = 5672L, vhost = "/",
-  username = "guest", password = "guest", timeout = 10L)
+  username = "guest", password = "guest", timeout = 10L,
+  name = "longears")
 
 \method{print}{amqp_connection}(x, full = FALSE, ...)
 
@@ -29,6 +30,8 @@ amqp_disconnect(conn)
 \item{password}{User credentials.}
 
 \item{timeout}{A timeout, in seconds, for operations that support it.}
+
+\item{name}{A name for the connection that may appear in supported interfaces.}
 
 \item{x}{An object returned by \code{\link{amqp_connect}}.}
 

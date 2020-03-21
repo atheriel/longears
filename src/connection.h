@@ -28,6 +28,7 @@ typedef struct connection {
   const char *vhost;
   const char *username;
   const char *password;
+  const char *name;
   int timeout;
   channel chan;
   int next_chan;

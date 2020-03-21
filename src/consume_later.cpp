@@ -338,6 +338,7 @@ connection *clone_connection(const connection *old)
   conn->vhost = old->vhost;
   conn->username = old->username;
   conn->password = old->password;
+  conn->name = old->name;
   conn->timeout = old->timeout;
   conn->chan.chan = 0;
   conn->chan.is_open = 0;

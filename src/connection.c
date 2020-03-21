@@ -30,7 +30,7 @@ static void R_finalize_amqp_connection(SEXP ptr)
 }
 
 SEXP R_amqp_connect(SEXP host, SEXP port, SEXP vhost, SEXP username,
-                    SEXP password, SEXP timeout)
+                    SEXP password, SEXP timeout, SEXP name)
 {
   const char *host_str = CHAR(asChar(host));
   int port_num = asInteger(port);
@@ -38,6 +38,7 @@ SEXP R_amqp_connect(SEXP host, SEXP port, SEXP vhost, SEXP username,
   const char *username_str = CHAR(asChar(username));
   const char *password_str = CHAR(asChar(password));
   int seconds = asInteger(timeout);
+  const char *name_str = CHAR(asChar(name));
 
   connection *conn = malloc(sizeof(connection)); // NOTE: Assuming this works.
   conn->host = host_str;
@@ -45,6 +46,7 @@ SEXP R_amqp_connect(SEXP host, SEXP port, SEXP vhost, SEXP username,
   conn->vhost = vhost_str;
   conn->username = username_str;
   conn->password = password_str;
+  conn->name = name_str;
   conn->timeout = seconds;
   conn->chan.chan = 0;
   conn->chan.is_open = 0;
@@ -221,7 +223,7 @@ int lconnect(connection *conn, char *buffer, size_t len)
 
   pentry[4].key = amqp_cstring_bytes("connection_name");
   pentry[4].value.kind = AMQP_FIELD_KIND_UTF8;
-  pentry[4].value.value.bytes = amqp_cstring_bytes("longears");
+  pentry[4].value.value.bytes = amqp_cstring_bytes(conn->name);
 
   pentry[5].key = amqp_cstring_bytes("capabilities");
   pentry[5].value.kind = AMQP_FIELD_KIND_TABLE;

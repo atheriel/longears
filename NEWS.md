@@ -1,5 +1,9 @@
 # longears 0.2.2.9000
 
+- `ampq_connect()` now takes a `name` parameter that allows users to set a
+  connection name, which will appear in the RabbitMQ management plugin web
+  interface and other supported UIs.
+
 - The `print()` method for a connection will now print out all server and client
   properties for a connection when passed `full = TRUE`.
 
