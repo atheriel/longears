@@ -3,12 +3,15 @@
 \name{amqp_connections}
 \alias{amqp_connections}
 \alias{amqp_connect}
+\alias{print.amqp_connection}
 \alias{amqp_reconnect}
 \alias{amqp_disconnect}
 \title{Connections to a RabbitMQ Server}
 \usage{
 amqp_connect(host = "localhost", port = 5672L, vhost = "/",
   username = "guest", password = "guest", timeout = 10L)
+
+\method{print}{amqp_connection}(x, full = FALSE, ...)
 
 amqp_reconnect(conn)
 
@@ -26,6 +29,13 @@ amqp_disconnect(conn)
 \item{password}{User credentials.}
 
 \item{timeout}{A timeout, in seconds, for operations that support it.}
+
+\item{x}{An object returned by \code{\link{amqp_connect}}.}
+
+\item{full}{When \code{TRUE}, print all server and client properties instead
+of a brief summary.}
+
+\item{...}{Ignored.}
 
 \item{conn}{An object returned by \code{\link{amqp_connect}}.}
 }

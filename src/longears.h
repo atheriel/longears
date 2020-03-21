@@ -16,6 +16,8 @@ extern "C" {
 
 SEXP R_amqp_connect(SEXP host, SEXP port, SEXP vhost, SEXP username, SEXP password, SEXP timeout);
 SEXP R_amqp_is_connected(SEXP ptr);
+SEXP R_amqp_client_properties(SEXP ptr);
+SEXP R_amqp_server_properties(SEXP ptr);
 SEXP R_amqp_reconnect(SEXP ptr);
 SEXP R_amqp_disconnect(SEXP ptr);
 

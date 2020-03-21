@@ -39,12 +39,58 @@ is_connected <- function(conn) {
   .Call(R_amqp_is_connected, conn$ptr)
 }
 
+client_properties <- function(conn) {
+  .Call(R_amqp_client_properties, conn$ptr, PACKAGE = "longears")
+}
+
+server_properties <- function(conn) {
+  out <- .Call(R_amqp_server_properties, conn$ptr, PACKAGE = "longears")
+  # For some reason these are in the reverse order we'd expect.
+  rev(out)
+}
+
+format_fields <- function(fields, prefix = "") {
+  len <- nchar(names(fields))
+  longest <- max(len)
+  buffer <- strrep(" ", times = longest - len + 1)
+
+  paste(prefix, names(fields), ":", buffer, fields, sep = "", collapse = "\n")
+}
+
+#' @param x An object returned by \code{\link{amqp_connect}}.
+#' @param full When \code{TRUE}, print all server and client properties instead
+#'   of a brief summary.
+#' @param ... Ignored.
+#'
+#' @rdname amqp_connections
 #' @export
-print.amqp_connection <- function(x, ...) {
-  cat(sep = "", "AMQP Connection:\n",
-      "  status:  ", ifelse(is_connected(x), "connected\n", "disconnected\n"),
-      "  address: ", x$host, ":", x$port, "\n",
-      "  vhost:   '", x$vhost, "'\n")
+print.amqp_connection <- function(x, full = FALSE, ...) {
+  header <- list(
+    status = ifelse(is_connected(x), "connected", "disconnected"),
+    address = sprintf("%s:%s", x$host, x$port),
+    vhost = sprintf("'%s'", x$vhost)
+  )
+
+  if (!full) {
+    cat(sep = "", "AMQP Connection:\n", format_fields(header, "  "), "\n")
+    return()
+  }
+
+  cprops <- client_properties(x)
+  ccapabilities <- cprops$capabilities
+  cprops$capabilities <- NULL
+
+  sprops <- server_properties(x)
+  scapabilities <- sprops$capabilities
+  sprops$capabilities <- NULL
+
+  cat(
+    sep = "", "AMQP Connection:\n", format_fields(header, "  "), "\n",
+    "  client properties:\n", format_fields(cprops, "    "), "\n",
+    "  client capabilities:\n", format_fields(ccapabilities, "    "), "\n",
+    "  server properties:\n", format_fields(sprops, "    "), "\n",
+    "  server capabilities:\n", format_fields(scapabilities, "    "), "\n"
+  )
 }
 
 #' @param conn An object returned by \code{\link{amqp_connect}}.

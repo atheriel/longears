@@ -28,6 +28,9 @@
   guarantee that as many workers as possible are busy, even if there are less
   than 50 queued messages. (#12 by @SyncM1972, Closes #2)
 
+- The `print()` method for a connection will now print out all server and client
+  properties for a connection when passed `full = TRUE`.
+
 # longears 0.2.4
 
 - Fixes handling of connection failures in `amqp_listen()`. Previously if you
