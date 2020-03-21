@@ -28,6 +28,10 @@
   guarantee that as many workers as possible are busy, even if there are less
   than 50 queued messages. (#12 by @SyncM1972, Closes #2)
 
+- `ampq_connect()` now takes a `name` parameter that allows users to set a
+  connection name, which will appear in the RabbitMQ management plugin web
+  interface and other supported UIs.
+
 - The `print()` method for a connection will now print out all server and client
   properties for a connection when passed `full = TRUE`.
 
