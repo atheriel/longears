@@ -8,6 +8,7 @@
 
 #include "longears.h"
 #include "connection.h"
+#include "tables.h"
 #include "utils.h"
 
 static void mark_consumers_closed(connection *conn);
@@ -85,6 +86,30 @@ SEXP R_amqp_is_connected(SEXP ptr)
     return R_NilValue;
   }
   return ScalarLogical(conn->is_connected);
+}
+
+SEXP R_amqp_client_properties(SEXP ptr)
+{
+  connection *conn = (connection *) R_ExternalPtrAddr(ptr);
+  if (!conn) {
+    Rf_error("The amqp connection no longer exists.");
+    return R_NilValue;
+  }
+
+  amqp_table_t *props = amqp_get_client_properties(conn->conn);
+  return decode_table(props);
+}
+
+SEXP R_amqp_server_properties(SEXP ptr)
+{
+  connection *conn = (connection *) R_ExternalPtrAddr(ptr);
+  if (!conn) {
+    Rf_error("The amqp connection no longer exists.");
+    return R_NilValue;
+  }
+
+  amqp_table_t *props = amqp_get_server_properties(conn->conn);
+  return decode_table(props);
 }
 
 SEXP R_amqp_reconnect(SEXP ptr)

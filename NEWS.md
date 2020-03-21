@@ -1,5 +1,8 @@
 # longears 0.2.2.9000
 
+- The `print()` method for a connection will now print out all server and client
+  properties for a connection when passed `full = TRUE`.
+
 - Connections now set common client properties, which are visible in the
   RabbitMQ management plugin web interface.
 
