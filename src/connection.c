@@ -16,9 +16,11 @@ static void R_finalize_amqp_connection(SEXP ptr)
 {
   connection *conn = (connection *) R_ExternalPtrAddr(ptr);
   if (conn) {
-    // Attempt to close the connection.
-    amqp_connection_close(conn->conn, AMQP_REPLY_SUCCESS);
-    amqp_destroy_connection(conn->conn);
+    // Attempt to close the connection, if it appears to be open.
+    if (conn->conn) {
+      amqp_connection_close(conn->conn, AMQP_REPLY_SUCCESS);
+      amqp_destroy_connection(conn->conn);
+    }
     if (conn->bg_conn) {
       destroy_bg_conn(conn->bg_conn);
     }
@@ -130,6 +132,8 @@ SEXP R_amqp_disconnect(SEXP ptr)
   // Depending on the nature of the possible error above, the connection might
   // be closed without this value having been set.
   conn->is_connected = 0;
+  amqp_destroy_connection(conn->conn);
+  conn->conn = NULL;
 
   mark_consumers_closed(conn);
 
@@ -144,6 +148,11 @@ int lconnect(connection *conn, char *buffer, size_t len)
   // Assume conn->conn is valid.
   if (conn->is_connected) return 0;
 
+  if (conn->conn) {
+    amqp_destroy_connection(conn->conn);
+  }
+  conn->conn = amqp_new_connection();
+
   // If a connection is closed, clearly the channel(s) are as well.
   conn->chan.is_open = 0;
 
@@ -152,6 +161,8 @@ int lconnect(connection *conn, char *buffer, size_t len)
 
   if (!socket) {
     snprintf(buffer, len, "Failed to create an amqp socket.");
+    amqp_destroy_connection(conn->conn);
+    conn->conn = NULL;
     return -1;
   }
 
@@ -167,6 +178,8 @@ int lconnect(connection *conn, char *buffer, size_t len)
     } else {
       snprintf(buffer, len, "%s", amqp_error_string2(sockfd));
     }
+    amqp_destroy_connection(conn->conn);
+    conn->conn = NULL;
     return -1;
   }
 
@@ -217,6 +230,8 @@ int lconnect(connection *conn, char *buffer, size_t len)
     render_amqp_error(reply, conn, &conn->chan, buffer, len);
     // The connection is likely closed already, but try anyway.
     amqp_connection_close(conn->conn, AMQP_REPLY_SUCCESS);
+    amqp_destroy_connection(conn->conn);
+    conn->conn = NULL;
     return -1;
   }
 
