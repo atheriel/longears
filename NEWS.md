@@ -10,6 +10,10 @@
 - Connections now set common client properties, which are visible in the
   RabbitMQ management plugin web interface.
 
+- Fixes usage of `librabbitmq` connection objects during disconnection events;
+  it turns out that re-using these handles can sometimes cause issues when
+  attempting to reconnect to a server.
+
 # longears 0.2.2
 
 - `amqp_publish()` will now accept raw vectors for the message body in addition

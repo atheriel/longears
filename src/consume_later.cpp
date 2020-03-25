@@ -346,7 +346,7 @@ connection *clone_connection(const connection *old)
   conn->consumers = NULL;
   conn->bg_conn = NULL;
   conn->is_connected = 0;
-  conn->conn = amqp_new_connection();
+  conn->conn = NULL;
 
   return (connection *) conn;
 }
