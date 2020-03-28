@@ -41,6 +41,7 @@ SEXP R_amqp_connect(SEXP host, SEXP port, SEXP vhost, SEXP username,
   int seconds = asInteger(timeout);
 
   struct connection *conn = malloc(sizeof(struct connection)); // NOTE: Assuming this works.
+  conn->thread = 0;
   conn->host = host_str;
   conn->port = port_num;
   conn->vhost = vhost_str;
@@ -54,6 +55,7 @@ SEXP R_amqp_connect(SEXP host, SEXP port, SEXP vhost, SEXP username,
   conn->bg_conn = NULL;
   conn->is_connected = 0;
   conn->conn = amqp_new_connection();
+  pthread_mutex_init(&conn->mutex, NULL);
 
   if (!conn->conn) {
     free(conn);

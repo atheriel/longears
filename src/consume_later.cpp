@@ -8,25 +8,14 @@
 
 #include "utils.h"
 
-typedef struct bg_consumer {
-  bg_conn *conn;
-  channel chan;
-  amqp_bytes_t tag;
-  int no_ack;
-  SEXP fun;
-  SEXP rho;
-  struct bg_consumer *next;
-  struct bg_consumer *prev;
-} bg_consumer;
-
 typedef struct {
-  bg_conn *conn;
+  struct connection *conn;
   amqp_envelope_t *env;
 } callback_data;
 
 static void R_finalize_bg_consumer(SEXP ptr)
 {
-  bg_consumer *con = (bg_consumer *) R_ExternalPtrAddr(ptr);
+  struct consumer *con = (struct consumer *) R_ExternalPtrAddr(ptr);
   if (con && con->conn) {
     pthread_mutex_lock(&con->conn->mutex);
 
@@ -34,17 +23,16 @@ static void R_finalize_bg_consumer(SEXP ptr)
        that we have exclusive access to the connection before we do this. It's
        also important to keep track of channel/connection errors, since they can
        affect other consumers. */
-    if (con->conn->conn->is_connected && con->chan.is_open) {
-      amqp_rpc_reply_t reply = amqp_channel_close(con->conn->conn->conn,
+    if (con->conn->is_connected && con->chan.is_open) {
+      amqp_rpc_reply_t reply = amqp_channel_close(con->conn->conn,
                                                   con->chan.chan,
                                                   AMQP_REPLY_SUCCESS);
       if (reply.reply_type != AMQP_RESPONSE_NORMAL) {
         char errbuff[200];
-        render_amqp_error(reply, con->conn->conn, &con->chan, errbuff, 200);
+        render_amqp_error(reply, con->conn, &con->chan, errbuff, 200);
       } else {
         /* TODO: This may not be necessary. */
-        amqp_maybe_release_buffers_on_channel(con->conn->conn->conn,
-                                              con->chan.chan);
+        amqp_maybe_release_buffers_on_channel(con->conn->conn, con->chan.chan);
       }
     }
 
@@ -77,7 +65,7 @@ static void later_callback(void *data)
 
   /* Find the consumer for the envelope. */
 
-  bg_consumer *elt = (bg_consumer *) cdata->conn->consumers;
+  struct consumer *elt = (struct consumer *) cdata->conn->consumers;
   while (elt && strncmp((const char *) elt->tag.bytes,
                         (const char *) cdata->env->consumer_tag.bytes,
                         elt->tag.len) != 0) {
@@ -95,7 +83,7 @@ static void later_callback(void *data)
      consumers swallowed above? */
   if (!elt->no_ack) {
     pthread_mutex_lock(&cdata->conn->mutex);
-    int ack = amqp_basic_ack(cdata->conn->conn->conn, elt->chan.chan,
+    int ack = amqp_basic_ack(cdata->conn->conn, elt->chan.chan,
                              cdata->env->delivery_tag, 0);
     if (ack != AMQP_STATUS_OK) {
       Rf_warning("Failed to acknowledge message. %s", amqp_error_string2(ack));
@@ -173,7 +161,7 @@ static void later_warn_callback(void *data)
 
 static void * consume_run(void *data)
 {
-  bg_conn *con = (bg_conn *) data;
+  struct connection *con = (struct connection *) data;
 
   struct timeval tv;
   tv.tv_sec = 0;
@@ -202,7 +190,7 @@ static void * consume_run(void *data)
     pthread_mutex_lock(&con->mutex);
 
     /* Sleep until this thread will actually be useful. */
-    if (!con->conn->is_connected || !con->consumers) {
+    if (!con->is_connected || !con->consumers) {
       pthread_mutex_unlock(&con->mutex);
       pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
       pthread_testcancel();
@@ -210,9 +198,9 @@ static void * consume_run(void *data)
     }
 
     /* TODO: Is this still safe? Does the callback rely on memory that is released here? */
-    amqp_maybe_release_buffers(con->conn->conn);
+    amqp_maybe_release_buffers(con->conn);
     env = (amqp_envelope_t *) malloc(sizeof(amqp_envelope_t));
-    reply = amqp_consume_message(con->conn->conn, env, &tv, 0);
+    reply = amqp_consume_message(con->conn, env, &tv, 0);
 
     /* If the envelope contains a message, schedule a callback. Note that the callback
      * is responsible for releasing the memory of both (1) ptr; and (2) env. */
@@ -228,7 +216,7 @@ static void * consume_run(void *data)
          (e.g. connection.close). */
       if (status == AMQP_STATUS_UNEXPECTED_STATE) {
         amqp_frame_t frame;
-        status = amqp_simple_wait_frame(con->conn->conn, &frame);
+        status = amqp_simple_wait_frame(con->conn, &frame);
         /* If the server shuts down gracefully, this is how we will probably be
            notified. */
         if (status == AMQP_STATUS_OK && frame.frame_type == AMQP_FRAME_METHOD &&
@@ -241,7 +229,7 @@ static void * consume_run(void *data)
              notified that e.g. deleted queues have cancelled a consumer. */
           amqp_basic_cancel_t *cancel;
           cancel = (amqp_basic_cancel_t *) frame.payload.method.decoded;
-          bg_consumer *elt = con->consumers;
+          struct consumer *elt = con->consumers;
           while (elt && strncmp((const char *) elt->tag.bytes,
                                 (const char *) cancel->consumer_tag.bytes,
                                 elt->tag.len) != 0) {
@@ -258,11 +246,10 @@ static void * consume_run(void *data)
 
             /* Close the corresponding channel now so we don't try to during the
                finalizer. */
-            reply = amqp_channel_close(con->conn->conn, elt->chan.chan,
+            reply = amqp_channel_close(con->conn, elt->chan.chan,
                                        AMQP_REPLY_SUCCESS);
             if (reply.reply_type == AMQP_RESPONSE_NORMAL) {
-              amqp_maybe_release_buffers_on_channel(con->conn->conn,
-                                                    elt->chan.chan);
+              amqp_maybe_release_buffers_on_channel(con->conn, elt->chan.chan);
               status = AMQP_STATUS_OK;
             } else if (reply.reply_type == AMQP_RESPONSE_LIBRARY_EXCEPTION) {
               status = reply.library_error;
@@ -290,7 +277,7 @@ static void * consume_run(void *data)
       case AMQP_STATUS_SOCKET_CLOSED:
         /* fallthrough */
       case AMQP_STATUS_SOCKET_ERROR:
-        con->conn->is_connected = 0;
+        con->is_connected = 0;
         amqp_destroy_envelope(env);
         free(env);
         pthread_mutex_unlock(&con->mutex);
@@ -333,6 +320,7 @@ static void * consume_run(void *data)
 connection *clone_connection(const connection *old)
 {
   connection *conn = (connection *) malloc(sizeof(connection));
+  conn->thread = 0;
   conn->host = old->host;
   conn->port = old->port;
   conn->vhost = old->vhost;
@@ -346,35 +334,34 @@ connection *clone_connection(const connection *old)
   conn->bg_conn = NULL;
   conn->is_connected = 0;
   conn->conn = NULL;
+  pthread_mutex_init(&conn->mutex, NULL);
 
   return (connection *) conn;
 }
 
 extern "C" int init_bg_conn(connection *conn)
 {
-  bg_conn *con = conn->bg_conn;
+  struct connection *con = conn->bg_conn;
   if (con) {
     /* If the connection has been marked as closed by the background thread, we
        need to clean up and start again. TODO: Do we need to lock the mutex here
        to safely check the connection state? */
-    if (!con->conn->is_connected) {
+    if (!con->is_connected) {
       destroy_bg_conn(conn->bg_conn);
     } else {
       return 0;
     }
   }
 
-  bg_conn *out = (bg_conn *) malloc(sizeof(bg_conn));
+  struct connection *out = (struct connection *) malloc(sizeof(struct connection));
 
   /* Need to do this before pthread_create() to avoid a data race on
      fields in out. */
-  out->conn = clone_connection(conn);
-  out->mutex = PTHREAD_MUTEX_INITIALIZER;
-  out->consumers = NULL;
+  out = clone_connection(conn);
 
   int res = pthread_create(&out->thread, NULL, consume_run, out);
   if (res != 0) {
-    amqp_destroy_connection(out->conn->conn);
+    amqp_destroy_connection(out->conn);
     free(out->conn);
     free(out);
     return res;
@@ -384,7 +371,7 @@ extern "C" int init_bg_conn(connection *conn)
   return 0;
 }
 
-extern "C" void destroy_bg_conn(bg_conn *conn)
+extern "C" void destroy_bg_conn(struct connection *conn)
 {
   if (!conn) return;
 
@@ -397,7 +384,7 @@ extern "C" void destroy_bg_conn(bg_conn *conn)
   /* Ensure all consumers attached to this thread know that the connection is
      dead. Instead of cleaning up consumers, rely on their finalizers to run. */
 
-  bg_consumer *next, *elt = conn->consumers;
+  struct consumer *next, *elt = conn->consumers;
   while (elt) {
     next = elt->next;
     elt->conn = NULL;
@@ -408,12 +395,11 @@ extern "C" void destroy_bg_conn(bg_conn *conn)
   }
 
   /* Attempt to close the connection. */
-  if (conn->conn->is_connected) {
-    amqp_connection_close(conn->conn->conn, AMQP_REPLY_SUCCESS);
+  if (conn->is_connected) {
+    amqp_connection_close(conn->conn, AMQP_REPLY_SUCCESS);
   }
 
-  amqp_destroy_connection(conn->conn->conn);
-  free(conn->conn);
+  amqp_destroy_connection(conn->conn);
   free(conn);
   conn = NULL;
 
@@ -436,18 +422,18 @@ extern "C" SEXP R_amqp_consume_later(SEXP ptr, SEXP queue, SEXP fun, SEXP rho,
   if (res != 0) {
     Rf_error("Failed to create background thread. Error: %d.", res);
   }
-  bg_conn *bg_conn = conn->bg_conn;
+  struct connection *bg_conn = conn->bg_conn;
 
   pthread_mutex_lock(&bg_conn->mutex);
 
-  bg_consumer *con = (bg_consumer *) malloc(sizeof(bg_consumer));
+  struct consumer *con = (struct consumer *) malloc(sizeof(struct consumer));
   con->conn = bg_conn;
   con->chan.chan = 0;
   con->chan.is_open = 0;
   con->tag = amqp_empty_bytes;
   char errbuff[1000];
-  if (lconnect(bg_conn->conn, errbuff, 1000) < 0 ||
-      ensure_valid_channel(bg_conn->conn, &con->chan, errbuff, 1000) < 0) {
+  if (lconnect(bg_conn, errbuff, 1000) < 0 ||
+      ensure_valid_channel(bg_conn, &con->chan, errbuff, 1000) < 0) {
     Rf_error("Failed to clone connection. %s", errbuff);
     return R_NilValue;
   }
@@ -459,19 +445,19 @@ extern "C" SEXP R_amqp_consume_later(SEXP ptr, SEXP queue, SEXP fun, SEXP rho,
   con->next = NULL;
 
   amqp_basic_consume_ok_t *consume_ok;
-  consume_ok = amqp_basic_consume(bg_conn->conn->conn, con->chan.chan,
+  consume_ok = amqp_basic_consume(bg_conn->conn, con->chan.chan,
                                   amqp_cstring_bytes(queue_str),
                                   amqp_cstring_bytes(consumer_str),
                                   0, has_no_ack, is_exclusive,
                                   *arg_table);
 
   if (consume_ok == NULL) {
-    amqp_rpc_reply_t reply = amqp_get_rpc_reply(bg_conn->conn->conn);
-    render_amqp_error(reply, bg_conn->conn, &con->chan, errbuff, 1000);
+    amqp_rpc_reply_t reply = amqp_get_rpc_reply(bg_conn->conn);
+    render_amqp_error(reply, bg_conn, &con->chan, errbuff, 1000);
 
     /* Clean up. */
     if (con->chan.is_open) {
-      amqp_channel_close(bg_conn->conn->conn, con->chan.chan,
+      amqp_channel_close(bg_conn->conn, con->chan.chan,
                          AMQP_REPLY_SUCCESS);
     }
     free(con);
@@ -480,17 +466,16 @@ extern "C" SEXP R_amqp_consume_later(SEXP ptr, SEXP queue, SEXP fun, SEXP rho,
   }
 
   if (!has_no_ack) {
-    amqp_basic_qos_ok_t *qos_ok = amqp_basic_qos(bg_conn->conn->conn,
+    amqp_basic_qos_ok_t *qos_ok = amqp_basic_qos(bg_conn->conn,
                                                  con->chan.chan, 0,
                                                  DEFAULT_PREFETCH_COUNT, 0);
     if (qos_ok == NULL) {
-      amqp_rpc_reply_t reply = amqp_get_rpc_reply(bg_conn->conn->conn);
-      render_amqp_error(reply, bg_conn->conn, &con->chan, errbuff, 1000);
+      amqp_rpc_reply_t reply = amqp_get_rpc_reply(bg_conn->conn);
+      render_amqp_error(reply, bg_conn, &con->chan, errbuff, 1000);
 
       /* Clean up. */
       if (con->chan.is_open) {
-        amqp_channel_close(bg_conn->conn->conn, con->chan.chan,
-                           AMQP_REPLY_SUCCESS);
+        amqp_channel_close(bg_conn->conn, con->chan.chan, AMQP_REPLY_SUCCESS);
       }
       free(con);
 
@@ -523,7 +508,7 @@ extern "C" SEXP R_amqp_consume_later(SEXP ptr, SEXP queue, SEXP fun, SEXP rho,
   if (!bg_conn->consumers) {
     bg_conn->consumers = con;
   } else {
-    bg_consumer *elt = bg_conn->consumers;
+    struct consumer *elt = bg_conn->consumers;
     while (elt->next) {
       elt = elt->next;
     }
@@ -538,7 +523,7 @@ extern "C" SEXP R_amqp_consume_later(SEXP ptr, SEXP queue, SEXP fun, SEXP rho,
 
 extern "C" SEXP R_amqp_destroy_bg_consumer(SEXP ptr)
 {
-  bg_consumer *con = (bg_consumer *) R_ExternalPtrAddr(ptr);
+  struct consumer *con = (struct consumer *) R_ExternalPtrAddr(ptr);
   if (!con) {
     Rf_error("The consumer has already been destroyed.");
   }
