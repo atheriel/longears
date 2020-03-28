@@ -11,16 +11,15 @@ extern "C" {
 #define DEFAULT_PREFETCH_COUNT 50
 
 /* Forward declaration. */
-struct consumer;
 struct bg_consumer;
 struct bg_conn;
 
-typedef struct channel {
+struct channel {
   amqp_channel_t chan;
   int is_open;
-} channel;
+};
 
-typedef struct connection {
+struct connection {
   amqp_connection_state_t conn;
   int is_connected;
   const char *host;
@@ -29,35 +28,35 @@ typedef struct connection {
   const char *username;
   const char *password;
   int timeout;
-  channel chan;
+  struct channel chan;
   int next_chan;
   struct consumer *consumers;
   struct bg_conn *bg_conn;
-} connection;
+};
 
-typedef struct consumer {
-  connection *conn;
-  channel chan;
+struct consumer {
+  struct connection *conn;
+  struct channel chan;
   amqp_bytes_t tag;
   SEXP fun;
   SEXP rho;
   int no_ack;
   struct consumer *prev;
   struct consumer *next;
-} consumer;
+};
 
 typedef struct bg_conn {
-  connection *conn;
+  struct connection *conn;
   pthread_t thread;
   pthread_mutex_t mutex;
   struct bg_consumer *consumers;
 } bg_conn;
 
-int init_bg_conn(connection *conn);
+int init_bg_conn(struct connection *conn);
 void destroy_bg_conn(bg_conn *conn);
 
-int lconnect(connection *conn, char *buffer, size_t len);
-int ensure_valid_channel(connection *, channel *, char *, size_t);
+int lconnect(struct connection *conn, char *buffer, size_t len);
+int ensure_valid_channel(struct connection *, struct channel *, char *, size_t);
 
 #ifdef __cplusplus
 }

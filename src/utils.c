@@ -7,8 +7,8 @@
 #include "tables.h"
 #include "utils.h"
 
-void render_amqp_library_error(int err, connection *conn, channel *chan,
-                               char *buffer, size_t len) {
+void render_amqp_library_error(int err, struct connection *conn,
+                               struct channel *chan, char *buffer, size_t len) {
   /* Some errors affect the connection state. */
   switch (err) {
   case AMQP_STATUS_WRONG_METHOD:
@@ -36,8 +36,8 @@ void render_amqp_library_error(int err, connection *conn, channel *chan,
   }
 }
 
-void render_amqp_error(const amqp_rpc_reply_t reply, connection *conn,
-                       channel *chan, char *buffer, size_t len)
+void render_amqp_error(const amqp_rpc_reply_t reply, struct connection *conn,
+                       struct channel *chan, char *buffer, size_t len)
 {
   // This is mostly ported from rabbitmq-c/examples/utils.c.
   switch (reply.reply_type) {

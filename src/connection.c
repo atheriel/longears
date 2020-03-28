@@ -10,11 +10,11 @@
 #include "connection.h"
 #include "utils.h"
 
-static void mark_consumers_closed(connection *conn);
+static void mark_consumers_closed(struct connection *conn);
 
 static void R_finalize_amqp_connection(SEXP ptr)
 {
-  connection *conn = (connection *) R_ExternalPtrAddr(ptr);
+  struct connection *conn = (struct connection *) R_ExternalPtrAddr(ptr);
   if (conn) {
     // Attempt to close the connection, if it appears to be open.
     if (conn->conn) {
@@ -40,7 +40,7 @@ SEXP R_amqp_connect(SEXP host, SEXP port, SEXP vhost, SEXP username,
   const char *password_str = CHAR(asChar(password));
   int seconds = asInteger(timeout);
 
-  connection *conn = malloc(sizeof(connection)); // NOTE: Assuming this works.
+  struct connection *conn = malloc(sizeof(struct connection)); // NOTE: Assuming this works.
   conn->host = host_str;
   conn->port = port_num;
   conn->vhost = vhost_str;
@@ -81,7 +81,7 @@ SEXP R_amqp_connect(SEXP host, SEXP port, SEXP vhost, SEXP username,
 
 SEXP R_amqp_is_connected(SEXP ptr)
 {
-  connection *conn = (connection *) R_ExternalPtrAddr(ptr);
+  struct connection *conn = (struct connection *) R_ExternalPtrAddr(ptr);
   if (!conn) {
     Rf_error("The amqp connection no longer exists.");
     return R_NilValue;
@@ -91,7 +91,7 @@ SEXP R_amqp_is_connected(SEXP ptr)
 
 SEXP R_amqp_reconnect(SEXP ptr)
 {
-  connection *conn = (connection *) R_ExternalPtrAddr(ptr);
+  struct connection *conn = (struct connection *) R_ExternalPtrAddr(ptr);
   if (!conn) {
     Rf_error("The amqp connection no longer exists.");
     return R_NilValue;
@@ -112,7 +112,7 @@ SEXP R_amqp_reconnect(SEXP ptr)
 
 SEXP R_amqp_disconnect(SEXP ptr)
 {
-  connection *conn = (connection *) R_ExternalPtrAddr(ptr);
+  struct connection *conn = (struct connection *) R_ExternalPtrAddr(ptr);
   if (!conn) {
     Rf_error("The amqp connection no longer exists.");
     return R_NilValue;
@@ -143,7 +143,7 @@ SEXP R_amqp_disconnect(SEXP ptr)
   return R_NilValue;
 }
 
-int lconnect(connection *conn, char *buffer, size_t len)
+int lconnect(struct connection *conn, char *buffer, size_t len)
 {
   // Assume conn->conn is valid.
   if (conn->is_connected) return 0;
@@ -246,7 +246,8 @@ int lconnect(connection *conn, char *buffer, size_t len)
   return 0;
 }
 
-int ensure_valid_channel(connection *conn, channel *chan, char *buffer, size_t len)
+int ensure_valid_channel(struct connection *conn, struct channel *chan,
+                         char *buffer, size_t len)
 {
   if (!conn) {
     snprintf(buffer, len, "Invalid connection object.");
@@ -276,9 +277,9 @@ int ensure_valid_channel(connection *conn, channel *chan, char *buffer, size_t l
   return 0;
 }
 
-static void mark_consumers_closed(connection *conn)
+static void mark_consumers_closed(struct connection *conn)
 {
-  consumer *elt = conn->consumers;
+  struct consumer *elt = conn->consumers;
   while (elt) {
     elt->chan.is_open = 0;
     elt = elt->next;

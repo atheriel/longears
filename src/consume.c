@@ -12,7 +12,7 @@
 
 static void R_finalize_consumer(SEXP ptr)
 {
-  consumer *con = (consumer *) R_ExternalPtrAddr(ptr);
+  struct consumer *con = (struct consumer *) R_ExternalPtrAddr(ptr);
   if (con) {
     /* Attempt to cancel the consumer and close the channel. */
     if (con->chan.is_open) {
@@ -40,8 +40,8 @@ static void R_finalize_consumer(SEXP ptr)
 SEXP R_amqp_create_consumer(SEXP ptr, SEXP queue, SEXP tag, SEXP fun, SEXP rho,
                             SEXP no_ack, SEXP exclusive, SEXP args)
 {
-  connection *conn = (connection *) R_ExternalPtrAddr(ptr);
-  consumer *con = malloc(sizeof(consumer));
+  struct connection *conn = (struct connection *) R_ExternalPtrAddr(ptr);
+  struct consumer *con = malloc(sizeof(struct consumer));
   con->conn = conn;
   con->chan.chan = 0;
   con->chan.is_open = 0;
@@ -98,7 +98,7 @@ SEXP R_amqp_create_consumer(SEXP ptr, SEXP queue, SEXP tag, SEXP fun, SEXP rho,
   if (!conn->consumers) {
     conn->consumers = con;
   } else {
-    consumer *elt = conn->consumers;
+    struct consumer *elt = conn->consumers;
     while (elt->next) {
       elt = elt->next;
     }
@@ -115,7 +115,7 @@ SEXP R_amqp_create_consumer(SEXP ptr, SEXP queue, SEXP tag, SEXP fun, SEXP rho,
 
 SEXP R_amqp_listen(SEXP ptr, SEXP timeout)
 {
-  connection *conn = (connection *) R_ExternalPtrAddr(ptr);
+  struct connection *conn = (struct connection *) R_ExternalPtrAddr(ptr);
   char errbuff[200];
   if (ensure_valid_channel(conn, &conn->chan, errbuff, 200) < 0) {
     Rf_error("Failed to consume messages. %s", errbuff);
@@ -139,7 +139,7 @@ SEXP R_amqp_listen(SEXP ptr, SEXP timeout)
   int ack;
   amqp_rpc_reply_t reply;
   amqp_envelope_t env;
-  consumer *elt;
+  struct consumer *elt;
 
   while (current_wait < max_wait) {
 
@@ -254,7 +254,7 @@ SEXP R_amqp_listen(SEXP ptr, SEXP timeout)
 
 SEXP R_amqp_destroy_consumer(SEXP ptr)
 {
-  consumer *con = (consumer *) R_ExternalPtrAddr(ptr);
+  struct consumer *con = (struct consumer *) R_ExternalPtrAddr(ptr);
   if (!con) {
     Rf_error("Invalid consumer object.");
   }

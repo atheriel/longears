@@ -12,7 +12,7 @@
 SEXP R_amqp_publish(SEXP ptr, SEXP body, SEXP exchange, SEXP routing_key,
                     SEXP mandatory, SEXP immediate, SEXP props)
 {
-  connection *conn = (connection *) R_ExternalPtrAddr(ptr);
+  struct connection *conn = (struct connection *) R_ExternalPtrAddr(ptr);
   char errbuff[200];
   if (ensure_valid_channel(conn, &conn->chan, errbuff, 200) < 0) {
     Rf_error("Failed to find an open channel. %s", errbuff);
@@ -55,7 +55,7 @@ SEXP R_amqp_publish(SEXP ptr, SEXP body, SEXP exchange, SEXP routing_key,
 
 SEXP R_amqp_get(SEXP ptr, SEXP queue, SEXP no_ack)
 {
-  connection *conn = (connection *) R_ExternalPtrAddr(ptr);
+  struct connection *conn = (struct connection *) R_ExternalPtrAddr(ptr);
   char errbuff[200];
   if (ensure_valid_channel(conn, &conn->chan, errbuff, 200) < 0) {
     Rf_error("Failed to find an open channel. %s", errbuff);
@@ -121,7 +121,7 @@ SEXP R_amqp_get(SEXP ptr, SEXP queue, SEXP no_ack)
 
 SEXP R_amqp_ack(SEXP ptr, SEXP delivery_tag, SEXP multiple)
 {
-  connection *conn = (connection *) R_ExternalPtrAddr(ptr);
+  struct connection *conn = (struct connection *) R_ExternalPtrAddr(ptr);
   char errbuff[200];
   if (ensure_valid_channel(conn, &conn->chan, errbuff, 200) < 0) {
     Rf_error("Failed to find an open channel. %s", errbuff);
@@ -142,7 +142,7 @@ SEXP R_amqp_ack(SEXP ptr, SEXP delivery_tag, SEXP multiple)
 
 SEXP R_amqp_nack(SEXP ptr, SEXP delivery_tag, SEXP multiple, SEXP requeue)
 {
-  connection *conn = (connection *) R_ExternalPtrAddr(ptr);
+  struct connection *conn = (struct connection *) R_ExternalPtrAddr(ptr);
   char errbuff[200];
   if (ensure_valid_channel(conn, &conn->chan, errbuff, 200) < 0) {
     Rf_error("Failed to find an open channel. %s", errbuff);

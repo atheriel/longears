@@ -9,7 +9,7 @@
 SEXP R_amqp_bind_queue(SEXP ptr, SEXP queue, SEXP exchange, SEXP routing_key,
                        SEXP args)
 {
-  connection *conn = (connection *) R_ExternalPtrAddr(ptr);
+  struct connection *conn = (struct connection *) R_ExternalPtrAddr(ptr);
   char errbuff[200];
   if (ensure_valid_channel(conn, &conn->chan, errbuff, 200) < 0) {
     Rf_error("Failed to find an open channel. %s", errbuff);
@@ -39,7 +39,7 @@ SEXP R_amqp_bind_queue(SEXP ptr, SEXP queue, SEXP exchange, SEXP routing_key,
 SEXP R_amqp_unbind_queue(SEXP ptr, SEXP queue, SEXP exchange, SEXP routing_key,
                          SEXP args)
 {
-  connection *conn = (connection *) R_ExternalPtrAddr(ptr);
+  struct connection *conn = (struct connection *) R_ExternalPtrAddr(ptr);
   char errbuff[200];
   if (ensure_valid_channel(conn, &conn->chan, errbuff, 200) < 0) {
     Rf_error("Failed to find an open channel. %s", errbuff);
@@ -69,7 +69,7 @@ SEXP R_amqp_unbind_queue(SEXP ptr, SEXP queue, SEXP exchange, SEXP routing_key,
 SEXP R_amqp_bind_exchange(SEXP ptr, SEXP dest, SEXP source, SEXP routing_key,
                           SEXP args)
 {
-  connection *conn = (connection *) R_ExternalPtrAddr(ptr);
+  struct connection *conn = (struct connection *) R_ExternalPtrAddr(ptr);
   char errbuff[200];
   if (ensure_valid_channel(conn, &conn->chan, errbuff, 200) < 0) {
     Rf_error("Failed to find an open channel. %s", errbuff);
@@ -99,7 +99,7 @@ SEXP R_amqp_bind_exchange(SEXP ptr, SEXP dest, SEXP source, SEXP routing_key,
 SEXP R_amqp_unbind_exchange(SEXP ptr, SEXP dest, SEXP source, SEXP routing_key,
                          SEXP args)
 {
-  connection *conn = (connection *) R_ExternalPtrAddr(ptr);
+  struct connection *conn = (struct connection *) R_ExternalPtrAddr(ptr);
   char errbuff[200];
   if (ensure_valid_channel(conn, &conn->chan, errbuff, 200) < 0) {
     Rf_error("Failed to find an open channel. %s", errbuff);
