@@ -2,6 +2,7 @@
 #define __LONGEARS_H__
 
 #include <Rinternals.h> /* for SEXP */
+#include <R_ext/Rdynload.h> /* Included by default in R (>= 3.4). */
 #include <Rversion.h>
 
 #define LONGEARS_VERSION "0.2.2.9000"
