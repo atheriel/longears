@@ -1,4 +1,4 @@
-# longears 0.2.2.9000
+# longears 0.2.3
 
 - `amqp_listen()` will now respect the timeout value even when processing many
   messages. To reliably consume "endlessly", use a `while(TRUE)` loop.
@@ -9,6 +9,8 @@
 - Fixes usage of `librabbitmq` connection objects during disconnection events;
   it turns out that re-using these handles can sometimes cause issues when
   attempting to reconnect to a server.
+
+- Fix compilation issues due to a missing header on pre-3.4 versions of R.
 
 # longears 0.2.2
 
