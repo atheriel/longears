@@ -1,5 +1,8 @@
 # longears 0.2.2.9000
 
+- `amqp_listen()` will now respect the timeout value even when processing many
+  messages. To reliably consume "endlessly", use a `while(TRUE)` loop.
+
 - Connections now set common client properties, which are visible in the
   RabbitMQ management plugin web interface.
 

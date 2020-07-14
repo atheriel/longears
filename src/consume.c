@@ -1,6 +1,7 @@
 #include <stdlib.h> /* for malloc */
 #include <string.h> /* for memcpy */
 #include <sys/time.h>
+#include <time.h> /* for time() */
 
 #include <amqp.h>
 #include <amqp_tcp_socket.h>
@@ -131,6 +132,7 @@ SEXP R_amqp_listen(SEXP ptr, SEXP timeout)
   struct timeval tv;
   tv.tv_sec = 1;
   tv.tv_usec = 0;
+  time_t start = time(NULL);
 
   SEXP message, body;
   SEXP R_fcall = PROTECT(allocList(2));
@@ -184,7 +186,7 @@ SEXP R_amqp_listen(SEXP ptr, SEXP timeout)
 
       switch (status) {
       case AMQP_STATUS_TIMEOUT:
-        current_wait++;
+        /* OK. */
         break;
       case AMQP_STATUS_CONNECTION_CLOSED:
         /* fallthrough */
@@ -245,6 +247,7 @@ SEXP R_amqp_listen(SEXP ptr, SEXP timeout)
       UNPROTECT(2);
     }
 
+    current_wait = time(NULL) - start;
     R_CheckUserInterrupt(); // Escape hatch.
   }
 
