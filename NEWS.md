@@ -1,3 +1,10 @@
+# longears 0.2.3.9000
+
+- Fixes handling of connection failures in `amqp_listen()`. Previously if you
+  got booted off the cluster during the acknowledgement phase the connection
+  would not be closed properly and only a warning would be triggered. Now that
+  warning is a hard error, as it should be.
+
 # longears 0.2.3
 
 - `amqp_listen()` will now respect the timeout value even when processing many

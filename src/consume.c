@@ -235,8 +235,26 @@ SEXP R_amqp_listen(SEXP ptr, SEXP timeout)
 
       if (!elt->no_ack) {
         ack = amqp_basic_ack(conn->conn, elt->chan.chan, env.delivery_tag, 0);
-        if (ack != AMQP_STATUS_OK) {
-          Rf_warning("Failed to acknowledge message. %s", amqp_error_string2(ack));
+
+        /* We want to handle errors here before running the callback, since it's
+         * possible the message will be redelivered and the callback may not be
+         * idempotent. */
+        switch (ack) {
+        case AMQP_STATUS_OK:
+          break;
+        case AMQP_STATUS_CONNECTION_CLOSED:
+          /* fallthrough */
+        case AMQP_STATUS_SOCKET_CLOSED:
+          /* fallthrough */
+        case AMQP_STATUS_SOCKET_ERROR:
+          /* fallthrough */
+          conn->is_connected = 0;
+          Rf_error("Disconnected from server.");
+          break;
+        default:
+          Rf_error("Failed to acknowledge message: %s.\n",
+                   amqp_error_string2(ack));
+          break;
         }
       }
 
