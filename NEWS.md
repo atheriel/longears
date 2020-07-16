@@ -5,6 +5,10 @@
   would not be closed properly and only a warning would be triggered. Now that
   warning is a hard error, as it should be.
 
+- Fixes setting of prefetch counts on consumers; previously they were
+  nonfunctional due to a misunderstanding of the AMQP spec and RabbitMQ's
+  interpretation of it. This should improve performance in some cases.
+
 # longears 0.2.3
 
 - `amqp_listen()` will now respect the timeout value even when processing many
