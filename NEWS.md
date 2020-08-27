@@ -1,4 +1,4 @@
-# longears 0.2.3.9000
+# longears 0.2.4
 
 - Fixes handling of connection failures in `amqp_listen()`. Previously if you
   got booted off the cluster during the acknowledgement phase the connection

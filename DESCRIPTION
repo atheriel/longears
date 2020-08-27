@@ -1,6 +1,6 @@
 Package: longears
 Title: A Fast and Fully-Featured 'RabbitMQ' Client
-Version: 0.2.3
+Version: 0.2.4
 Authors@R: c(
   person("Aaron", "Jacobs", role = c("aut", "cre"),
          email = "atheriel@gmail.com"),
