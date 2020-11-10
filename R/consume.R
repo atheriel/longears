@@ -51,7 +51,9 @@
 #'
 #' Unless \code{no_ack} is \code{TRUE}, messages are acknowledged automatically
 #' after the callback executes. If it fails, messages are nacked instead before
-#' surfacing the underlying error to the caller.
+#' surfacing the underlying error to the caller. \code{amqp_nack()} can be used
+#' instead to manually signal that a message should be nacked and control the
+#' redelivery behaviour.
 #'
 #' @examples
 #' \dontrun{
@@ -91,6 +93,11 @@ amqp_consume <- function(conn, queue, fun, tag = "", no_ack = FALSE,
       should_ack <- TRUE
       tryCatch({
         fun(msg)
+      }, amqp_nack = function(cond) {
+        should_ack <<- FALSE
+        amqp_nack_on_channel(
+          conn, chan, msg$delivery_tag, requeue = cond$requeue
+        )
       }, error = function(cond) {
         should_ack <<- FALSE
         amqp_nack_on_channel(
@@ -135,6 +142,18 @@ amqp_listen <- function(conn, timeout = 10L) {
     stop("`conn` is not an amqp_connection object")
   }
   invisible(.Call(R_amqp_listen, conn$ptr, timeout))
+}
+
+#' @param requeue When \code{TRUE}, redeliver the message on the queue.
+#'
+#' @rdname amqp_consume
+#' @export
+amqp_nack <- function(requeue = FALSE) {
+  cond <- structure(
+    list(requeue = requeue),
+    class = c("amqp_nack", "condition")
+  )
+  signalCondition(cond)
 }
 
 #' Consume Messages from a Queue, Later

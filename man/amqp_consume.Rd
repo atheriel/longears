@@ -4,6 +4,7 @@
 \alias{amqp_consume}
 \alias{amqp_cancel_consumer}
 \alias{amqp_listen}
+\alias{amqp_nack}
 \title{Consume Messages from a Queue}
 \usage{
 amqp_consume(conn, queue, fun, tag = "", no_ack = FALSE,
@@ -12,6 +13,8 @@ amqp_consume(conn, queue, fun, tag = "", no_ack = FALSE,
 amqp_cancel_consumer(consumer)
 
 amqp_listen(conn, timeout = 10L)
+
+amqp_nack(requeue = FALSE)
 }
 \arguments{
 \item{conn}{An object returned by \code{\link{amqp_connect}}.}
@@ -42,6 +45,8 @@ extensions. See \strong{Details}.}
 \item{consumer}{An object created by \code{\link{amqp_consume}}.}
 
 \item{timeout}{Maximum number of seconds to wait for messages. Capped at 60.}
+
+\item{requeue}{When \code{TRUE}, redeliver the message on the queue.}
 }
 \value{
 \code{amqp_consume} returns an \code{"amqp_consumer"} object, which can
@@ -74,7 +79,9 @@ incomplete list is as follows:
 
 Unless \code{no_ack} is \code{TRUE}, messages are acknowledged automatically
 after the callback executes. If it fails, messages are nacked instead before
-surfacing the underlying error to the caller.
+surfacing the underlying error to the caller. \code{amqp_nack()} can be used
+instead to manually signal that a message should be nacked and control the
+redelivery behaviour.
 }
 \examples{
 \dontrun{
