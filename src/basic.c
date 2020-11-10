@@ -119,20 +119,28 @@ SEXP R_amqp_get(SEXP ptr, SEXP queue, SEXP no_ack)
   return out;
 }
 
-SEXP R_amqp_ack(SEXP ptr, SEXP delivery_tag, SEXP multiple)
+SEXP R_amqp_ack_on_channel(SEXP ptr, SEXP chan_ptr, SEXP delivery_tag,
+                           SEXP multiple)
 {
   connection *conn = (connection *) R_ExternalPtrAddr(ptr);
-  char errbuff[200];
-  if (ensure_valid_channel(conn, &conn->chan, errbuff, 200) < 0) {
-    Rf_error("Failed to find an open channel. %s", errbuff);
-    return R_NilValue;
+  channel *chan = (channel *) R_ExternalPtrAddr(chan_ptr);
+  if (!conn || !chan) {
+    Rf_error("Failed to acknowledge message(s). Invalid connection or channel object.");
+  }
+  if (!conn->is_connected) {
+    chan->is_open = 0;
+    Rf_error("Failed to acknowledge message(s). Not connected to a server.");
+  }
+  if (!chan->is_open) {
+    Rf_error("Failed to acknowledge message(s). Channel is closed.");
   }
   int delivery_tag_ = asInteger(delivery_tag);
   int multiple_ = asLogical(multiple);
 
-  int result = amqp_basic_ack(conn->conn, conn->chan.chan, delivery_tag_,
+  int result = amqp_basic_ack(conn->conn, chan->chan, delivery_tag_,
                               multiple_);
   if (result != AMQP_STATUS_OK) {
+    char errbuff[200];
     render_amqp_library_error(result, conn, &conn->chan, errbuff, 200);
     Rf_error("Failed to acknowledge message(s). %s", errbuff);
   }
@@ -140,21 +148,29 @@ SEXP R_amqp_ack(SEXP ptr, SEXP delivery_tag, SEXP multiple)
   return R_NilValue;
 }
 
-SEXP R_amqp_nack(SEXP ptr, SEXP delivery_tag, SEXP multiple, SEXP requeue)
+SEXP R_amqp_nack_on_channel(SEXP ptr, SEXP chan_ptr, SEXP delivery_tag,
+                            SEXP multiple, SEXP requeue)
 {
   connection *conn = (connection *) R_ExternalPtrAddr(ptr);
-  char errbuff[200];
-  if (ensure_valid_channel(conn, &conn->chan, errbuff, 200) < 0) {
-    Rf_error("Failed to find an open channel. %s", errbuff);
-    return R_NilValue;
+  channel *chan = (channel *) R_ExternalPtrAddr(chan_ptr);
+  if (!conn || !chan) {
+    Rf_error("Failed to nack message(s). Invalid connection or channel object.");
+  }
+  if (!conn->is_connected) {
+    chan->is_open = 0;
+    Rf_error("Failed to nack message(s). Not connected to a server.");
+  }
+  if (!chan->is_open) {
+    Rf_error("Failed to nack message(s). Channel is closed.");
   }
   int delivery_tag_ = asInteger(delivery_tag);
   int multiple_ = asLogical(multiple);
   int requeue_ = asLogical(requeue);
 
-  int result = amqp_basic_nack(conn->conn, conn->chan.chan, delivery_tag_,
+  int result = amqp_basic_nack(conn->conn, chan->chan, delivery_tag_,
                                multiple_, requeue_);
   if (result != AMQP_STATUS_OK) {
+    char errbuff[200];
     render_amqp_library_error(result, conn, &conn->chan, errbuff, 200);
     Rf_error("Failed to nack message(s). %s", errbuff);
   }
