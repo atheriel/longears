@@ -85,6 +85,57 @@ testthat::test_that("Consume works as expected", {
   amqp_disconnect(conn)
 })
 
+testthat::test_that("Consume (n)acks work as expected", {
+  skip_if_no_local_rmq()
+
+  conn <- amqp_connect()
+  exch <- amqp_declare_tmp_exchange(conn)
+  q1 <- amqp_declare_tmp_queue(conn)
+  amqp_bind_queue(conn, q1, exch, routing_key = "#")
+
+  c1 <- amqp_consume(conn, q1, function(msg) {
+    stop("callback failed")
+  })
+
+  amqp_publish(conn, body = "Hello, world", exchange = exch, routing_key = "#")
+
+  testthat::expect_error(
+    amqp_listen(conn, timeout = 1),
+    regexp = "callback failed"
+  )
+
+  q2 <- amqp_declare_tmp_queue(conn)
+  amqp_bind_queue(conn, q2, exch, routing_key = "#")
+  amqp_cancel_consumer(c1)
+
+  count <- 0
+  c2 <- amqp_consume(conn, q2, function(msg) {
+    count <<- count + 1
+    if (msg$redelivered) {
+      message("can't handle this either, dead-letter it")
+      amqp_nack(requeue = FALSE)
+    } else {
+      stop("can't handle this, maybe someone else can")
+    }
+  }, requeue_on_error = TRUE)
+
+  amqp_publish(conn, body = "Hello, again", exchange = exch, routing_key = "#")
+
+  testthat::expect_error(
+    amqp_listen(conn, timeout = 1),
+    regexp = "can't handle this, maybe someone else can"
+  )
+  testthat::expect_condition(
+    amqp_listen(conn, timeout = 1),
+    regexp = "can't handle this either, dead-letter it",
+    class = "message"
+  )
+  testthat::expect_equal(count, 2)
+
+  amqp_disconnect(conn)
+})
+
+
 testthat::test_that("Consumers respond to disconnections correctly", {
   skip_if_no_local_rmq()
   skip_if_no_rabbitmqctl()
