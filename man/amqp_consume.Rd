@@ -7,7 +7,7 @@
 \title{Consume Messages from a Queue}
 \usage{
 amqp_consume(conn, queue, fun, tag = "", no_ack = FALSE,
-  exclusive = FALSE, ...)
+  exclusive = FALSE, requeue_on_error = FALSE, ...)
 
 amqp_cancel_consumer(consumer)
 
@@ -30,6 +30,11 @@ will be acknowledged.}
 
 \item{exclusive}{When \code{TRUE}, request that this consumer has exclusive
 access to the queue.}
+
+\item{requeue_on_error}{When \code{TRUE}, errors in \code{fun} will cause the
+message in question to be redelivered on the queue by the server. This is
+advisable \emph{only} when you expect that another consumer will be able to
+handle the same message without issue.}
 
 \item{...}{Additional arguments, used to declare broker-specific AMQP
 extensions. See \strong{Details}.}

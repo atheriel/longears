@@ -19,6 +19,10 @@
 #'   server will generate one automatically.
 #' @param exclusive When \code{TRUE}, request that this consumer has exclusive
 #'   access to the queue.
+#' @param requeue_on_error When \code{TRUE}, errors in \code{fun} will cause the
+#'   message in question to be redelivered on the queue by the server. This is
+#'   advisable \emph{only} when you expect that another consumer will be able to
+#'   handle the same message without issue.
 #' @param ... Additional arguments, used to declare broker-specific AMQP
 #'   extensions. See \strong{Details}.
 #'
@@ -74,11 +78,12 @@
 #'
 #' @export
 amqp_consume <- function(conn, queue, fun, tag = "", no_ack = FALSE,
-                         exclusive = FALSE, ...) {
+                         exclusive = FALSE, requeue_on_error = FALSE, ...) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
   stopifnot(is.function(fun))
+  stopifnot(is.logical(requeue_on_error))
   args <- amqp_table(...)
   if (!no_ack) {
     # Wrap fun to control error conditions and ensure messages are acknowledged.
@@ -88,7 +93,9 @@ amqp_consume <- function(conn, queue, fun, tag = "", no_ack = FALSE,
         fun(msg)
       }, error = function(cond) {
         should_ack <<- FALSE
-        amqp_nack_on_channel(conn, chan, msg$delivery_tag, requeue = FALSE)
+        amqp_nack_on_channel(
+          conn, chan, msg$delivery_tag, requeue = requeue_on_error
+        )
         stop(cond)
       }, finally = {
         if (should_ack) {
