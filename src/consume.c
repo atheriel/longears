@@ -139,9 +139,7 @@ SEXP R_amqp_listen(SEXP ptr, SEXP timeout)
   tv.tv_usec = 0;
   time_t start = time(NULL);
 
-  SEXP message, body;
-  SEXP R_fcall = PROTECT(allocList(2));
-  SET_TYPEOF(R_fcall, LANGSXP);
+  SEXP message, body, R_fcall;
 
   int ack;
   amqp_rpc_reply_t reply;
@@ -235,46 +233,25 @@ SEXP R_amqp_listen(SEXP ptr, SEXP timeout)
                                          &env.message.properties));
       amqp_destroy_envelope(&env);
 
-      /* Acknowledge the message before we run the callback, just in case it
-       * fails. */
-
-      if (!elt->no_ack) {
-        ack = amqp_basic_ack(conn->conn, elt->chan.chan, env.delivery_tag, 0);
-
-        /* We want to handle errors here before running the callback, since it's
-         * possible the message will be redelivered and the callback may not be
-         * idempotent. */
-        switch (ack) {
-        case AMQP_STATUS_OK:
-          break;
-        case AMQP_STATUS_CONNECTION_CLOSED:
-          /* fallthrough */
-        case AMQP_STATUS_SOCKET_CLOSED:
-          /* fallthrough */
-        case AMQP_STATUS_SOCKET_ERROR:
-          /* fallthrough */
-          conn->is_connected = 0;
-          Rf_error("Disconnected from server.");
-          break;
-        default:
-          Rf_error("Failed to acknowledge message: %s.\n",
-                   amqp_error_string2(ack));
-          break;
-        }
-      }
-
+      R_fcall = PROTECT(allocList(elt->no_ack ? 2 : 3));
+      SET_TYPEOF(R_fcall, LANGSXP);
       SETCAR(R_fcall, elt->fun);
       SETCADR(R_fcall, message);
+      if (!elt->no_ack) {
+        /* The channel is passed to the callback wrapper so that it can be used
+         * for acknowledgements. */
+        SEXP chan_ptr = PROTECT(R_MakeExternalPtr(&elt->chan, R_NilValue, R_NilValue));
+        SETCADDR(R_fcall, chan_ptr);
+      }
       Rf_eval(R_fcall, elt->rho);
 
-      UNPROTECT(2);
+      UNPROTECT(elt->no_ack ? 3 : 4);
     }
 
     current_wait = time(NULL) - start;
     R_CheckUserInterrupt(); // Escape hatch.
   }
 
-  UNPROTECT(1);
   return R_NilValue;
 }
 

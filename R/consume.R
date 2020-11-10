@@ -46,7 +46,8 @@
 #' @details
 #'
 #' Unless \code{no_ack} is \code{TRUE}, messages are acknowledged automatically
-#' after the callback executes.
+#' after the callback executes. If it fails, messages are nacked instead before
+#' surfacing the underlying error to the caller.
 #'
 #' @examples
 #' \dontrun{
@@ -79,8 +80,27 @@ amqp_consume <- function(conn, queue, fun, tag = "", no_ack = FALSE,
   }
   stopifnot(is.function(fun))
   args <- amqp_table(...)
+  if (!no_ack) {
+    # Wrap fun to control error conditions and ensure messages are acknowledged.
+    wrapped <- function(msg, chan) {
+      should_ack <- TRUE
+      tryCatch({
+        fun(msg)
+      }, error = function(cond) {
+        should_ack <<- FALSE
+        amqp_nack_on_channel(conn, chan, msg$delivery_tag, requeue = FALSE)
+        stop(cond)
+      }, finally = {
+        if (should_ack) {
+          amqp_nack_on_channel(conn, chan, msg$delivery_tag)
+        }
+      })
+    }
+  } else {
+    wrapped <- fun
+  }
   .Call(
-    R_amqp_create_consumer, conn$ptr, queue, tag, fun, new.env(), no_ack,
+    R_amqp_create_consumer, conn$ptr, queue, tag, wrapped, new.env(), no_ack,
     exclusive, args$ptr
   )
 }
@@ -144,6 +164,8 @@ amqp_listen <- function(conn, timeout = 10L) {
 #' At present, consumers can only be cancelled by using
 #' \code{\link{amqp_cancel_consumer}} or by garbage collection when the original
 #' connection object expires.
+#'
+#' Messages to background consumers are always acknowledged.
 #'
 #' @seealso \code{\link{amqp_consume}} to consume messages in the main thread.
 #' @export

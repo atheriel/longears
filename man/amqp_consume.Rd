@@ -68,7 +68,8 @@ incomplete list is as follows:
 }
 
 Unless \code{no_ack} is \code{TRUE}, messages are acknowledged automatically
-after the callback executes.
+after the callback executes. If it fails, messages are nacked instead before
+surfacing the underlying error to the caller.
 }
 \examples{
 \dontrun{

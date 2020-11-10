@@ -52,6 +52,8 @@ This may change in future versions.
 At present, consumers can only be cancelled by using
 \code{\link{amqp_cancel_consumer}} or by garbage collection when the original
 connection object expires.
+
+Messages to background consumers are always acknowledged.
 }
 \seealso{
 \code{\link{amqp_consume}} to consume messages in the main thread.
