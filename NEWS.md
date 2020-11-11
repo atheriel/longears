@@ -1,3 +1,26 @@
+# longears 0.2.4.9000
+
+- Consumers created with `amqp_consume()` will now acknowledge messages only
+  *after* the callback has run. Moreover, when a callback fails the message in
+  question will be nacked instead. The new `requeue_on_error` parameter controls
+  whether messages should be redelivered when callbacks error; by default it is
+  `FALSE`, in line with current behaviour. For complete control over when and
+  how messages are nacked, one can use the new `amqp_nack()` function, which
+  works like `stop()` inside a message handler. The following is an example of
+  complex acknowledgement behaviour for a consumer, which might be used in
+  combination with a [dead letter exchange](https://www.rabbitmq.com/dlx.html):
+
+  ```r
+  consumer <- amqp_consume(conn, queue, function(msg) {
+    if (msg$redelivered) {
+      message("can't handle this either, dead-letter it")
+      amqp_nack(requeue = FALSE)
+    } else {
+      stop("can't handle this, maybe someone else can")
+    }
+  }, requeue_on_error = TRUE)
+  ```
+
 # longears 0.2.4
 
 - Fixes handling of connection failures in `amqp_listen()`. Previously if you
