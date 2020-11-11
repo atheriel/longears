@@ -28,6 +28,7 @@ if test "x${have_librabbitmq}" = xno; then
     - librabbitmq-devel on Fedora-based systems (including CentOS, RHEL)
     - librabbitmq-c on Arch-based systems
     - rabbitmq-c (via Homebrew) on macOS
+    - librabbitmq (via vcpkg) on Windows
 
   and try again. If you do have this library and this installation still fails,
   you can provide the location of the library directly with

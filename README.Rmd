@@ -52,6 +52,8 @@ For other platforms:
 * macOS (via Homebrew): `brew install rabbitmq-c`
 * Fedora-based: `yum install librabbitmq-devel`
 * Arch-based: `pacman -S librabbitmq-c`
+* Windows (via [vcpkg](https://github.com/Microsoft/vcpkg)): `vcpkg install
+  librabbitmq`
 
 You can then install **longears** from CRAN with
 
