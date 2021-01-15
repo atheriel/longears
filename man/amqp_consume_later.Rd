@@ -5,7 +5,7 @@
 \title{Consume Messages from a Queue, Later}
 \usage{
 amqp_consume_later(conn, queue, fun, tag = "", no_ack = FALSE,
-  exclusive = FALSE, ...)
+  exclusive = FALSE, prefetch_count = 50, ...)
 }
 \arguments{
 \item{conn}{An object returned by \code{\link{amqp_connect}}, but see
@@ -25,6 +25,8 @@ will be acknowledged.}
 
 \item{exclusive}{When \code{TRUE}, request that this consumer has exclusive
 access to the queue.}
+
+\item{prefetch_count}{An optional number of prefetched messages}
 
 \item{...}{Additional arguments, used to declare broker-specific AMQP
 extensions. See \strong{Details}.}

@@ -8,8 +8,6 @@
 extern "C" {
 #endif
 
-#define DEFAULT_PREFETCH_COUNT 50
-
 /* Forward declaration. */
 struct consumer;
 struct bg_consumer;

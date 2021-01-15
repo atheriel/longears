@@ -39,7 +39,7 @@ static void R_finalize_consumer(SEXP ptr)
 }
 
 SEXP R_amqp_create_consumer(SEXP ptr, SEXP queue, SEXP tag, SEXP fun, SEXP rho,
-                            SEXP no_ack, SEXP exclusive, SEXP args)
+                            SEXP no_ack, SEXP exclusive, SEXP prefetch_count_, SEXP args)
 {
   connection *conn = (connection *) R_ExternalPtrAddr(ptr);
   consumer *con = malloc(sizeof(consumer));
@@ -61,6 +61,7 @@ SEXP R_amqp_create_consumer(SEXP ptr, SEXP queue, SEXP tag, SEXP fun, SEXP rho,
   const char *tag_str = CHAR(asChar(tag));
   int has_no_ack = asLogical(no_ack);
   int is_exclusive = asLogical(exclusive);
+  int prefetch_count = asInteger(prefetch_count_);
   amqp_table_t *arg_table = (amqp_table_t *) R_ExternalPtrAddr(args);
 
   con->no_ack = has_no_ack;
@@ -72,7 +73,7 @@ SEXP R_amqp_create_consumer(SEXP ptr, SEXP queue, SEXP tag, SEXP fun, SEXP rho,
    *      https://www.rabbitmq.com/consumer-prefetch.html
    */
   amqp_basic_qos_ok_t *qos_ok = amqp_basic_qos(conn->conn, con->chan.chan, 0,
-                                               DEFAULT_PREFETCH_COUNT, 0);
+                                               prefetch_count, 0);
   if (qos_ok == NULL) {
     free(con);
     amqp_rpc_reply_t reply = amqp_get_rpc_reply(conn->conn);
