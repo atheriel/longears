@@ -8,7 +8,7 @@
 \title{Consume Messages from a Queue}
 \usage{
 amqp_consume(conn, queue, fun, tag = "", no_ack = FALSE,
-  exclusive = FALSE, requeue_on_error = FALSE, ...)
+  exclusive = FALSE, requeue_on_error = FALSE, prefetch_count = 50, ...)
 
 amqp_cancel_consumer(consumer)
 
@@ -38,6 +38,8 @@ access to the queue.}
 message in question to be redelivered on the queue by the server. This is
 advisable \emph{only} when you expect that another consumer will be able to
 handle the same message without issue.}
+
+\item{prefetch_count}{An optional number of prefetched messages}
 
 \item{...}{Additional arguments, used to declare broker-specific AMQP
 extensions. See \strong{Details}.}

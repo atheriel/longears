@@ -422,13 +422,16 @@ extern "C" void destroy_bg_conn(bg_conn *conn)
 
 extern "C" SEXP R_amqp_consume_later(SEXP ptr, SEXP queue, SEXP fun, SEXP rho,
                                      SEXP consumer, SEXP no_ack, SEXP exclusive,
-                                     SEXP args)
+                                     SEXP prefetch_count_, SEXP args)
 {
 
   const char *queue_str = CHAR(Rf_asChar(queue));
   const char *consumer_str = CHAR(Rf_asChar(consumer));
   int has_no_ack = Rf_asLogical(no_ack);
   int is_exclusive = Rf_asLogical(exclusive);
+  // convert the parameter to int
+  int prefetch_count = Rf_asInteger(prefetch_count_);
+
   amqp_table_t *arg_table = (amqp_table_t *) R_ExternalPtrAddr(args);
 
   connection *conn = (connection *) R_ExternalPtrAddr(ptr);
@@ -466,7 +469,7 @@ extern "C" SEXP R_amqp_consume_later(SEXP ptr, SEXP queue, SEXP fun, SEXP rho,
    */
   amqp_basic_qos_ok_t *qos_ok = amqp_basic_qos(bg_conn->conn->conn,
                                                con->chan.chan, 0,
-                                               DEFAULT_PREFETCH_COUNT, 0);
+                                               prefetch_count, 0);
   if (qos_ok == NULL) {
     amqp_rpc_reply_t reply = amqp_get_rpc_reply(bg_conn->conn->conn);
     render_amqp_error(reply, bg_conn->conn, &con->chan, errbuff, 1000);

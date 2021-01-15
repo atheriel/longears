@@ -35,9 +35,9 @@ SEXP R_amqp_get(SEXP ptr, SEXP queue, SEXP no_ack);
 SEXP R_amqp_ack_on_channel(SEXP ptr, SEXP chan_ptr, SEXP delivery_tag, SEXP multiple);
 SEXP R_amqp_nack_on_channel(SEXP ptr, SEXP chan_ptr, SEXP delivery_tag, SEXP multiple, SEXP requeue);
 
-SEXP R_amqp_create_consumer(SEXP ptr, SEXP queue, SEXP tag, SEXP fun, SEXP rho, SEXP no_ack, SEXP exclusive, SEXP args);
+SEXP R_amqp_create_consumer(SEXP ptr, SEXP queue, SEXP tag, SEXP fun, SEXP rho, SEXP no_ack, SEXP exclusive, SEXP prefetch_count_, SEXP args);
 SEXP R_amqp_listen(SEXP ptr, SEXP timeout);
-SEXP R_amqp_consume_later(SEXP ptr, SEXP queue, SEXP fun, SEXP rho, SEXP no_local, SEXP no_ack, SEXP exclusive, SEXP args);
+SEXP R_amqp_consume_later(SEXP ptr, SEXP queue, SEXP fun, SEXP rho, SEXP no_local, SEXP no_ack, SEXP exclusive, SEXP prefetch_count_, SEXP args);
 SEXP R_amqp_destroy_consumer(SEXP ptr);
 SEXP R_amqp_destroy_bg_consumer(SEXP ptr);
 

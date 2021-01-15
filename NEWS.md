@@ -21,6 +21,10 @@
   }, requeue_on_error = TRUE)
   ```
 
+- It is possible to customize the number of prefetched messages. This is useful 
+  in scenarios where parallel workers fetch messages from the same queue. All
+  workers should be busy, even if there are less than 50 queued messages.
+
 # longears 0.2.4
 
 - Fixes handling of connection failures in `amqp_listen()`. Previously if you
