@@ -19,6 +19,10 @@
 #'   server will generate one automatically.
 #' @param exclusive When \code{TRUE}, request that this consumer has exclusive
 #'   access to the queue.
+#' @param requeue_on_error When \code{TRUE}, errors in \code{fun} will cause the
+#'   message in question to be redelivered on the queue by the server. This is
+#'   advisable \emph{only} when you expect that another consumer will be able to
+#'   handle the same message without issue.
 #' @param ... Additional arguments, used to declare broker-specific AMQP
 #'   extensions. See \strong{Details}.
 #'
@@ -46,7 +50,10 @@
 #' @details
 #'
 #' Unless \code{no_ack} is \code{TRUE}, messages are acknowledged automatically
-#' after the callback executes.
+#' after the callback executes. If it fails, messages are nacked instead before
+#' surfacing the underlying error to the caller. \code{amqp_nack()} can be used
+#' instead to manually signal that a message should be nacked and control the
+#' redelivery behaviour.
 #'
 #' @examples
 #' \dontrun{
@@ -73,14 +80,41 @@
 #'
 #' @export
 amqp_consume <- function(conn, queue, fun, tag = "", no_ack = FALSE,
-                         exclusive = FALSE, ...) {
+                         exclusive = FALSE, requeue_on_error = FALSE, ...) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
   stopifnot(is.function(fun))
+  stopifnot(is.logical(requeue_on_error))
   args <- amqp_table(...)
+  if (!no_ack) {
+    # Wrap fun to control error conditions and ensure messages are acknowledged.
+    wrapped <- function(msg, chan) {
+      should_ack <- TRUE
+      tryCatch({
+        fun(msg)
+      }, amqp_nack = function(cond) {
+        should_ack <<- FALSE
+        amqp_nack_on_channel(
+          conn, chan, msg$delivery_tag, requeue = cond$requeue
+        )
+      }, error = function(cond) {
+        should_ack <<- FALSE
+        amqp_nack_on_channel(
+          conn, chan, msg$delivery_tag, requeue = requeue_on_error
+        )
+        stop(cond)
+      }, finally = {
+        if (should_ack) {
+          amqp_nack_on_channel(conn, chan, msg$delivery_tag)
+        }
+      })
+    }
+  } else {
+    wrapped <- fun
+  }
   .Call(
-    R_amqp_create_consumer, conn$ptr, queue, tag, fun, new.env(), no_ack,
+    R_amqp_create_consumer, conn$ptr, queue, tag, wrapped, new.env(), no_ack,
     exclusive, args$ptr
   )
 }
@@ -108,6 +142,18 @@ amqp_listen <- function(conn, timeout = 10L) {
     stop("`conn` is not an amqp_connection object")
   }
   invisible(.Call(R_amqp_listen, conn$ptr, timeout))
+}
+
+#' @param requeue When \code{TRUE}, redeliver the message on the queue.
+#'
+#' @rdname amqp_consume
+#' @export
+amqp_nack <- function(requeue = FALSE) {
+  cond <- structure(
+    list(requeue = requeue),
+    class = c("amqp_nack", "condition")
+  )
+  signalCondition(cond)
 }
 
 #' Consume Messages from a Queue, Later
@@ -144,6 +190,8 @@ amqp_listen <- function(conn, timeout = 10L) {
 #' At present, consumers can only be cancelled by using
 #' \code{\link{amqp_cancel_consumer}} or by garbage collection when the original
 #' connection object expires.
+#'
+#' Messages to background consumers are always acknowledged.
 #'
 #' @seealso \code{\link{amqp_consume}} to consume messages in the main thread.
 #' @export

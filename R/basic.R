@@ -96,25 +96,29 @@ as.data.frame.amqp_message <- function(x, row.names = NULL, optional = FALSE,
 #' handle correctly by "nack"-ing them.
 #'
 #' @param conn An object returned by \code{\link{amqp_connect}}.
+#' @param chan An external pointer representing a channel object.
 #' @param delivery_tag The message's numeric identifier.
 #' @param multiple When \code{TRUE}, (n)ack messages up-to-and-including this
 #'   \code{delivery_tag}. By default, we only (n)ack a single message.
 #'
 #' @noRd
-amqp_ack <- function(conn, delivery_tag, multiple = FALSE) {
+amqp_ack_on_channel <- function(conn, chan, delivery_tag, multiple = FALSE) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
-  invisible(.Call(R_amqp_ack, conn$ptr, delivery_tag, multiple))
+  invisible(.Call(R_amqp_ack_on_channel, conn$ptr, chan, delivery_tag, multiple))
 }
 
 #' @param requeue When \code{TRUE}, ask the server to requeue the message.
 #'   Otherwise, messages are discarded or dead-lettered.
 #'
 #' @noRd
-amqp_nack <- function(conn, delivery_tag, multiple = FALSE, requeue = FALSE) {
+amqp_nack_on_channel <- function(conn, chan, delivery_tag, multiple = FALSE,
+                                 requeue = FALSE) {
   if (!inherits(conn, "amqp_connection")) {
     stop("`conn` is not an amqp_connection object")
   }
-  invisible(.Call(R_amqp_ack, conn$ptr, delivery_tag, multiple))
+  invisible(.Call(
+    R_amqp_nack_on_channel, conn$ptr, chan, delivery_tag, multiple, requeue
+  ))
 }
