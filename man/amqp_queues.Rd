@@ -99,6 +99,9 @@ incomplete list is as follows:
     \href{https://www.rabbitmq.com/lazy-queues.html}{mode}. Either
     \code{"normal"} (the default) or \code{"lazy"}.}
 
+  \item{\code{"x-single-active-consumer"}}{Specify that the queue can only
+    have a \href{https://www.rabbitmq.com/consumers.html#single-active-consumer}{single active consumer}.}
+
 }
 }
 \examples{
