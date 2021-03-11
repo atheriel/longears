@@ -39,7 +39,9 @@ message in question to be redelivered on the queue by the server. This is
 advisable \emph{only} when you expect that another consumer will be able to
 handle the same message without issue.}
 
-\item{prefetch_count}{An optional number of prefetched messages}
+\item{prefetch_count}{The maximum number of messages to "prefetch" from the
+queue. Use \code{1} to implement true round-robin delivery to multiple
+consumers.}
 
 \item{...}{Additional arguments, used to declare broker-specific AMQP
 extensions. See \strong{Details}.}

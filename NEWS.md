@@ -21,9 +21,12 @@
   }, requeue_on_error = TRUE)
   ```
 
-- It is possible to customize the number of prefetched messages. This is useful 
-  in scenarios where parallel workers fetch messages from the same queue. All
-  workers should be busy, even if there are less than 50 queued messages.
+- Consumers can now control the number of prefetched messages, though the
+  default remains 50. The most likely reason to do so is to implement true
+  round-robin dispatch by setting it to exactly 1. This is useful in scenarios
+  where parallel workers fetch messages from the same queue and you want to
+  guarantee that as many workers as possible are busy, even if there are less
+  than 50 queued messages. (#12 by @SyncM1972, Closes #2)
 
 # longears 0.2.4
 

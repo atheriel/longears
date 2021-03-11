@@ -26,7 +26,9 @@ will be acknowledged.}
 \item{exclusive}{When \code{TRUE}, request that this consumer has exclusive
 access to the queue.}
 
-\item{prefetch_count}{An optional number of prefetched messages}
+\item{prefetch_count}{The maximum number of messages to "prefetch" from the
+queue. Use \code{1} to implement true round-robin delivery to multiple
+consumers.}
 
 \item{...}{Additional arguments, used to declare broker-specific AMQP
 extensions. See \strong{Details}.}
