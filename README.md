@@ -5,8 +5,6 @@
 
 <!-- badges: start -->
 
-[![travis-ci build
-status](https://travis-ci.org/atheriel/longears.svg?branch=master)](https://travis-ci.org/atheriel/longears)
 [![CRAN
 status](https://www.r-pkg.org/badges/version/longears)](https://cran.r-project.org/package=longears)
 <!-- badges: end -->
