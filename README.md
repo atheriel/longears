@@ -7,6 +7,7 @@
 
 [![CRAN
 status](https://www.r-pkg.org/badges/version/longears)](https://cran.r-project.org/package=longears)
+[![R-CMD-check](https://github.com/atheriel/longears/workflows/R-CMD-check/badge.svg)](https://github.com/atheriel/longears/actions)
 <!-- badges: end -->
 
 **longears** is a fast and fully-featured RabbitMQ client for R, built
