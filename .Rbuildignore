@@ -3,3 +3,4 @@
 ^README\.Rmd$
 ^\.dir-locals.el$
 ^\.travis\.yml$
+^\.github$
