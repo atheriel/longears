@@ -3,6 +3,7 @@
 #include <amqp.h>
 #include <amqp_framing.h>
 
+#include <string.h> /* for memcpy, strncmp, strncpy */
 #include <pthread.h>
 #include <later_api.h>
 
