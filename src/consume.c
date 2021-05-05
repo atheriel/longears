@@ -142,7 +142,6 @@ SEXP R_amqp_listen(SEXP ptr, SEXP timeout)
 
   SEXP message, body, R_fcall;
 
-  int ack;
   amqp_rpc_reply_t reply;
   amqp_envelope_t env;
   consumer *elt;
