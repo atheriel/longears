@@ -64,7 +64,7 @@ jobs:
       - name: Install system dependencies (macOS)
         if: runner.os == 'macOS'
         run: |
-          brew install rabbitmq-c
+          brew install rabbitmq-c automake
 
       - name: Install system dependencies (Windows)
         if: runner.os == 'Windows'
