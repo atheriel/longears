@@ -1,2 +1,2 @@
 PKG_CPPFLAGS = -I. -DAMQP_STATIC
-PKG_LIBS = -lrabbitmq
+PKG_LIBS = -lrabbitmq -lws2_32
