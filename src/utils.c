@@ -1,6 +1,7 @@
 #include <stdio.h> /* for snprintf */
 #include <stdlib.h> /* for malloc, free */
 #include <string.h> /* for strcmp */
+#include <time.h> /* for clock_gettime, gettimeoday */
 #include <Rinternals.h>
 
 #include "connection.h"
@@ -355,20 +356,22 @@ SEXP R_message_object(SEXP body, int delivery_tag, int redelivered,
                       int message_count, amqp_bytes_t consumer_tag,
                       amqp_basic_properties_t *props)
 {
-  SEXP out = PROTECT(Rf_allocVector(VECSXP, 7));
-  SEXP names = PROTECT(Rf_allocVector(STRSXP, 7));
+  SEXP out = PROTECT(Rf_allocVector(VECSXP, 8));
+  SEXP names = PROTECT(Rf_allocVector(STRSXP, 8));
   SET_STRING_ELT(names, 0, mkCharLen("body", 4));
   SET_STRING_ELT(names, 1, mkCharLen("delivery_tag", 12));
   SET_STRING_ELT(names, 2, mkCharLen("redelivered", 11));
   SET_STRING_ELT(names, 3, mkCharLen("exchange", 8));
   SET_STRING_ELT(names, 4, mkCharLen("routing_key", 11));
   SET_STRING_ELT(names, 6, mkCharLen("properties", 10));
+  SET_STRING_ELT(names, 7, mkCharLen("received", 8));
 
   SET_VECTOR_ELT(out, 0, body);
   SET_VECTOR_ELT(out, 1, ScalarInteger(delivery_tag));
   SET_VECTOR_ELT(out, 2, ScalarLogical(redelivered));
   SET_VECTOR_ELT(out, 3, amqp_bytes_to_string(&exchange));
   SET_VECTOR_ELT(out, 4, amqp_bytes_to_string(&routing_key));
+  SET_VECTOR_ELT(out, 7, amqp_timestamp());
 
   /* amqp_get and amqp_consume will have different entries. */
   if (message_count < 0) {
@@ -401,4 +404,34 @@ SEXP amqp_bytes_to_string(const amqp_bytes_t *in)
 SEXP amqp_bytes_to_char(const amqp_bytes_t *in)
 {
   return mkCharLen(in->bytes, in->len);
+}
+
+/* Equivalent to Sys.time(). */
+SEXP amqp_timestamp()
+{
+  double epoch = NA_REAL;
+
+ /* R's timestamps have fractional timestamps, so we want sub-second
+  * precision. */
+
+#if defined(CLOCK_REALTIME)
+  struct timespec tp;
+  if (clock_gettime(CLOCK_REALTIME, &tp) == 0) {
+    epoch = (double) tp.tv_sec + 1e-9 * (double) tp.tv_nsec;
+  }
+#else
+  struct timeval tv;
+  if (gettimeofday(&tv, NULL) == 0) {
+    epoch = (double) tv.tv_sec + 1e-6 * (double) tv.tv_usec;
+  }
+#endif
+
+  SEXP out = PROTECT(Rf_ScalarReal(epoch));
+  SEXP class = PROTECT(Rf_allocVector(STRSXP, 2));
+  SET_STRING_ELT(class, 0, Rf_mkCharLen("POSIXct", 7));
+  SET_STRING_ELT(class, 1, Rf_mkCharLen("POSIXt", 6));
+  Rf_setAttrib(out, R_ClassSymbol, class);
+
+  UNPROTECT(2);
+  return out;
 }

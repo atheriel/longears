@@ -38,6 +38,8 @@
 - The `print()` method for a connection will now print out all server and client
   properties for a connection when passed `full = TRUE`.
 
+- Message objects now have a `received` field with a timestamp.
+
 # longears 0.2.4
 
 - Fixes handling of connection failures in `amqp_listen()`. Previously if you
