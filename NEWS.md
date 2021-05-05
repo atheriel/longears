@@ -1,5 +1,8 @@
 # longears 0.2.4.9000
 
+- The package now builds and installs correctly on Windows with a stock
+  [Rtools](https://cran.r-project.org/bin/windows/Rtools/) toolchain.
+
 - Consumers created with `amqp_consume()` will now acknowledge messages only
   *after* the callback has run. Moreover, when a callback fails the message in
   question will be nacked instead. The new `requeue_on_error` parameter controls
