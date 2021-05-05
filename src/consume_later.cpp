@@ -515,7 +515,7 @@ extern "C" SEXP R_amqp_consume_later(SEXP ptr, SEXP queue, SEXP fun, SEXP rho,
   R_PreserveObject(rho);
 
   SEXP ext = PROTECT(R_MakeExternalPtr(con, R_NilValue, R_NilValue));
-  R_RegisterCFinalizerEx(ext, R_finalize_bg_consumer, TRUE);
+  R_RegisterCFinalizerEx(ext, R_finalize_bg_consumer, (Rboolean) 1);
 
   SEXP out = PROTECT(Rf_allocVector(VECSXP, 2));
   SEXP names = PROTECT(Rf_allocVector(STRSXP, 2));
