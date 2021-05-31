@@ -1,2 +1,15 @@
 PKG_CPPFLAGS = -I. @PKG_CPPFLAGS@
 PKG_LIBS = @PKG_LIBS@
+
+.PHONY: all librabbitmq
+
+all: $(SHLIB)
+$(SHLIB): @BUNDLED_LIBRABBITMQ@
+
+librabbitmq:
+	$(MAKE) -C librabbitmq/build && cp librabbitmq/build/librabbitmq/librabbitmq.a .
+
+clean-librabbitmq:
+	$(MAKE) -C librabbitmq/build clean
+
+clean: @CLEAN-BUNDLED_LIBRABBITMQ@
