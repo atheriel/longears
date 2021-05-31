@@ -4,3 +4,6 @@
 ^\.dir-locals.el$
 ^\.travis\.yml$
 ^\.github$
+^src/librabbitmq$
+^inst/librabbitmq\.tar\.gz$
+^src/librabbitmq\.a$
