@@ -86,13 +86,16 @@ void render_amqp_error(const amqp_rpc_reply_t reply, connection *conn,
 
 void encode_properties(const SEXP list, amqp_basic_properties_t *props)
 {
-  SEXP names = PROTECT(Rf_getAttrib(list, R_NamesSymbol));
   props->_flags = 0;
   props->headers.num_entries = 0;
+  int max_len = Rf_length(list);
+  if (max_len == 0) {
+    return;
+  }
 
   /* We accumulate the indices of header arguments on the first pass, then
    * actually fill the table on the second. */
-  int max_len = Rf_length(list);
+  SEXP names = PROTECT(Rf_getAttrib(list, R_NamesSymbol));
   int headers[max_len];
 
   int i;
