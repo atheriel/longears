@@ -4005,6 +4005,7 @@ $as_echo "$as_me: configuring librabbitmq via cmake" >&6;}
     -DBUILD_STATIC_LIBS=ON \
     -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
     -DBUILD_SHARED_LIBS=OFF \
+    -DENABLE_SSL_SUPPORT=OFF \
     -DBUILD_EXAMPLES=OFF \
     -DBUILD_TOOLS=OFF \
     -DBUILD_TESTS=OFF \
