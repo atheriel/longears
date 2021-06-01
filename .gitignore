@@ -10,3 +10,4 @@ config.log
 .Rproj.user
 src/librabbitmq
 src/librabbitmq.a
+docs

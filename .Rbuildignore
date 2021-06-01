@@ -9,3 +9,5 @@
 ^src/librabbitmq$
 ^inst/librabbitmq\.tar\.gz$
 ^src/librabbitmq\.a$
+^_pkgdown\.yml$
+^pkgdown$
