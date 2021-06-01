@@ -42,7 +42,7 @@
 - The `print()` method for a connection will now print out all server and client
   properties for a connection when passed `full = TRUE`.
 
-# longears 0.2.4
+# longears 0.2.4 (2020-08-27)
 
 - Fixes handling of connection failures in `amqp_listen()`. Previously if you
   got booted off the cluster during the acknowledgement phase the connection
@@ -53,7 +53,7 @@
   nonfunctional due to a misunderstanding of the AMQP spec and RabbitMQ's
   interpretation of it. This should improve performance in some cases.
 
-# longears 0.2.3
+# longears 0.2.3 (2020-07-14)
 
 - `amqp_listen()` will now respect the timeout value even when processing many
   messages. To reliably consume "endlessly", use a `while(TRUE)` loop.
@@ -67,7 +67,7 @@
 
 - Fix compilation issues due to a missing header on pre-3.4 versions of R.
 
-# longears 0.2.2
+# longears 0.2.2 (2020-03-20)
 
 - `amqp_publish()` will now accept raw vectors for the message body in addition
   to strings. (#4 by @dselivanov)
