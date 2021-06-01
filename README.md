@@ -55,13 +55,8 @@ For other platforms:
   - Windows (via [Rtools](https://cran.r-project.org/bin/windows/Rtools/)):
     `pacman -Sy mingw-w64-{i686,x86_64}-rabbitmq-c`
 
-You can then install **longears** from CRAN with
-
-``` r
-install.packages("longears")
-```
-
-or from GitHub with
+**longears** is not yet available on CRAN. You can install it from
+GitHub with
 
 ``` r
 # install.packages("remotes")
