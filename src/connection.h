@@ -1,6 +1,7 @@
 #ifndef __LONGEARS_CONNECTION_H__
 #define __LONGEARS_CONNECTION_H__
 
+#include <Rinternals.h> /* for SEXP */
 #include <pthread.h>
 #include <amqp.h> /* for amqp_channel_t, amqp_connection_state_t */
 
