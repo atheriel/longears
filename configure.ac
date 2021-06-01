@@ -5,7 +5,7 @@ AC_REQUIRE_CPP
 AC_PROG_CC
 
 AC_ARG_WITH([librabbitmq_src],
-            AC_HELP_STRING([--with-librabbitmq-src=URL],
+            AS_HELP_STRING([--with-librabbitmq-src=URL],
                            [URL override for librabbitmq sources (if required)]),
             [LIBRABBITMQ_SRC_URL="${with_librabbitmq_src}"],
             [LIBRABBITMQ_SRC_URL=https://github.com/alanxz/rabbitmq-c/archive/refs/tags/v0.11.0.tar.gz])
