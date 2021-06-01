@@ -34,14 +34,15 @@ package [**rzmq**](https://cran.r-project.org/package=rzmq).
 
 ## Installation
 
-To install **longears** as a source package you will need its system dependency,
-`librabbitmq`. Normally if this library is missing during installation, the
-`configure` script will attempt to download and build it directly (provided you
-have `cmake` installed).
+To install **longears** as a source package you will need its system
+dependency, `librabbitmq`. Normally if this library is missing during
+installation, the `configure` script will attempt to download and build
+it directly (provided you have `cmake` installed).
 
-You may still wish to use your platform's provided `librabbitmq` instead,
-especially if this process fails. On Debian-based systems (including Ubuntu) you
-can get this library by running the following from the command line:
+You may still wish to use your platform’s provided `librabbitmq`
+instead, especially if this process fails. On Debian-based systems
+(including Ubuntu) you can get this library by running the following
+from the command line:
 
 ``` shell
 $ apt install librabbitmq-dev
@@ -52,8 +53,9 @@ For other platforms:
   - macOS (via Homebrew): `brew install rabbitmq-c`
   - Fedora-based: `yum install librabbitmq-devel`
   - Arch-based: `pacman -S librabbitmq-c`
-  - Windows (via [Rtools](https://cran.r-project.org/bin/windows/Rtools/)):
-    `pacman -Sy mingw-w64-{i686,x86_64}-rabbitmq-c`
+  - Windows (via
+    [Rtools](https://cran.r-project.org/bin/windows/Rtools/)): `pacman
+    -Sy mingw-w64-{i686,x86_64}-rabbitmq-c`
 
 **longears** is not yet available on CRAN. You can install it from
 GitHub with
