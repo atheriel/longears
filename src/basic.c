@@ -7,6 +7,7 @@
 
 #include "longears.h"
 #include "connection.h"
+#include "tracing.h"
 #include "utils.h"
 
 SEXP R_amqp_publish(SEXP ptr, SEXP body, SEXP exchange, SEXP routing_key,
@@ -31,12 +32,20 @@ SEXP R_amqp_publish(SEXP ptr, SEXP body, SEXP exchange, SEXP routing_key,
     props_ = R_ExternalPtrAddr(props);
   }
 
+  /* Start a trace, if enabled. */
+  void *ctx = start_publish_span((const char *) exchange_str.bytes,
+                                 (const char *) routing_key_str.bytes,
+                                 conn);
+
   /* Send message. */
 
   int result = amqp_basic_publish(conn->conn, conn->chan.chan,
                                   exchange_str, routing_key_str,
                                   is_mandatory, is_immediate, props_,
                                   body_bytes);
+
+  /* End the trace, if enabled. */
+  finish_publish_span(ctx, result);
 
   if (result != AMQP_STATUS_OK) {
     render_amqp_library_error(result, conn, &conn->chan, errbuff, 200);
