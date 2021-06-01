@@ -59,16 +59,8 @@ if test "x${have_librabbitmq}" = xno; then
     fi
     AC_MSG_NOTICE([extracting librabbitmq sources to src/librabbitmq])
 
-    # Work around Solaris and macOS not supporting various tar flags.
-    if test x"${uname}" = x"Darwin"; then
-      cd inst
-      gunzip -k librabbitmq.tar.gz
-      tar -xf librabbitmq.tar
-      mv rabbitmq-c* librabbitmq-src
-      mv librabbitmq-src/* ../src/librabbitmq/
-      rm -r librabbitmq.tar librabbitmq-src
-      cd ..
-    elif test x"${uname}" = x"SunOS"; then
+    # Work around Solaris not supporting various tar flags.
+    if test x"${uname}" = x"SunOS"; then
       gtar xzf inst/librabbitmq.tar.gz -C src/librabbitmq --strip-components 1
     else
       tar xzf inst/librabbitmq.tar.gz -C src/librabbitmq --strip-components 1
