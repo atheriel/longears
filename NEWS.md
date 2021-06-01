@@ -3,6 +3,10 @@
 - The package now builds and installs correctly on Windows with a stock
   [Rtools](https://cran.r-project.org/bin/windows/Rtools/) toolchain.
 
+- If the `librabbitmq` system dependency is not detected during installation,
+  the `configure` script will attempt to download and build it directly,
+  provided you have a working `cmake` available.
+
 - Consumers created with `amqp_consume()` will now acknowledge messages only
   *after* the callback has run. Moreover, when a callback fails the message in
   question will be nacked instead. The new `requeue_on_error` parameter controls

@@ -34,10 +34,14 @@ package [**rzmq**](https://cran.r-project.org/package=rzmq).
 
 ## Installation
 
-To install **longears** as a source package you will need its system
-dependency, `librabbitmq`. For example, on Debian-based systems
-(including Ubuntu) you can get this library by running the following
-from the command line:
+To install **longears** as a source package you will need its system dependency,
+`librabbitmq`. Normally if this library is missing during installation, the
+`configure` script will attempt to download and build it directly (provided you
+have `cmake` installed).
+
+You may still wish to use your platform's provided `librabbitmq` instead,
+especially if this process fails. On Debian-based systems (including Ubuntu) you
+can get this library by running the following from the command line:
 
 ``` shell
 $ apt install librabbitmq-dev
