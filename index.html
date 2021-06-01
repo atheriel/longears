@@ -34,7 +34,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">longears</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.2.4</span>
       </span>
     </div>
 
@@ -42,7 +42,7 @@
       <ul class="nav navbar-nav">
 <li>
   <a href="index.html">
-    <span class="fas fa fas fa-home fa-lg"></span>
+    <span class="fas fa-home fa-lg"></span>
      
   </a>
 </li>
@@ -56,7 +56,7 @@
 <ul class="nav navbar-nav navbar-right">
 <li>
   <a href="https://github.com/atheriel/longears/">
-    <span class="fab fa fab fa-github fa-lg"></span>
+    <span class="fab fa-github fa-lg"></span>
      
   </a>
 </li>
@@ -84,7 +84,8 @@
 <div id="installation" class="section level2">
 <h2 class="hasAnchor">
 <a href="#installation" class="anchor"></a>Installation</h2>
-<p>To install <strong>longears</strong> as a source package you will need its system dependency, <code>librabbitmq</code>. For example, on Debian-based systems (including Ubuntu) you can get this library by running the following from the command line:</p>
+<p>To install <strong>longears</strong> as a source package you will need its system dependency, <code>librabbitmq</code>. Normally if this library is missing during installation, the <code>configure</code> script will attempt to download and build it directly (provided you have <code>cmake</code> installed).</p>
+<p>You may still wish to use your platform’s provided <code>librabbitmq</code> instead, especially if this process fails. On Debian-based systems (including Ubuntu) you can get this library by running the following from the command line:</p>
 <pre class="shell"><code>$ apt install librabbitmq-dev</code></pre>
 <p>For other platforms:</p>
 <ul>
@@ -94,12 +95,13 @@
 </li>
 <li>Arch-based: <code>pacman -S librabbitmq-c</code>
 </li>
+<li>Windows (via <a href="https://cran.r-project.org/bin/windows/Rtools/">Rtools</a>): <code>pacman -Sy mingw-w64-{i686,x86_64}-rabbitmq-c</code>
+</li>
 </ul>
-<p>You can then install <strong>longears</strong> from CRAN with</p>
-<div class="sourceCode" id="cb2"><pre class="r"><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span>(<span class="st">"longears"</span>)</pre></div>
-<p>or from GitHub with</p>
-<div class="sourceCode" id="cb3"><pre class="r"><span class="co"># install.packages("remotes")</span>
-<span class="kw pkg">remotes</span><span class="kw ns">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html">install_github</a></span>(<span class="st">"atheriel/longears"</span>)</pre></div>
+<p><strong>longears</strong> is not yet available on CRAN. You can install it from GitHub with</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># install.packages("remotes")</span>
+<span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html">install_github</a></span><span class="op">(</span><span class="st">"atheriel/longears"</span><span class="op">)</span></code></pre></div>
 </div>
 <div id="basic-usage" class="section level2">
 <h2 class="hasAnchor">
@@ -110,72 +112,79 @@
 $ systemctl start rabbitmq-server
 $ rabbitmqctl status</code></pre>
 <p>First, connect to the server (with the default settings):</p>
-<div class="sourceCode" id="cb5"><pre class="r"><span class="no">conn</span> <span class="kw">&lt;-</span> <span class="fu"><a href="reference/amqp_connections.html">amqp_connect</a></span>()
-<span class="no">conn</span>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">conn</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/amqp_connections.html">amqp_connect</a></span><span class="op">(</span><span class="op">)</span>
+<span class="va">conn</span>
 <span class="co">#&gt; AMQP Connection:</span>
 <span class="co">#&gt;   status:  connected</span>
 <span class="co">#&gt;   address: localhost:5672</span>
-<span class="co">#&gt;   vhost:   '/'</span></pre></div>
+<span class="co">#&gt;   vhost:   '/'</span></code></pre></div>
 <p>Create an exchange to route messages and a couple of queues to store them:</p>
-<div class="sourceCode" id="cb6"><pre class="r"><span class="fu"><a href="reference/amqp_exchanges.html">amqp_declare_exchange</a></span>(<span class="no">conn</span>, <span class="st">"my.exchange"</span>, <span class="kw">type</span> <span class="kw">=</span> <span class="st">"fanout"</span>)
-<span class="fu"><a href="reference/amqp_queues.html">amqp_declare_queue</a></span>(<span class="no">conn</span>, <span class="st">"my.queue1"</span>)
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu"><a href="reference/amqp_exchanges.html">amqp_declare_exchange</a></span><span class="op">(</span><span class="va">conn</span>, <span class="st">"my.exchange"</span>, type <span class="op">=</span> <span class="st">"fanout"</span><span class="op">)</span>
+<span class="fu"><a href="reference/amqp_queues.html">amqp_declare_queue</a></span><span class="op">(</span><span class="va">conn</span>, <span class="st">"my.queue1"</span><span class="op">)</span>
 <span class="co">#&gt; AMQP queue 'my.queue1'</span>
 <span class="co">#&gt;   messages:  0</span>
 <span class="co">#&gt;   consumers: 0</span>
-<span class="fu"><a href="reference/amqp_queues.html">amqp_declare_queue</a></span>(<span class="no">conn</span>, <span class="st">"my.queue2"</span>)
+<span class="fu"><a href="reference/amqp_queues.html">amqp_declare_queue</a></span><span class="op">(</span><span class="va">conn</span>, <span class="st">"my.queue2"</span><span class="op">)</span>
 <span class="co">#&gt; AMQP queue 'my.queue2'</span>
 <span class="co">#&gt;   messages:  0</span>
 <span class="co">#&gt;   consumers: 0</span>
-<span class="fu"><a href="reference/amqp_bindings.html">amqp_bind_queue</a></span>(<span class="no">conn</span>, <span class="st">"my.queue1"</span>, <span class="st">"my.exchange"</span>, <span class="kw">routing_key</span> <span class="kw">=</span> <span class="st">"#"</span>)
-<span class="fu"><a href="reference/amqp_bindings.html">amqp_bind_queue</a></span>(<span class="no">conn</span>, <span class="st">"my.queue2"</span>, <span class="st">"my.exchange"</span>, <span class="kw">routing_key</span> <span class="kw">=</span> <span class="st">"#"</span>)</pre></div>
+<span class="fu"><a href="reference/amqp_bindings.html">amqp_bind_queue</a></span><span class="op">(</span><span class="va">conn</span>, <span class="st">"my.queue1"</span>, <span class="st">"my.exchange"</span>, routing_key <span class="op">=</span> <span class="st">"#"</span><span class="op">)</span>
+<span class="fu"><a href="reference/amqp_bindings.html">amqp_bind_queue</a></span><span class="op">(</span><span class="va">conn</span>, <span class="st">"my.queue2"</span>, <span class="st">"my.exchange"</span>, routing_key <span class="op">=</span> <span class="st">"#"</span><span class="op">)</span></code></pre></div>
 <p>You can also set up a consumer for one of these queues with a callback:</p>
-<div class="sourceCode" id="cb7"><pre class="r"><span class="no">received</span> <span class="kw">&lt;-</span> <span class="fl">0</span>
-<span class="no">consumer</span> <span class="kw">&lt;-</span> <span class="fu"><a href="reference/amqp_consume.html">amqp_consume</a></span>(<span class="no">conn</span>, <span class="st">"my.queue2"</span>, <span class="kw">function</span>(<span class="no">msg</span>) {
-  <span class="no">received</span> <span class="kw">&lt;&lt;-</span> <span class="no">received</span> + <span class="fl">1</span>
-})</pre></div>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">received</span> <span class="op">&lt;-</span> <span class="fl">0</span>
+<span class="va">consumer</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/amqp_consume.html">amqp_consume</a></span><span class="op">(</span><span class="va">conn</span>, <span class="st">"my.queue2"</span>, <span class="kw">function</span><span class="op">(</span><span class="va">msg</span><span class="op">)</span> <span class="op">{</span>
+  <span class="va">received</span> <span class="op">&lt;&lt;-</span> <span class="va">received</span> <span class="op">+</span> <span class="fl">1</span>
+<span class="op">}</span><span class="op">)</span></code></pre></div>
 <p>Now, send a few messages to this exchange:</p>
-<div class="sourceCode" id="cb8"><pre class="r"><span class="fu"><a href="reference/amqp_publish.html">amqp_publish</a></span>(<span class="no">conn</span>, <span class="st">"first"</span>, <span class="kw">exchange</span> <span class="kw">=</span> <span class="st">"my.exchange"</span>, <span class="kw">routing_key</span> <span class="kw">=</span> <span class="st">"#"</span>)
-<span class="fu"><a href="reference/amqp_publish.html">amqp_publish</a></span>(<span class="no">conn</span>, <span class="st">"second"</span>, <span class="kw">exchange</span> <span class="kw">=</span> <span class="st">"my.exchange"</span>, <span class="kw">routing_key</span> <span class="kw">=</span> <span class="st">"#"</span>)</pre></div>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu"><a href="reference/amqp_publish.html">amqp_publish</a></span><span class="op">(</span><span class="va">conn</span>, <span class="st">"first"</span>, exchange <span class="op">=</span> <span class="st">"my.exchange"</span>, routing_key <span class="op">=</span> <span class="st">"#"</span><span class="op">)</span>
+<span class="fu"><a href="reference/amqp_publish.html">amqp_publish</a></span><span class="op">(</span><span class="va">conn</span>, <span class="st">"second"</span>, exchange <span class="op">=</span> <span class="st">"my.exchange"</span>, routing_key <span class="op">=</span> <span class="st">"#"</span><span class="op">)</span></code></pre></div>
 <p>Check if your messages are going into the queues:</p>
 <pre class="shell"><code>$ rabbitmqctl list_queues</code></pre>
 <p>You can use <code><a href="reference/amqp_get.html">amqp_get()</a></code> to pull individual messages back into R:</p>
-<div class="sourceCode" id="cb10"><pre class="r"><span class="fu"><a href="reference/amqp_get.html">amqp_get</a></span>(<span class="no">conn</span>, <span class="st">"my.queue1"</span>)
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu"><a href="reference/amqp_get.html">amqp_get</a></span><span class="op">(</span><span class="va">conn</span>, <span class="st">"my.queue1"</span><span class="op">)</span>
 <span class="co">#&gt; Delivery Tag:    1</span>
 <span class="co">#&gt; Redelivered: FALSE</span>
 <span class="co">#&gt; Exchange:    my.exchange</span>
 <span class="co">#&gt; Routing Key: #</span>
 <span class="co">#&gt; Message Count:   1</span>
 <span class="co">#&gt; 66 69 72 73 74</span>
-<span class="fu"><a href="reference/amqp_get.html">amqp_get</a></span>(<span class="no">conn</span>, <span class="st">"my.queue1"</span>)
+<span class="fu"><a href="reference/amqp_get.html">amqp_get</a></span><span class="op">(</span><span class="va">conn</span>, <span class="st">"my.queue1"</span><span class="op">)</span>
 <span class="co">#&gt; Delivery Tag:    2</span>
 <span class="co">#&gt; Redelivered: FALSE</span>
 <span class="co">#&gt; Exchange:    my.exchange</span>
 <span class="co">#&gt; Routing Key: #</span>
 <span class="co">#&gt; Message Count:   0</span>
 <span class="co">#&gt; 73 65 63 6f 6e 64</span>
-<span class="fu"><a href="reference/amqp_get.html">amqp_get</a></span>(<span class="no">conn</span>, <span class="st">"my.queue1"</span>)
-<span class="co">#&gt; character(0)</span></pre></div>
+<span class="fu"><a href="reference/amqp_get.html">amqp_get</a></span><span class="op">(</span><span class="va">conn</span>, <span class="st">"my.queue1"</span><span class="op">)</span>
+<span class="co">#&gt; character(0)</span></code></pre></div>
 <p>Or you can use <code><a href="reference/amqp_consume.html">amqp_listen()</a></code> to run consumer callbacks:</p>
-<div class="sourceCode" id="cb11"><pre class="r"><span class="fu"><a href="reference/amqp_consume.html">amqp_listen</a></span>(<span class="no">conn</span>, <span class="kw">timeout</span> <span class="kw">=</span> <span class="fl">1</span>)
-<span class="no">received</span>
-<span class="co">#&gt; [1] 2</span></pre></div>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu"><a href="reference/amqp_consume.html">amqp_listen</a></span><span class="op">(</span><span class="va">conn</span>, timeout <span class="op">=</span> <span class="fl">1</span><span class="op">)</span>
+<span class="va">received</span>
+<span class="co">#&gt; [1] 2</span></code></pre></div>
 <p>To clean things up, delete the queues, the exchange, and disconnect from the server.</p>
-<div class="sourceCode" id="cb12"><pre class="r"><span class="fu"><a href="reference/amqp_queues.html">amqp_delete_queue</a></span>(<span class="no">conn</span>, <span class="st">"my.queue1"</span>)
-<span class="fu"><a href="reference/amqp_queues.html">amqp_delete_queue</a></span>(<span class="no">conn</span>, <span class="st">"my.queue2"</span>)
-<span class="fu"><a href="reference/amqp_exchanges.html">amqp_delete_exchange</a></span>(<span class="no">conn</span>, <span class="st">"my.exchange"</span>)
-<span class="fu"><a href="reference/amqp_connections.html">amqp_disconnect</a></span>(<span class="no">conn</span>)
-<span class="no">conn</span>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu"><a href="reference/amqp_queues.html">amqp_delete_queue</a></span><span class="op">(</span><span class="va">conn</span>, <span class="st">"my.queue1"</span><span class="op">)</span>
+<span class="fu"><a href="reference/amqp_queues.html">amqp_delete_queue</a></span><span class="op">(</span><span class="va">conn</span>, <span class="st">"my.queue2"</span><span class="op">)</span>
+<span class="fu"><a href="reference/amqp_exchanges.html">amqp_delete_exchange</a></span><span class="op">(</span><span class="va">conn</span>, <span class="st">"my.exchange"</span><span class="op">)</span>
+<span class="fu"><a href="reference/amqp_connections.html">amqp_disconnect</a></span><span class="op">(</span><span class="va">conn</span><span class="op">)</span>
+<span class="va">conn</span>
 <span class="co">#&gt; AMQP Connection:</span>
 <span class="co">#&gt;   status:  disconnected</span>
 <span class="co">#&gt;   address: localhost:5672</span>
-<span class="co">#&gt;   vhost:   '/'</span></pre></div>
+<span class="co">#&gt;   vhost:   '/'</span></code></pre></div>
 <p>And check that the connection is closed:</p>
 <pre class="shell"><code>$ rabbitmqctl list_connections</code></pre>
 </div>
 <div id="limitations" class="section level2">
 <h2 class="hasAnchor">
 <a href="#limitations" class="anchor"></a>Limitations</h2>
-<p>Some AMQP features are not present, notably transaction support (which there are no plans to implement). Others are not exposed through the API but are handled internally according to best practices: channels, message acknowledgements, and prefetch counts, among others. The current design goal of the package is to keep these details from the eyes of users, insofar as that is possible.</p>
+<p>Some AMQP features are not present, notably transaction support (which there are no plans to implement). Others are handled internally according to best practices, even when they are not exposed through the API – channels, message acknowledgements, and prefetch counts are in this category. A design goal of the package is to shield users from some details, especially if departures from best practice are rare.</p>
 <p>If you have need of an AMQP feature (or RabbitMQ extension) that is not currently available or accessible, please consider filing an issue explaining the use case you have in mind.</p>
 </div>
 <div id="license" class="section level2">
@@ -213,8 +222,8 @@ $ rabbitmqctl status</code></pre>
   <div class="dev-status">
 <h2>Dev status</h2>
 <ul class="list-unstyled">
-<li><a href="https://travis-ci.org/atheriel/longears"><img src="https://travis-ci.org/atheriel/longears.svg?branch=master" alt="travis-ci build status"></a></li>
 <li><a href="https://cran.r-project.org/package=longears"><img src="https://www.r-pkg.org/badges/version/longears" alt="CRAN status"></a></li>
+<li><a href="https://github.com/atheriel/longears/actions"><img src="https://github.com/atheriel/longears/workflows/R-CMD-check/badge.svg" alt="R-CMD-check"></a></li>
 </ul>
 </div>
 </div>
@@ -226,7 +235,7 @@ $ rabbitmqctl status</code></pre>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
 
       </footer>

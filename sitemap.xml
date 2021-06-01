@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://atheriel.github.io/longears//index.html</loc>
+  </url>
+  <url>
+    <loc>https://atheriel.github.io/longears//reference/amqp_bindings.html</loc>
+  </url>
+  <url>
+    <loc>https://atheriel.github.io/longears//reference/amqp_connections.html</loc>
+  </url>
+  <url>
+    <loc>https://atheriel.github.io/longears//reference/amqp_consume.html</loc>
+  </url>
+  <url>
+    <loc>https://atheriel.github.io/longears//reference/amqp_consume_later.html</loc>
+  </url>
+  <url>
+    <loc>https://atheriel.github.io/longears//reference/amqp_exchanges.html</loc>
+  </url>
+  <url>
+    <loc>https://atheriel.github.io/longears//reference/amqp_get.html</loc>
+  </url>
+  <url>
+    <loc>https://atheriel.github.io/longears//reference/amqp_properties.html</loc>
+  </url>
+  <url>
+    <loc>https://atheriel.github.io/longears//reference/amqp_publish.html</loc>
+  </url>
+  <url>
+    <loc>https://atheriel.github.io/longears//reference/amqp_queues.html</loc>
+  </url>
+</urlset>
