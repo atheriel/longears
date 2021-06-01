@@ -3970,16 +3970,8 @@ $as_echo "$as_me: downloading librabbitmq sources from ${LIBRABBITMQ_SRC_URL}" >
     { $as_echo "$as_me:${as_lineno-$LINENO}: extracting librabbitmq sources to src/librabbitmq" >&5
 $as_echo "$as_me: extracting librabbitmq sources to src/librabbitmq" >&6;}
 
-    # Work around Solaris and macOS not supporting various tar flags.
-    if test x"${uname}" = x"Darwin"; then
-      cd inst
-      gunzip -k librabbitmq.tar.gz
-      tar -xf librabbitmq.tar
-      mv rabbitmq-c* librabbitmq-src
-      mv librabbitmq-src/* ../src/librabbitmq/
-      rm -r librabbitmq.tar librabbitmq-src
-      cd ..
-    elif test x"${uname}" = x"SunOS"; then
+    # Work around Solaris not supporting various tar flags.
+    if test x"${uname}" = x"SunOS"; then
       gtar xzf inst/librabbitmq.tar.gz -C src/librabbitmq --strip-components 1
     else
       tar xzf inst/librabbitmq.tar.gz -C src/librabbitmq --strip-components 1
