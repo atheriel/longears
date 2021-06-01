@@ -1,3 +1,5 @@
+#include <cstdlib> /* for malloc, free */
+
 #include <time.h> /* for nanosleep */
 
 #include <amqp.h>
