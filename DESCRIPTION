@@ -6,7 +6,6 @@ Authors@R: c(
          email = "atheriel@gmail.com"),
   person("Crescendo Technology Ltd.", role = "cph")
   )
-Maintainer: Aaron Jacobs <atheriel@gmail.com>
 Description: Provides a client for the 'RabbitMQ' message broker, allowing users
   to publish and consume messages via the Advanced Message Queuing Protocol
   ('AMQP'), as well as declare, delete, and bind the exchanges and queues used to
