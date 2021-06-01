@@ -155,11 +155,11 @@ $ rabbitmqctl list_connections
 ## Limitations
 
 Some AMQP features are not present, notably transaction support (which there
-are no plans to implement). Others are not exposed through the API but are
-handled internally according to best practices: channels, message
-acknowledgements, and prefetch counts, among others. The current design goal of
-the package is to keep these details from the eyes of users, insofar as that is
-possible.
+are no plans to implement). Others are handled internally according to best
+practices, even when they are not exposed through the API -- channels, message
+acknowledgements, and prefetch counts are in this category. A design goal of
+the package is to shield users from some details, especially if departures from
+best practice are rare.
 
 If you have need of an AMQP feature (or RabbitMQ extension) that is not
 currently available or accessible, please consider filing an issue explaining
