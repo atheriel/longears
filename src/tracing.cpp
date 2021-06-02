@@ -12,7 +12,13 @@ extern "C" void * start_publish_span(const char *exchange,
 {
   return nullptr;
 }
-extern "C" void finish_publish_span(void * ctx, int result) {}
+extern "C" void * start_consume_span(const char *exchange,
+                                     const char *routing_key,
+                                     connection *conn)
+{
+  return nullptr;
+}
+extern "C" void finish_span(void * ctx, int result) {}
 #else
 #include <opentelemetry/context/context.h>
 #include <opentelemetry/context/propagation/global_propagator.h>
@@ -165,7 +171,40 @@ extern "C" void * start_publish_span(const char *exchange,
   return (void *) ctx;
 }
 
-extern "C" void finish_publish_span(void * ptr, int result)
+extern "C" void * start_consume_span(const char *exchange,
+                                     const char *routing_key,
+                                     connection *conn)
+{
+  std::string span_name = exchange + std::string(" receive");
+  trace::StartSpanOptions options;
+  options.kind = trace::SpanKind::kConsumer;
+
+  // Set the parent as the existing span context, if it exists.
+  auto context = context::RuntimeContext::GetCurrent();
+  auto parent = trace::propagation::GetSpan(context);
+  options.parent = parent->GetContext();
+
+  auto ctx = new TraceContext();
+
+  // Note: most of the OpenTelemetry APIs are marked noexcept, so we can assume
+  // that they will not throw exceptions and screw up the R stack.
+
+  ctx->current_span = get_tracer()->StartSpan(
+     span_name,
+     {
+      {"messaging.system", "rabbitmq"},
+      {"messaging.destination", exchange},
+      {"messaging.destination_kind", "topic"},
+      {"messaging.rabbitmq.routing_key", routing_key},
+      {"net.peer.name", conn->host},
+      {"net.peer.port", conn->port},
+     },
+     options);
+
+  return (void *) ctx;
+}
+
+extern "C" void finish_span(void * ptr, int result)
 {
   auto ctx = (TraceContext *) ptr;
   if (result != AMQP_STATUS_OK) {

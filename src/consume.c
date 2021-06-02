@@ -9,6 +9,7 @@
 
 #include "longears.h"
 #include "connection.h"
+#include "tracing.h"
 #include "utils.h"
 
 static void R_finalize_consumer(SEXP ptr)
@@ -240,8 +241,17 @@ SEXP R_amqp_listen(SEXP ptr, SEXP timeout)
                                          &env.message.properties));
       amqp_destroy_envelope(&env);
 
+      /* Start a trace, if enabled. */
+      extract_span_ctx(&env.message.properties);
+      void *ctx = start_consume_span((const char *) env.exchange.bytes,
+                                     (const char *) env.routing_key.bytes,
+                                     conn);
+
       SETCADR(elt->fcall, message);
       Rf_eval(elt->fcall, elt->rho);
+
+      /* End the trace, if enabled. */
+      finish_span(ctx, AMQP_STATUS_OK);
 
       UNPROTECT(2);
     }

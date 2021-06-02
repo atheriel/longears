@@ -47,7 +47,7 @@ SEXP R_amqp_publish(SEXP ptr, SEXP body, SEXP exchange, SEXP routing_key,
                                   body_bytes);
 
   /* End the trace, if enabled. */
-  finish_publish_span(ctx, result);
+  finish_span(ctx, result);
 
   if (result != AMQP_STATUS_OK) {
     render_amqp_library_error(result, conn, &conn->chan, errbuff, 200);

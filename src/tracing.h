@@ -11,7 +11,8 @@ void extract_span_ctx(amqp_basic_properties_t *props);
 void inject_span_ctx(amqp_basic_properties_t *props);
 
 void * start_publish_span(const char *, const char *, connection *);
-void finish_publish_span(void *, int);
+void * start_consume_span(const char *, const char *, connection *);
+void finish_span(void *, int);
 
 #ifdef __cplusplus
 }
