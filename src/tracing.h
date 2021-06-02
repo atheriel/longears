@@ -7,6 +7,9 @@
 extern "C" {
 #endif
 
+void extract_span_ctx(amqp_basic_properties_t *props);
+void inject_span_ctx(amqp_basic_properties_t *props);
+
 void * start_publish_span(const char *, const char *, connection *);
 void finish_publish_span(void *, int);
 

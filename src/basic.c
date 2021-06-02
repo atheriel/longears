@@ -33,9 +33,11 @@ SEXP R_amqp_publish(SEXP ptr, SEXP body, SEXP exchange, SEXP routing_key,
   }
 
   /* Start a trace, if enabled. */
+  extract_span_ctx(props_);
   void *ctx = start_publish_span((const char *) exchange_str.bytes,
                                  (const char *) routing_key_str.bytes,
                                  conn);
+  inject_span_ctx(props_);
 
   /* Send message. */
 
