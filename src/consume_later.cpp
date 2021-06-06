@@ -429,8 +429,8 @@ extern "C" SEXP R_amqp_consume_later(SEXP ptr, SEXP queue, SEXP fun, SEXP rho,
                                      SEXP prefetch_count_, SEXP args)
 {
 
-  const char *queue_str = CHAR(Rf_asChar(queue));
-  const char *consumer_str = CHAR(Rf_asChar(consumer));
+  amqp_bytes_t queue_str = charsxp_to_amqp_bytes(Rf_asChar(queue));
+  amqp_bytes_t consumer_str = charsxp_to_amqp_bytes(Rf_asChar(consumer));
   int has_no_ack = Rf_asLogical(no_ack);
   int is_exclusive = Rf_asLogical(exclusive);
   // convert the parameter to int
@@ -489,10 +489,8 @@ extern "C" SEXP R_amqp_consume_later(SEXP ptr, SEXP queue, SEXP fun, SEXP rho,
   }
 
   amqp_basic_consume_ok_t *consume_ok;
-  consume_ok = amqp_basic_consume(bg_conn->conn->conn, con->chan.chan,
-                                  amqp_cstring_bytes(queue_str),
-                                  amqp_cstring_bytes(consumer_str),
-                                  0, has_no_ack, is_exclusive,
+  consume_ok = amqp_basic_consume(bg_conn->conn->conn, con->chan.chan, queue_str,
+                                  consumer_str, 0, has_no_ack, is_exclusive,
                                   *arg_table);
 
   if (consume_ok == NULL) {

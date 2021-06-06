@@ -16,8 +16,8 @@ SEXP R_amqp_declare_exchange(SEXP ptr, SEXP exchange, SEXP type, SEXP passive,
     Rf_error("Failed to find an open channel. %s", errbuff);
     return R_NilValue;
   }
-  const char *exchange_str = CHAR(asChar(exchange));
-  const char *type_str = CHAR(asChar(type));
+  amqp_bytes_t exchange_str = charsxp_to_amqp_bytes(Rf_asChar(exchange));
+  amqp_bytes_t type_str = charsxp_to_amqp_bytes(Rf_asChar(type));
   int is_passive = asLogical(passive);
   int is_durable = asLogical(durable);
   int is_auto_delete = asLogical(auto_delete);
@@ -25,11 +25,9 @@ SEXP R_amqp_declare_exchange(SEXP ptr, SEXP exchange, SEXP type, SEXP passive,
   amqp_table_t *arg_table = (amqp_table_t *) R_ExternalPtrAddr(args);
 
   amqp_exchange_declare_ok_t *exch_ok;
-  exch_ok = amqp_exchange_declare(conn->conn, conn->chan.chan,
-                                  amqp_cstring_bytes(exchange_str),
-                                  amqp_cstring_bytes(type_str), is_passive,
-                                  is_durable, is_auto_delete, is_internal,
-                                  *arg_table);
+  exch_ok = amqp_exchange_declare(conn->conn, conn->chan.chan, exchange_str,
+                                  type_str, is_passive, is_durable,
+                                  is_auto_delete, is_internal, *arg_table);
 
   if (exch_ok == NULL) {
     amqp_rpc_reply_t reply = amqp_get_rpc_reply(conn->conn);
@@ -48,12 +46,12 @@ SEXP R_amqp_delete_exchange(SEXP ptr, SEXP exchange, SEXP if_unused)
     Rf_error("Failed to find an open channel. %s", errbuff);
     return R_NilValue;
   }
-  const char *exchange_str = CHAR(asChar(exchange));
+  amqp_bytes_t exchange_str = charsxp_to_amqp_bytes(Rf_asChar(exchange));
   int unused = asLogical(if_unused);
 
   amqp_exchange_delete_ok_t *delete_ok;
-  delete_ok = amqp_exchange_delete(conn->conn, conn->chan.chan,
-                                   amqp_cstring_bytes(exchange_str), unused);
+  delete_ok = amqp_exchange_delete(conn->conn, conn->chan.chan, exchange_str,
+                                   unused);
 
   if (delete_ok == NULL) {
     amqp_rpc_reply_t reply = amqp_get_rpc_reply(conn->conn);

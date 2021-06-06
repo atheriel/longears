@@ -108,11 +108,11 @@ void encode_properties(const SEXP list, amqp_basic_properties_t *props)
     if (strcmp(CHAR(name), "content_type") == 0) {
       if (!isString(elt)) Rf_error("'content_type' must be a string.");
       props->_flags |= AMQP_BASIC_CONTENT_TYPE_FLAG;
-      props->content_type = amqp_cstring_bytes(CHAR(STRING_ELT(elt, 0)));
+      props->content_type = strsxp_to_amqp_bytes(elt);
     } else if (strcmp(CHAR(name), "content_encoding") == 0) {
       if (!isString(elt)) Rf_error("'content_encoding' must be a string.");
       props->_flags |= AMQP_BASIC_CONTENT_ENCODING_FLAG;
-      props->content_encoding = amqp_cstring_bytes(CHAR(STRING_ELT(elt, 0)));
+      props->content_encoding = strsxp_to_amqp_bytes(elt);
     } else if (strcmp(CHAR(name), "delivery_mode") == 0) {
       if (!isNumeric(elt)) Rf_error("'delivery_mode' must be an integer.");
       props->_flags |= AMQP_BASIC_DELIVERY_MODE_FLAG;
@@ -124,38 +124,38 @@ void encode_properties(const SEXP list, amqp_basic_properties_t *props)
     } else if (strcmp(CHAR(name), "correlation_id") == 0) {
       if (!isString(elt)) Rf_error("'correlation_id' must be a string.");
       props->_flags |= AMQP_BASIC_CORRELATION_ID_FLAG;
-      props->correlation_id = amqp_cstring_bytes(CHAR(STRING_ELT(elt, 0)));
+      props->correlation_id = strsxp_to_amqp_bytes(elt);
     } else if (strcmp(CHAR(name), "reply_to") == 0) {
       if (!isString(elt)) Rf_error("'reply_to' must be a string.");
       props->_flags |= AMQP_BASIC_REPLY_TO_FLAG;
-      props->reply_to = amqp_cstring_bytes(CHAR(STRING_ELT(elt, 0)));
+      props->reply_to = strsxp_to_amqp_bytes(elt);
     } else if (strcmp(CHAR(name), "expiration") == 0) {
       if (!isString(elt)) Rf_error("'expiration' must be a string.");
       props->_flags |= AMQP_BASIC_EXPIRATION_FLAG;
-      props->expiration = amqp_cstring_bytes(CHAR(STRING_ELT(elt, 0)));
+      props->expiration = strsxp_to_amqp_bytes(elt);
     } else if (strcmp(CHAR(name), "message_id") == 0) {
       if (!isString(elt)) Rf_error("'message_id' must be a string.");
       props->_flags |= AMQP_BASIC_MESSAGE_ID_FLAG;
-      props->message_id = amqp_cstring_bytes(CHAR(STRING_ELT(elt, 0)));
+      props->message_id = strsxp_to_amqp_bytes(elt);
     } else if (strcmp(CHAR(name), "timestamp") == 0) {
       /* TODO: Support the timestamp. */
       Rf_warning("The timestamp property is not yet supported, and will be ignored.");
     } else if (strcmp(CHAR(name), "type") == 0) {
       if (!isString(elt)) Rf_error("'type' must be a string.");
       props->_flags |= AMQP_BASIC_TYPE_FLAG;
-      props->type = amqp_cstring_bytes(CHAR(STRING_ELT(elt, 0)));
+      props->type = strsxp_to_amqp_bytes(elt);
     } else if (strcmp(CHAR(name), "user_id") == 0) {
       if (!isString(elt)) Rf_error("'user_id' must be a string.");
       props->_flags |= AMQP_BASIC_USER_ID_FLAG;
-      props->user_id = amqp_cstring_bytes(CHAR(STRING_ELT(elt, 0)));
+      props->user_id = strsxp_to_amqp_bytes(elt);
     } else if (strcmp(CHAR(name), "app_id") == 0) {
       if (!isString(elt)) Rf_error("'app_id' must be a string.");
       props->_flags |= AMQP_BASIC_APP_ID_FLAG;
-      props->app_id = amqp_cstring_bytes(CHAR(STRING_ELT(elt, 0)));
+      props->app_id = strsxp_to_amqp_bytes(elt);
     } else if (strcmp(CHAR(name), "cluster_id") == 0) {
       if (!isString(elt)) Rf_error("'cluster_id' must be a string.");
       props->_flags |= AMQP_BASIC_CLUSTER_ID_FLAG;
-      props->cluster_id = amqp_cstring_bytes(CHAR(STRING_ELT(elt, 0)));
+      props->cluster_id = strsxp_to_amqp_bytes(elt);
     } else {
       headers[props->headers.num_entries] = i;
       props->headers.num_entries++;
@@ -170,7 +170,7 @@ void encode_properties(const SEXP list, amqp_basic_properties_t *props)
       elt = VECTOR_ELT(list, headers[i]);
       name = STRING_ELT(names, headers[i]);
 
-      props->headers.entries[i].key = amqp_cstring_bytes(CHAR(name));
+      props->headers.entries[i].key = charsxp_to_amqp_bytes(name);
       encode_value(elt, &props->headers.entries[i].value);
     }
   }
@@ -393,4 +393,23 @@ SEXP amqp_bytes_to_string(const amqp_bytes_t *in)
 SEXP amqp_bytes_to_char(const amqp_bytes_t *in)
 {
   return mkCharLen(in->bytes, in->len);
+}
+
+amqp_bytes_t charsxp_to_amqp_bytes(const SEXP in)
+{
+  /* Assume we have a CHARSXP */
+  amqp_bytes_t result;
+  result.len = XLENGTH(in);
+  result.bytes = (void *) CHAR(in);
+  return result;
+}
+
+amqp_bytes_t strsxp_to_amqp_bytes(const SEXP in)
+{
+  /* Assume we have a STRSXP of length 1. */
+  SEXP content = STRING_ELT(in, 0);
+  amqp_bytes_t result;
+  result.len = XLENGTH(content);
+  result.bytes = (void *) CHAR(content);
+  return result;
 }

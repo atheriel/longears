@@ -15,7 +15,7 @@ SEXP R_amqp_declare_queue(SEXP ptr, SEXP queue, SEXP passive, SEXP durable,
     Rf_error("Failed to find an open channel. %s", errbuff);
     return R_NilValue;
   }
-  const char *queue_str = CHAR(asChar(queue));
+  amqp_bytes_t queue_str = charsxp_to_amqp_bytes(Rf_asChar(queue));
   int is_passive = asLogical(passive);
   int is_exclusive = asLogical(exclusive);
   int is_durable = asLogical(durable);
@@ -23,10 +23,9 @@ SEXP R_amqp_declare_queue(SEXP ptr, SEXP queue, SEXP passive, SEXP durable,
   amqp_table_t *arg_table = (amqp_table_t *) R_ExternalPtrAddr(args);
 
   amqp_queue_declare_ok_t *queue_ok;
-  queue_ok = amqp_queue_declare(conn->conn, conn->chan.chan,
-                                amqp_cstring_bytes(queue_str), is_passive,
-                                is_durable, is_exclusive, is_auto_delete,
-                                *arg_table);
+  queue_ok = amqp_queue_declare(conn->conn, conn->chan.chan, queue_str,
+                                is_passive, is_durable, is_exclusive,
+                                is_auto_delete, *arg_table);
 
   if (queue_ok == NULL) {
     amqp_rpc_reply_t reply = amqp_get_rpc_reply(conn->conn);
@@ -60,13 +59,13 @@ SEXP R_amqp_delete_queue(SEXP ptr, SEXP queue, SEXP if_unused, SEXP if_empty)
     Rf_error("Failed to find an open channel. %s", errbuff);
     return R_NilValue;
   }
-  const char *queue_str = CHAR(asChar(queue));
+  amqp_bytes_t queue_str = charsxp_to_amqp_bytes(Rf_asChar(queue));
   int unused = asLogical(if_unused);
   int empty = asLogical(if_empty);
 
   amqp_queue_delete_ok_t *delete_ok;
-  delete_ok = amqp_queue_delete(conn->conn, conn->chan.chan,
-                                amqp_cstring_bytes(queue_str), unused, empty);
+  delete_ok = amqp_queue_delete(conn->conn, conn->chan.chan, queue_str, unused,
+                                empty);
 
   if (delete_ok == NULL) {
     amqp_rpc_reply_t reply = amqp_get_rpc_reply(conn->conn);

@@ -22,8 +22,8 @@ SEXP R_amqp_publish(SEXP ptr, SEXP body, SEXP exchange, SEXP routing_key,
   amqp_bytes_t body_bytes;
   body_bytes.len = XLENGTH(body);
   body_bytes.bytes = (void *) RAW(body);
-  const char *exchange_str = CHAR(asChar(exchange));
-  const char *routing_key_str = CHAR(asChar(routing_key));
+  amqp_bytes_t exchange_str = charsxp_to_amqp_bytes(Rf_asChar(exchange));
+  amqp_bytes_t routing_key_str = charsxp_to_amqp_bytes(Rf_asChar(routing_key));
   int is_mandatory = asLogical(mandatory);
   int is_immediate = asLogical(immediate);
   amqp_basic_properties_t *props_ = NULL;
@@ -34,8 +34,7 @@ SEXP R_amqp_publish(SEXP ptr, SEXP body, SEXP exchange, SEXP routing_key,
   /* Send message. */
 
   int result = amqp_basic_publish(conn->conn, conn->chan.chan,
-                                  amqp_cstring_bytes(exchange_str),
-                                  amqp_cstring_bytes(routing_key_str),
+                                  exchange_str, routing_key_str,
                                   is_mandatory, is_immediate, props_,
                                   body_bytes);
 
@@ -61,13 +60,12 @@ SEXP R_amqp_get(SEXP ptr, SEXP queue, SEXP no_ack)
     Rf_error("Failed to find an open channel. %s", errbuff);
     return R_NilValue;
   }
-  const char *queue_str = CHAR(asChar(queue));
+  amqp_bytes_t queue_str = charsxp_to_amqp_bytes(Rf_asChar(queue));
   int has_no_ack = asLogical(no_ack);
 
   /* Get message. */
 
-  amqp_rpc_reply_t reply = amqp_basic_get(conn->conn, conn->chan.chan,
-                                          amqp_cstring_bytes(queue_str),
+  amqp_rpc_reply_t reply = amqp_basic_get(conn->conn, conn->chan.chan, queue_str,
                                           has_no_ack);
   if (reply.reply_type != AMQP_RESPONSE_NORMAL) {
     render_amqp_error(reply, conn, &conn->chan, errbuff, 200);

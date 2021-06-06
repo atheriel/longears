@@ -66,7 +66,7 @@ void encode_value(const SEXP in, amqp_field_value_t *out)
     int len = Rf_length(in);
     if (len == 1) {
       out->kind = AMQP_FIELD_KIND_UTF8;
-      out->value.bytes = amqp_cstring_bytes(CHAR(STRING_ELT(in, 0)));
+      out->value.bytes = strsxp_to_amqp_bytes(in);
     } else {
       out->kind = AMQP_FIELD_KIND_ARRAY;
       out->value.array.num_entries = len;
@@ -74,7 +74,7 @@ void encode_value(const SEXP in, amqp_field_value_t *out)
       for (int i = 0; i < len; i++) {
         out->value.array.entries[i].kind = AMQP_FIELD_KIND_UTF8;
         out->value.array.entries[i].value.bytes =
-          amqp_cstring_bytes(CHAR(STRING_ELT(in, i)));
+          charsxp_to_amqp_bytes(STRING_ELT(in, i));
       }
     }
     break;
@@ -127,7 +127,7 @@ void encode_table(const SEXP list, amqp_table_t *table, int alloc)
     elt = VECTOR_ELT(list, i);
     name = STRING_ELT(names, i);
 
-    table->entries[i].key = amqp_cstring_bytes(CHAR(name));
+    table->entries[i].key = charsxp_to_amqp_bytes(name);
     encode_value(elt, &table->entries[i].value);
   }
 

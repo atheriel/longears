@@ -57,8 +57,8 @@ SEXP R_amqp_create_consumer(SEXP ptr, SEXP queue, SEXP tag, SEXP fun, SEXP rho,
     Rf_error("Failed to find an open channel. %s", errbuff);
     return R_NilValue;
   }
-  const char *queue_str = CHAR(asChar(queue));
-  const char *tag_str = CHAR(asChar(tag));
+  amqp_bytes_t queue_str = charsxp_to_amqp_bytes(Rf_asChar(queue));
+  amqp_bytes_t tag_str = charsxp_to_amqp_bytes(Rf_asChar(tag));
   int has_no_ack = asLogical(no_ack);
   int is_exclusive = asLogical(exclusive);
   int prefetch_count = asInteger(prefetch_count_);
@@ -82,11 +82,8 @@ SEXP R_amqp_create_consumer(SEXP ptr, SEXP queue, SEXP tag, SEXP fun, SEXP rho,
   }
 
   amqp_basic_consume_ok_t *consume_ok;
-  consume_ok = amqp_basic_consume(conn->conn, con->chan.chan,
-                                  amqp_cstring_bytes(queue_str),
-                                  amqp_cstring_bytes(tag_str),
-                                  0, has_no_ack, is_exclusive,
-                                  *arg_table);
+  consume_ok = amqp_basic_consume(conn->conn, con->chan.chan, queue_str, tag_str,
+                                  0, has_no_ack, is_exclusive, *arg_table);
 
   if (consume_ok == NULL) {
     free(con);
