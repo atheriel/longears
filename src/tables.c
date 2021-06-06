@@ -1,6 +1,7 @@
 #include <stdlib.h> /* for malloc, free */
 #include <string.h> /* for memcpy */
 
+#include "constants.h"
 #include "tables.h"
 #include "utils.h"
 
@@ -206,6 +207,10 @@ SEXP decode_field_value(amqp_field_value_t value)
 
 SEXP decode_table(amqp_table_t *table)
 {
+  if (!table || table->num_entries == 0) {
+    return empty_named_list;
+  }
+
   SEXP out = PROTECT(Rf_allocVector(VECSXP, table->num_entries));
   SEXP names = PROTECT(Rf_allocVector(STRSXP, table->num_entries));
 
@@ -268,20 +273,19 @@ SEXP R_table_object(amqp_table_t *table)
 
   /* Create the "amqp_table" object. */
   SEXP out = PROTECT(Rf_allocVector(VECSXP, 1));
-  SEXP names = PROTECT(Rf_allocVector(STRSXP, 1));
-  SEXP class = PROTECT(Rf_allocVector(STRSXP, 1));
   SET_VECTOR_ELT(out, 0, ptr);
-  SET_STRING_ELT(names, 0, mkCharLen("ptr", 3));
-  SET_STRING_ELT(class, 0, mkCharLen("amqp_table", 10));
-  Rf_setAttrib(out, R_NamesSymbol, names);
-  Rf_setAttrib(out, R_ClassSymbol, class);
+  Rf_setAttrib(out, R_NamesSymbol, ptr_object_names);
+  Rf_setAttrib(out, R_ClassSymbol, table_class);
 
-  UNPROTECT(4);
+  UNPROTECT(2);
   return out;
 }
 
 SEXP R_amqp_encode_table(SEXP list)
 {
+  if (Rf_xlength(list) == 0) {
+    return empty_table_object;
+  }
   amqp_table_t *table = malloc(sizeof(amqp_table_t));
   encode_table(list, table, 1);
   return R_table_object(table);
