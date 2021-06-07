@@ -138,17 +138,17 @@
 <li><p>The <code><a href="https://rdrr.io/r/base/print.html">print()</a></code> method for a connection will now print out all server and client properties for a connection when passed <code>full = TRUE</code>.</p></li>
 </ul>
 </div>
-    <div id="longears-024" class="section level1">
+    <div id="longears-024-2020-08-27" class="section level1">
 <h1 class="page-header" data-toc-text="0.2.4">
-<a href="#longears-024" class="anchor"></a>longears 0.2.4</h1>
+<a href="#longears-024-2020-08-27" class="anchor"></a>longears 0.2.4 (2020-08-27)</h1>
 <ul>
 <li><p>Fixes handling of connection failures in <code><a href="../reference/amqp_consume.html">amqp_listen()</a></code>. Previously if you got booted off the cluster during the acknowledgement phase the connection would not be closed properly and only a warning would be triggered. Now that warning is a hard error, as it should be.</p></li>
 <li><p>Fixes setting of prefetch counts on consumers; previously they were nonfunctional due to a misunderstanding of the AMQP spec and RabbitMQ’s interpretation of it. This should improve performance in some cases.</p></li>
 </ul>
 </div>
-    <div id="longears-023" class="section level1">
+    <div id="longears-023-2020-07-14" class="section level1">
 <h1 class="page-header" data-toc-text="0.2.3">
-<a href="#longears-023" class="anchor"></a>longears 0.2.3</h1>
+<a href="#longears-023-2020-07-14" class="anchor"></a>longears 0.2.3 (2020-07-14)</h1>
 <ul>
 <li><p><code><a href="../reference/amqp_consume.html">amqp_listen()</a></code> will now respect the timeout value even when processing many messages. To reliably consume “endlessly”, use a <code>while(TRUE)</code> loop.</p></li>
 <li><p>Connections now set common client properties, which are visible in the RabbitMQ management plugin web interface.</p></li>
@@ -156,9 +156,9 @@
 <li><p>Fix compilation issues due to a missing header on pre-3.4 versions of R.</p></li>
 </ul>
 </div>
-    <div id="longears-022" class="section level1">
+    <div id="longears-022-2020-03-20" class="section level1">
 <h1 class="page-header" data-toc-text="0.2.2">
-<a href="#longears-022" class="anchor"></a>longears 0.2.2</h1>
+<a href="#longears-022-2020-03-20" class="anchor"></a>longears 0.2.2 (2020-03-20)</h1>
 <ul>
 <li><p><code><a href="../reference/amqp_publish.html">amqp_publish()</a></code> will now accept raw vectors for the message body in addition to strings. (<a href='https://github.com/atheriel/longears/issues/4'>#4</a> by <a href='https://github.com/dselivanov'>@dselivanov</a>)</p></li>
 <li><p>Connections now set a heartbeat of 60 seconds. This should hopefully eliminate bugs where R would hang when trying to send messages to a closed socket (especially inside finalizers).</p></li>
