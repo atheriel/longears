@@ -39,9 +39,8 @@ typedef struct consumer {
   connection *conn;
   channel chan;
   amqp_bytes_t tag;
-  SEXP fun;
+  SEXP fcall;
   SEXP rho;
-  int no_ack;
   struct consumer *prev;
   struct consumer *next;
 } consumer;

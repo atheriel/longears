@@ -30,8 +30,9 @@ static void R_finalize_consumer(SEXP ptr)
       con->conn->consumers = con->next;
     }
     amqp_bytes_free(con->tag);
-    R_ReleaseObject(con->fun);
+    R_ReleaseObject(con->fcall);
     R_ReleaseObject(con->rho);
+    R_ClearExternalPtr(ptr);
     free(con);
     con = NULL;
   }
@@ -47,7 +48,6 @@ SEXP R_amqp_create_consumer(SEXP ptr, SEXP queue, SEXP tag, SEXP fun, SEXP rho,
   con->chan.chan = 0;
   con->chan.is_open = 0;
   con->tag = amqp_empty_bytes;
-  con->fun = fun;
   con->rho = rho;
   con->prev = NULL;
   con->next = NULL;
@@ -63,8 +63,6 @@ SEXP R_amqp_create_consumer(SEXP ptr, SEXP queue, SEXP tag, SEXP fun, SEXP rho,
   int is_exclusive = asLogical(exclusive);
   int prefetch_count = asInteger(prefetch_count_);
   amqp_table_t *arg_table = (amqp_table_t *) R_ExternalPtrAddr(args);
-
-  con->no_ack = has_no_ack;
 
   /* Note: QoS needs to happen on the channel *before* we start the consumer to
    * take effect.
@@ -94,6 +92,19 @@ SEXP R_amqp_create_consumer(SEXP ptr, SEXP queue, SEXP tag, SEXP fun, SEXP rho,
 
   con->tag = amqp_bytes_malloc_dup(consume_ok->consumer_tag);
 
+  /* Set up the callback so we don't need to construct it later. */
+  con->fcall = has_no_ack ? Rf_lang2(fun, R_NilValue) :
+    Rf_lang3(fun, R_NilValue, R_NilValue);
+  R_PreserveObject(con->fcall);
+
+  if (!has_no_ack) {
+    /* The channel is passed to the callback wrapper so that it can be used
+     * for acknowledgements. TODO: Does this need a finalizer? */
+    SEXP chan_ptr = PROTECT(R_MakeExternalPtr(&con->chan, R_NilValue, R_NilValue));
+    SETCADDR(con->fcall, chan_ptr);
+    UNPROTECT(1);
+  }
+
   SEXP out = PROTECT(R_MakeExternalPtr(con, R_NilValue, R_NilValue));
   R_RegisterCFinalizerEx(out, R_finalize_consumer, 1);
   setAttrib(out, R_ClassSymbol, mkString("amqp_consumer"));
@@ -110,7 +121,6 @@ SEXP R_amqp_create_consumer(SEXP ptr, SEXP queue, SEXP tag, SEXP fun, SEXP rho,
     con->prev = elt;
   }
 
-  R_PreserveObject(fun);
   R_PreserveObject(rho);
 
   UNPROTECT(1);
@@ -230,19 +240,10 @@ SEXP R_amqp_listen(SEXP ptr, SEXP timeout)
                                          &env.message.properties));
       amqp_destroy_envelope(&env);
 
-      R_fcall = PROTECT(allocList(elt->no_ack ? 2 : 3));
-      SET_TYPEOF(R_fcall, LANGSXP);
-      SETCAR(R_fcall, elt->fun);
-      SETCADR(R_fcall, message);
-      if (!elt->no_ack) {
-        /* The channel is passed to the callback wrapper so that it can be used
-         * for acknowledgements. */
-        SEXP chan_ptr = PROTECT(R_MakeExternalPtr(&elt->chan, R_NilValue, R_NilValue));
-        SETCADDR(R_fcall, chan_ptr);
-      }
-      Rf_eval(R_fcall, elt->rho);
+      SETCADR(elt->fcall, message);
+      Rf_eval(elt->fcall, elt->rho);
 
-      UNPROTECT(elt->no_ack ? 3 : 4);
+      UNPROTECT(2);
     }
 
     current_wait = time(NULL) - start;
