@@ -82,9 +82,8 @@ void encode_value(const SEXP in, amqp_field_value_t *out)
   case RAWSXP: {
     int len = Rf_length(in);
     out->kind = AMQP_FIELD_KIND_BYTES;
-    out->value.bytes.len = len;
-    out->value.bytes.bytes = malloc(len);
-    memcpy((void *) RAW(in), out->value.bytes.bytes, len);
+    out->value.bytes = amqp_bytes_malloc(len);
+    memcpy(out->value.bytes.bytes, RAW_RO(in), len);
     break;
   }
   case VECSXP: {

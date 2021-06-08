@@ -42,6 +42,9 @@
 - The `print()` method for a connection will now print out all server and client
   properties for a connection when passed `full = TRUE`.
 
+- Fix potential memory corruption when passing raw vectors as properties or
+  headers.
+
 # longears 0.2.4 (2020-08-27)
 
 - Fixes handling of connection failures in `amqp_listen()`. Previously if you
