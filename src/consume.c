@@ -152,6 +152,7 @@ static SEXP eval_consumer_callback(void * data)
                                       &ctx->env->message.properties));
   SETCADR(ctx->con->fcall, ctx->msg);
   Rf_eval(ctx->con->fcall, ctx->con->rho);
+  SETCADR(ctx->con->fcall, R_NilValue);
   UNPROTECT(2);
   return R_NilValue;
 }
@@ -166,6 +167,22 @@ static void eval_cleanup(void *data, Rboolean jump)
    * error? */
   if (ctx->msg != R_NilValue) {
     SEXP body = VECTOR_ELT(ctx->msg, 0);
+
+    /* FIXME: Currently this condition will always be true, even on R 4.0 with
+     * true reference counting.
+     *
+     * Using REFCNT() seems to indicate that ctx->msg is referenced after
+     * evaluation *even when the callback does not create any references*; in
+     * addition, wrapped callbacks (when no_ack = FALSE) seem to add an
+     * additional increment.
+     *
+     * I'm not sure why this is the case -- perhaps the enclosing frame
+     * environment or some related promises are storing a reference here we
+     * can't eliminate. */
+    if (MAYBE_REFERENCED(ctx->msg) || MAYBE_SHARED(body)) {
+      materialize_pooled_bytes(body);
+    }
+
     release_pooled_bytes(body);
   }
 #endif

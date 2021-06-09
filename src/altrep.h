@@ -15,6 +15,7 @@ extern "C" {
 #define ENABLE_ALTREP 1
 
 SEXP new_pooled_bytes_sexp(amqp_bytes_t *);
+void materialize_pooled_bytes(SEXP);
 void release_pooled_bytes(SEXP);
 #endif
 

@@ -20,6 +20,27 @@ SEXP new_pooled_bytes_sexp(amqp_bytes_t *data)
   return out;
 }
 
+void materialize_pooled_bytes(SEXP x)
+{
+  if (R_altrep_data2(x) != R_NilValue) {
+    return;
+  }
+
+  SEXP data1 = R_altrep_data1(x);
+  if (data1 == NULL || R_ExternalPtrAddr(data1) == NULL) {
+    /* I believe this should only happen when the object is GC'd before we can
+     * do anything with it. Correct behaviour in that case would be to do
+     * nothing. */
+    return;
+  }
+
+  amqp_bytes_t *data = R_ExternalPtrAddr(data1);
+  SEXP data2 = PROTECT(Rf_allocVector(RAWSXP, data->len));
+  memcpy((void *) RAW(data2), data->bytes, data->len);
+  R_set_altrep_data2(x, data2);
+  UNPROTECT(1);
+}
+
 void release_pooled_bytes(SEXP x)
 {
   SEXP data1 = R_altrep_data1(x);
@@ -35,6 +56,11 @@ static R_INLINE int is_released(SEXP x)
 }
 
 static R_xlen_t Length_impl(SEXP x) {
+  SEXP data2 = R_altrep_data2(x);
+  if (data2 != R_NilValue) {
+    return Rf_xlength(data2);
+  }
+
   if (is_released(x)) {
     return 0; /* TODO: What is a reasonable fallback? Rf_error()? */
   }
@@ -47,12 +73,18 @@ static R_xlen_t Length_impl(SEXP x) {
 static Rboolean Inspect_impl(SEXP x, int pre, int deep, int pvec,
                              void (*inspect_subtree)(SEXP, int, int, int))
 {
-  Rprintf("amqp_pooled_bytes (len=%d, released=%s)\n", Length_impl(x),
+  Rprintf("amqp_pooled_bytes (len=%d, materialized=%s, released=%s)\n",
+          Length_impl(x), R_altrep_data2(x) != R_NilValue ? "TRUE" : "FALSE",
           is_released(x) ? "TRUE" : "FALSE");
   return TRUE;
 }
 
 static void* Dataptr_impl(SEXP vec, Rboolean writeable) {
+  SEXP data2 = R_altrep_data2(vec);
+  if (data2 != R_NilValue) {
+    return STDVEC_DATAPTR(data2);
+  }
+
   if (is_released(vec)) {
     /* This should never happen. */
     Rf_error("Can't get a DATAPTR to released memory.");
@@ -64,8 +96,13 @@ static void* Dataptr_impl(SEXP vec, Rboolean writeable) {
 }
 
 static const void* Dataptr_or_null_impl(SEXP vec) {
+  SEXP data2 = R_altrep_data2(vec);
+  if (data2 != R_NilValue) {
+    return STDVEC_DATAPTR(data2);
+  }
+
   if (is_released(vec)) {
-    /* TODO: Should we error instead? */
+    /* TODO: This should never happen -- should we error instead? */
     return NULL;
   }
 
@@ -75,6 +112,12 @@ static const void* Dataptr_or_null_impl(SEXP vec) {
 }
 
 static Rbyte Elt_impl(SEXP vec, R_xlen_t i) {
+  SEXP data2 = R_altrep_data2(vec);
+  if (data2 != R_NilValue) {
+    /* TODO: Might be slow. */
+    return RAW_ELT(data2, i);
+  }
+
   if (is_released(vec)) {
     /* TODO: This should never happen -- should we error instead? */
     return 0;
