@@ -1,4 +1,5 @@
 #include "longears.h"
+#include "altrep.h"
 #include "constants.h"
 
 static const R_CallMethodDef longears_entries[] = {
@@ -36,4 +37,5 @@ void R_init_longears(DllInfo *info) {
   R_registerRoutines(info, NULL, longears_entries, NULL, NULL);
   R_useDynamicSymbols(info, FALSE);
   init_static_sexps();
+  maybe_init_altrep(info);
 }

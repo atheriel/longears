@@ -8,6 +8,7 @@
 #include <amqp_framing.h>
 
 #include "longears.h"
+#include "altrep.h"
 #include "connection.h"
 #include "utils.h"
 
@@ -127,6 +128,51 @@ SEXP R_amqp_create_consumer(SEXP ptr, SEXP queue, SEXP tag, SEXP fun, SEXP rho,
   return out;
 }
 
+struct msg_ctx {
+  amqp_envelope_t *env;
+  consumer *con;
+  SEXP msg;
+};
+
+static SEXP eval_consumer_callback(void * data)
+{
+  struct msg_ctx *ctx = (struct msg_ctx *) data;
+#ifdef ENABLE_ALTREP
+  SEXP body = PROTECT(new_pooled_bytes_sexp(&ctx->env->message.body));
+#else
+  SEXP body = PROTECT(Rf_allocVector(RAWSXP, ctx->env->message.body.len));
+  memcpy((void *) RAW(body), ctx->env->message.body.bytes,
+         ctx->env->message.body.len);
+#endif
+
+  ctx->msg = PROTECT(R_message_object(body, ctx->env->delivery_tag,
+                                      ctx->env->redelivered, ctx->env->exchange,
+                                      ctx->env->routing_key, -1,
+                                      ctx->env->consumer_tag,
+                                      &ctx->env->message.properties));
+  SETCADR(ctx->con->fcall, ctx->msg);
+  Rf_eval(ctx->con->fcall, ctx->con->rho);
+  UNPROTECT(2);
+  return R_NilValue;
+}
+
+static void eval_cleanup(void *data, Rboolean jump)
+{
+  struct msg_ctx *ctx = (struct msg_ctx *) data;
+
+#ifdef ENABLE_ALTREP
+  /* If the callback failed (as opposed to body/message creation failing), we
+   * should try to release the memory. FIXME: What happens if this throws an
+   * error? */
+  if (ctx->msg != R_NilValue) {
+    SEXP body = VECTOR_ELT(ctx->msg, 0);
+    release_pooled_bytes(body);
+  }
+#endif
+
+  amqp_destroy_envelope(ctx->env);
+}
+
 SEXP R_amqp_listen(SEXP ptr, SEXP timeout)
 {
   connection *conn = (connection *) R_ExternalPtrAddr(ptr);
@@ -152,6 +198,10 @@ SEXP R_amqp_listen(SEXP ptr, SEXP timeout)
   amqp_rpc_reply_t reply;
   amqp_envelope_t env;
   consumer *elt;
+  struct msg_ctx ctx;
+  ctx.env = NULL;
+  ctx.con = NULL;
+  ctx.msg = R_NilValue;
 
   while (current_wait < max_wait) {
 
@@ -229,21 +279,12 @@ SEXP R_amqp_listen(SEXP ptr, SEXP timeout)
         continue;
       }
 
-      /* Copy body. */
-      size_t body_len = env.message.body.len;
-      body = PROTECT(Rf_allocVector(RAWSXP, body_len));
-      memcpy((void *) RAW(body), env.message.body.bytes, body_len);
-
-      message = PROTECT(R_message_object(body, env.delivery_tag, env.redelivered,
-                                         env.exchange, env.routing_key, -1,
-                                         env.consumer_tag,
-                                         &env.message.properties));
-      amqp_destroy_envelope(&env);
-
-      SETCADR(elt->fcall, message);
-      Rf_eval(elt->fcall, elt->rho);
-
-      UNPROTECT(2);
+      ctx.env = &env;
+      ctx.con = elt;
+      /* We need to execute the callback in an unwind context so that the
+       * envelope's resources are always cleaned up after the fact. */
+      R_UnwindProtect(eval_consumer_callback, &ctx, eval_cleanup, &ctx,
+                      NULL);
     }
 
     current_wait = time(NULL) - start;
