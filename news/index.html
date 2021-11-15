@@ -136,6 +136,7 @@
 <li><p>Consumers can now control the number of prefetched messages, though the default remains 50. The most likely reason to do so is to implement true round-robin dispatch by setting it to exactly 1. This is useful in scenarios where parallel workers fetch messages from the same queue and you want to guarantee that as many workers as possible are busy, even if there are less than 50 queued messages. (<a href='https://github.com/atheriel/longears/issues/12'>#12</a> by <a href='https://github.com/SyncM1972'>@SyncM1972</a>, Closes <a href='https://github.com/atheriel/longears/issues/2'>#2</a>)</p></li>
 <li><p><code>ampq_connect()</code> now takes a <code>name</code> parameter that allows users to set a connection name, which will appear in the RabbitMQ management plugin web interface and other supported UIs.</p></li>
 <li><p>The <code><a href="https://rdrr.io/r/base/print.html">print()</a></code> method for a connection will now print out all server and client properties for a connection when passed <code>full = TRUE</code>.</p></li>
+<li><p>Fix potential memory corruption when passing raw vectors as properties or headers.</p></li>
 </ul>
 </div>
     <div id="longears-024-2020-08-27" class="section level1">
