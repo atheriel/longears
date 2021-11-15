@@ -7,6 +7,7 @@
 #include <amqp_tcp_socket.h>
 #include <amqp_framing.h>
 
+#define SWITH_TO_REFCNT
 #include "longears.h"
 #include "altrep.h"
 #include "connection.h"
@@ -144,15 +145,25 @@ static SEXP eval_consumer_callback(void * data)
   memcpy((void *) RAW(body), ctx->env->message.body.bytes,
          ctx->env->message.body.len);
 #endif
+  printf("refs after body creation: body=%d\n", REFCNT(body));
 
   ctx->msg = PROTECT(R_message_object(body, ctx->env->delivery_tag,
                                       ctx->env->redelivered, ctx->env->exchange,
                                       ctx->env->routing_key, -1,
                                       ctx->env->consumer_tag,
                                       &ctx->env->message.properties));
+  printf("refs after creation: msg=%d body=%d\n", REFCNT(ctx->msg), REFCNT(body));
+  printf("types: fun=%d msg=%d body=%d\n", TYPEOF(CAR(ctx->con->fcall)),
+         TYPEOF(ctx->msg), TYPEOF(body));
+  Rf_eval(CAR(ctx->con->fcall), ctx->con->rho);
+  printf("refs after eval fun: msg=%d body=%d\n", REFCNT(ctx->msg), REFCNT(body));
+
   SETCADR(ctx->con->fcall, ctx->msg);
+  printf("refs after cons: msg=%d body=%d\n", REFCNT(ctx->msg), REFCNT(body));
   Rf_eval(ctx->con->fcall, ctx->con->rho);
+  printf("refs after eval: msg=%d body=%d\n", REFCNT(ctx->msg), REFCNT(body));
   SETCADR(ctx->con->fcall, R_NilValue);
+  printf("refs after uncons: msg=%d body=%d\n", REFCNT(ctx->msg), REFCNT(body));
   UNPROTECT(2);
   return R_NilValue;
 }
@@ -160,6 +171,17 @@ static SEXP eval_consumer_callback(void * data)
 static void eval_cleanup(void *data, Rboolean jump)
 {
   struct msg_ctx *ctx = (struct msg_ctx *) data;
+  if (!ctx) {
+    printf("in cleanup: ctx is null\n");
+  }
+  if (!ctx->con) {
+    printf("in cleanup: ctx->con is null\n");
+  }
+  if (!ctx->env) {
+    printf("in cleanup: ctx->env is null\n");
+  }
+  printf("in cleanup: connected=%d open=%d\n", ctx->con->conn->is_connected,
+         ctx->con->chan.is_open);
 
 #ifdef ENABLE_ALTREP
   /* If the callback failed (as opposed to body/message creation failing), we
@@ -167,6 +189,9 @@ static void eval_cleanup(void *data, Rboolean jump)
    * error? */
   if (ctx->msg != R_NilValue) {
     SEXP body = VECTOR_ELT(ctx->msg, 0);
+    printf("referenced: msg=%d body=%d; shared: msg=%d body=%d\n",
+           MAYBE_REFERENCED(ctx->msg), MAYBE_REFERENCED(body),
+           MAYBE_SHARED(ctx->msg), MAYBE_SHARED(body));
 
     /* FIXME: Currently this condition will always be true, even on R 4.0 with
      * true reference counting.
@@ -187,7 +212,11 @@ static void eval_cleanup(void *data, Rboolean jump)
   }
 #endif
 
+  printf("before destroy\n");
   amqp_destroy_envelope(ctx->env);
+  printf("before release\n");
+  amqp_maybe_release_buffers(ctx->con->conn->conn);
+  printf("after release\n");
 }
 
 SEXP R_amqp_listen(SEXP ptr, SEXP timeout)
@@ -222,7 +251,7 @@ SEXP R_amqp_listen(SEXP ptr, SEXP timeout)
 
   while (current_wait < max_wait) {
 
-    amqp_maybe_release_buffers(conn->conn);
+    /* amqp_maybe_release_buffers(conn->conn); */
     reply = amqp_consume_message(conn->conn, &env, &tv, 0);
 
     /* Accumulate timeouts one second at a time until we hit the max. This is to
@@ -302,6 +331,7 @@ SEXP R_amqp_listen(SEXP ptr, SEXP timeout)
        * envelope's resources are always cleaned up after the fact. */
       R_UnwindProtect(eval_consumer_callback, &ctx, eval_cleanup, &ctx,
                       NULL);
+      printf("here here\n");
     }
 
     current_wait = time(NULL) - start;

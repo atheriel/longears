@@ -97,12 +97,15 @@ amqp_consume <- function(conn, queue, fun, tag = "", no_ack = FALSE,
       should_ack <- TRUE
       tryCatch({
         fun(msg)
+        cat("fun success\n")
       }, amqp_nack = function(cond) {
+        cat("nacking cond: ", cond$message, "\n")
         should_ack <<- FALSE
         amqp_nack_on_channel(
           conn, chan, msg$delivery_tag, requeue = cond$requeue
         )
       }, error = function(cond) {
+        cat("nacking error: ", cond$message, "\n")
         should_ack <<- FALSE
         amqp_nack_on_channel(
           conn, chan, msg$delivery_tag, requeue = requeue_on_error
@@ -110,8 +113,11 @@ amqp_consume <- function(conn, queue, fun, tag = "", no_ack = FALSE,
         stop(cond)
       }, finally = {
         if (should_ack) {
+          cat("acking\n")
           amqp_nack_on_channel(conn, chan, msg$delivery_tag)
+          should_ack <<- FALSE
         }
+        cat("already ack'd\n")
       })
     }
   } else {

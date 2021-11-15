@@ -5,6 +5,14 @@
 ^\.travis\.yml$
 ^\.github$
 ^cran-comments\.md$
+^docs$
+^Dockerfile$
+^rchk\.sh$
+^rmq-config\.yml$
+^test-([a-z\-]+)\.R$
+test.rds
+^502-*
+.*\.bt$
 ^CRAN-RELEASE$
 ^src/librabbitmq$
 ^inst/librabbitmq\.tar\.gz$

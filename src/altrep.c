@@ -23,6 +23,7 @@ SEXP new_pooled_bytes_sexp(amqp_bytes_t *data)
 void materialize_pooled_bytes(SEXP x)
 {
   if (R_altrep_data2(x) != R_NilValue) {
+    Rprintf("bytes already copied\n");
     return;
   }
 
@@ -133,6 +134,8 @@ void maybe_init_altrep(DllInfo *dll)
   pooled_bytes_class = R_make_altraw_class("amqp_pooled_bytes", "longears", dll);
 
   /* ALTREP methods */
+  /* R_set_altrep_Unserialize_method(pooled_bytes_class, Unserialize_impl); */
+  /* R_set_altrep_Serialized_state_method(pooled_bytes_class, Serialized_impl); */
   R_set_altrep_Length_method(pooled_bytes_class, Length_impl);
   R_set_altrep_Inspect_method(pooled_bytes_class, Inspect_impl);
 
@@ -142,5 +145,6 @@ void maybe_init_altrep(DllInfo *dll)
 
   /* ALTRAW methods */
   R_set_altraw_Elt_method(pooled_bytes_class, Elt_impl);
+  /* R_set_altraw_Get_region_method(pooled_bytes_class, Get_region_impl); */
 }
 #endif /* ENABLE_ALTREP */
